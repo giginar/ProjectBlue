@@ -91,3 +91,5 @@ if ($LASTEXITCODE -ne 0) { throw 'Could not create shallow fixture.' }
 Read-Version $shallow 'complete Git history'
 Write-Host 'PASS: clean/repeated builds, dirty/untracked files, commit increments, branch uniqueness, unborn/nested/shallow rejection.'
 Write-Host "Fixtures: $fixtureRoot"
+# GitHub's pwsh runner propagates the last native exit code, including expected rejections.
+exit 0
