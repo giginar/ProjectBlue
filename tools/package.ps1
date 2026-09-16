@@ -131,7 +131,7 @@ function Test-WindowsImage([string]$ImagePath) {
 }
 
 try {
-    if ($env:OS -ne 'Windows_NT') { throw 'Run paketle.bat on Windows.' }
+    if ($env:OS -ne 'Windows_NT') { throw 'Run package.bat on Windows.' }
     if ($SmokeTest -and -not $withWindows) { throw '-SmokeTest requires Windows or All.' }
     New-Item -ItemType Directory -Path $buildRoot -Force | Out-Null
     try {
@@ -226,22 +226,22 @@ try {
     }
     Write-Utf8 (Join-Path $output 'BUILD.json') (($metadata | ConvertTo-Json -Depth 5) + "`n")
     Write-Utf8 (Join-Path $output 'SHA256SUMS.txt') (($files | ForEach-Object { "$($_.sha256)  $($_.name)" }) -join "`n")
-    Write-Utf8 (Join-Path $output 'OKU.txt') @"
+    Write-Utf8 (Join-Path $output 'README.txt') @"
 Project Blue $($version.versionName)
 
-Android: *-android.apk dosyasini telefona gonder ve ac. Android 8.0+ gerekir.
-Telefon isterse dosyayi actigin uygulamaya APK yukleme izni ver.
-Windows: *-windows-x64-setup.exe dosyasini calistir. Java pakete dahildir.
-Kurulumsuz alternatif: *-portable.zip dosyasini TAMAMEN cikart, ProjectBlue.exe'yi ac.
-Windows paketi x64 icindir. APK debug imzalidir; Windows EXE kod imzasizdir.
+Android: send *-android.apk to your phone and open it. Requires Android 8.0+.
+If prompted, allow the app opening the file to install APKs from this source.
+Windows: run *-windows-x64-setup.exe. Java is included.
+Portable option: extract the ENTIRE *-portable.zip archive, then open ProjectBlue.exe.
+The Windows package is for x64. The APK is debug-signed; the Windows EXE is not code-signed.
 
-Sol mouse tusuyla / parmaginla surukle. Esc / P / pause dugmesi ile duraklat.
-180 saniye hayatta kal, plastikleri temizle ve kaplumbagalari kurtar.
-Windows kayitlari: %USERPROFILE%\.projectblue
+Drag with the left mouse button or your finger. Press Esc / P or the pause button to pause.
+Survive for 180 seconds, collect plastic, and rescue turtles.
+Windows saves: %USERPROFILE%\.projectblue
 
-Dosya adindaki surum, oyun menusundeki surumle aynidir.
-Yeni commit yeni surumdur; -dirty commitlenmemis degisiklik demektir.
-BUILD.json dosya boyutlarini ve SHA-256 dogrulama degerlerini icerir.
+The version in the filename matches the version shown in the game menu.
+Each new commit produces a new version; -dirty indicates uncommitted changes.
+BUILD.json contains file sizes and SHA-256 checksums.
 "@
 
     # Publish only a complete, verified set. Failed builds leave the previous output intact.

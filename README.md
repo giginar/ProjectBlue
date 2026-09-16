@@ -1,225 +1,233 @@
 # Project Blue
 
-Java/libGDX ile yazılmış, Android öncelikli özgün bir portre 2D sualtı shooter prototipi.
-Denizaltıyla drone'ları etkisizleştir, plastikleri temizle, kaplumbağaları kurtar ve
-**180 saniyelik The Quiet Reef** bölümünü tamamla. Temizlik/kurtarma ile su rengi,
-mercanlar ve balık yoğunluğu gözle görülür biçimde iyileşir.
+An original, Android-first 2D underwater shooter prototype written in Java/libGDX
+and played in portrait orientation. Pilot a submarine, disable drones, collect plastic,
+rescue turtles, and complete **The Quiet Reef**, a **180-second** level. Cleanup and
+rescue visibly improve the water color, coral, and fish density.
 
-Sky Force yalnızca tür düzeyinde referanstır; isim, asset, UI, bölüm, düşman, hikâye
-veya kod kopyası kullanılmamıştır. İnternetten oyun asset'i indirilmemiştir.
+Sky Force is a genre reference only. No names, assets, UI, levels, enemies, story,
+or source code have been copied. No game assets have been downloaded from the internet.
 
-## Arkadaşına göndermek için paketle
+## Build packages to share
 
-Kökteki **`paketle.bat` dosyasına çift tıkla**. Android APK, Windows x64 kurulum EXE'si
-ve kurulumsuz ZIP hazırlanır; bitince dosyaların bulunduğu klasör açılır.
-Windows paketinin içinde Java vardır; arkadaşının JDK/SDK kurması gerekmez.
+**Double-click `package.bat` in the project root.** It builds an Android APK, a Windows x64
+installer EXE, and a portable ZIP, then opens the output folder.
+The Windows packages include Java; players do not need to install a JDK or SDK.
 
-Terminalden, pencere açmadan ve tuş beklemeden:
+To run from a terminal without opening a folder or waiting for a keypress:
 
 ```powershell
-.\paketle.bat All
+.\package.bat All
 ```
 
-Gönderilecek dosyalar **`dist/<sürüm>/`** altındadır. Telefona `*-android.apk`, Windows'a
-`*-windows-x64-setup.exe` gönder. `*-portable.zip` kurmadan denemek isteyenler içindir.
-Her yeni commit sürümü artırır; tekrar paketlemek artırmaz. Commit'lenmemiş kod `-dirty`
-olarak işaretlenir. GitHub hesabı, push veya Actions adımı gerekmez.
+Shareable files are written to **`dist/<version>/`**. Send `*-android.apk` to phone users
+and `*-windows-x64-setup.exe` to Windows users. `*-portable.zip` runs without installation.
+Each new commit increments the version; rebuilding does not. Uncommitted code is marked
+`-dirty`. No GitHub account, push, or Actions step is required.
 
-Yalnızca bir platform, test seçeneği ve ilk kurulum ayrıntıları:
-[Yerel paketleme rehberi](docs/LOCAL_PACKAGING.md).
+For individual platforms, optional tests, and first-time setup, see the
+[local packaging guide](docs/LOCAL_PACKAGING.md).
 
-## Hızlı başlangıç — Windows / IntelliJ IDEA Community
+## Quick start - Windows / IntelliJ IDEA Community
 
-1. Kök dizini **Gradle projesi olarak** aç. Gradle dağıtımı için **Wrapper** seç.
-2. Project SDK ve Gradle JVM için **JDK 17 veya 21** seç.
-3. Terminalde:
+1. Open the project root **as a Gradle project**. Select **Wrapper** as the Gradle distribution.
+2. Select **JDK 17 or 21** for the Project SDK and Gradle JVM.
+3. Run in the terminal:
 
 ```powershell
 .\gradlew.bat :lwjgl3:run
 ```
 
-Gradle araç penceresinden `lwjgl3 > application > run` da çalıştırılabilir. Android geliştirme
-eklentisine ihtiyaç duymadan Java oyun kodunu ve masaüstü sürümünü geliştirebilirsin.
-Android paketleme için ayrıca Android SDK gerekir. Makineye özel SDK yolları repoya yazılmaz.
+You can also run `lwjgl3 > application > run` from the Gradle tool window. Java gameplay
+and the desktop version can be developed without an Android IDE plugin.
+Android packaging requires the Android SDK. Machine-specific SDK paths are not committed.
 
-Linux/macOS: `sh ./gradlew :lwjgl3:run`. macOS için Gradle run görevi ilk iş parçacığı
-JVM seçeneğini ekler. Bu oturumda doğrulanan platform Windows x64'tür.
+Linux/macOS: `sh ./gradlew :lwjgl3:run`. On macOS, the Gradle run task adds the JVM
+first-thread option. The platform verified in this development session is Windows x64.
 
-## Kontroller
+## Controls
 
-- Mouse sol tuşunu / tek parmağını oyun alanında tutup **sürükle**. Göreli hareket,
-  denizaltının ilk dokunulan noktaya sıçramasını önler.
-- Otomatik ateş sürekli çalışır. Camgöbeği mermiler oyuncuya, kırmızı mermiler drone'lara aittir.
-- Şişeye 112 birim yaklaş: 0.42 saniyede temizlik ışını toplar.
-- Kaplumbağanın 96 birim yakınında **kesintisiz 1.5 saniye** kal: ağ çözülür ve kaplumbağa uzaklaşır.
-- Altın salvage parçaları yaklaşınca mıknatısla toplanır.
-- Sağ üst pause düğmesi, **Esc**, **P** veya Android geri tuşu duraklatır.
-- Pause ekranından devam edilir. Menüye dönmek mevcut dalışı bitirir.
-- Ses ve müzik ana menüden/pause ekranından açılıp kapatılır; ayarlar kaydedilir.
+- Hold the left mouse button or one finger inside the play area and **drag**. Relative
+  movement prevents the submarine from jumping to the initial touch position.
+- Firing is automatic. Cyan projectiles belong to the player; red projectiles belong to drones.
+- Move within 112 units of a bottle: the cleanup beam collects it in 0.42 seconds.
+- Stay within 96 units of a turtle for **1.5 uninterrupted seconds** to remove its net.
+- Gold salvage pieces are pulled toward the submarine when it gets close.
+- Use the top-right pause button, **Esc**, **P**, or Android's back button to pause.
+- Continue from the pause screen. Returning to the menu ends the current dive.
+- Toggle sound and music from the main menu or pause screen; settings are saved.
 
-## Sürümler ve uyumluluk
+## Versions and compatibility
 
-2026-09-16 tarihinde resmî kaynaklardan kontrol edildi:
+Checked against official sources on 2026-09-16:
 
-| Bileşen | Sürüm / karar |
+| Component | Version / decision |
 |---|---|
-| Java kaynak ve bytecode | **17** (`--release 17`); yerel build/test JVM: Microsoft OpenJDK **21.0.12** |
-| libGDX | **1.14.2**, güncel kararlı sürüm |
-| LWJGL | **3.3.3**, libGDX backend'inin yayımladığı bağımlılık |
-| Gradle Wrapper | **8.13**, resmî dağıtım SHA-256 kontrolü etkin |
-| Android Gradle Plugin | **8.13.2**, Java 17 ve API 36 için uyumlu sabit sürüm |
-| Android compile / target | **36 / 36** |
-| Android min SDK | **26** (Android 8.0); kullanılan standart Java API'leri için sade taban |
-| Android uygulama kimliği | `com.projectblue.game` |
+| Java source and bytecode | **17** (`--release 17`); local build/test JVM: Microsoft OpenJDK **21.0.12** |
+| libGDX | **1.14.2**, current stable release at the time of verification |
+| LWJGL | **3.3.3**, the dependency published with the libGDX backend |
+| Gradle Wrapper | **8.13**, official distribution SHA-256 verification enabled |
+| Android Gradle Plugin | **8.13.2**, pinned for Java 17 and API 36 compatibility |
+| Android compile / target SDK | **36 / 36** |
+| Android minimum SDK | **26** (Android 8.0), a simple baseline for the standard Java APIs in use |
+| Android application ID | `com.projectblue.game` |
 | Android ABI | `arm64-v8a`, `armeabi-v7a`, `x86_64` |
 | JUnit | **5.13.4**, Jupiter / JUnit Platform |
-| Mantıksal alan | **540 × 960**, FitViewport, portre |
+| Logical play area | **540 x 960**, FitViewport, portrait |
 
-Google Play yeni uygulama/güncellemeler için 31 Ağustos 2026 itibarıyla en az API 36 istiyor.
-AGP 8.13, API 36.1'e kadar destekliyor ve Gradle 8.13/JDK 17 ile uyumlu.
-Gradle/AGP için “en son sürüm” iddiası yok; birlikte doğrulanmış sade sürüm çifti kullanıldı.
+As of August 31, 2026, Google Play requires at least API 36 for new apps and updates.
+AGP 8.13 supports up to API 36.1 and is compatible with Gradle 8.13/JDK 17.
+Gradle and AGP are a verified version pair, not a claim to use their latest releases.
 
-Kaynaklar: [libGDX sürümleri](https://libgdx.com/dev/versions/),
-[Google Play hedef API](https://support.google.com/googleplay/android-developer/answer/11926878?hl=en),
-[AGP 8.13 uyumluluğu](https://developer.android.com/build/releases/agp-8-13-0-release-notes),
+Sources: [libGDX releases](https://libgdx.com/dev/versions/),
+[Google Play target API requirements](https://support.google.com/googleplay/android-developer/answer/11926878?hl=en),
+[AGP 8.13 compatibility](https://developer.android.com/build/releases/agp-8-13-0-release-notes),
 [JUnit 5.13.4](https://docs.junit.org/5.13.4/release-notes/),
-[16 KB Android sayfa desteği](https://developer.android.com/guide/practices/page-sizes).
+[Android 16 KB page support](https://developer.android.com/guide/practices/page-sizes).
 
-## Test, dağıtım ve Android build
+## Tests, distributions, and Android builds
 
-Android APK üretimi ve telefona kurulum için [Android deneme rehberi](docs/ANDROID_TESTING.md).
-Windows'ta `android.bat build` eksik SDK'yı kurar, test/lint kontrollerini çalıştırır ve
-`build/artifacts/<sürüm>/ProjectBlue-<sürüm>-debug.apk` üretir. USB ile bağlı telefon için
-`android.bat install` APK'yı kurup oyunu açar.
-GitHub Actions, her dalın push'unda indirilebilir ve sürüm içeren APK artifact'i hazırlar.
-Sürüm Git commit sayısı ve kimliğinden otomatik üretilir; `android.bat version` ile
-görülebilir. Aynı sürüm menüde ve masaüstü pencere başlığında da gösterilir.
-Ayrıntılar ve dal/geçmiş kuralları: [Sürümleme](docs/VERSIONING.md).
+See the [Android testing guide](docs/ANDROID_TESTING.md) for APK builds and phone installation.
+On Windows, `android.bat build` installs a missing SDK, runs tests/lint, and produces
+`build/artifacts/<version>/ProjectBlue-<version>-debug.apk`. For a phone connected over USB,
+`android.bat install` installs the APK and launches the game.
+GitHub Actions creates a downloadable, versioned APK artifact on pushes to any branch.
+The version is derived from the Git commit count and ID; use `android.bat version` to
+display it. The same version appears in the menu and desktop window title.
+See [versioning](docs/VERSIONING.md) for branch and history rules.
 
 ```powershell
-# Android SDK olmadan saf Java testleri ve asset lisans kontrolü
+# Pure Java tests and asset license checks without an Android SDK
 .\gradlew.bat :check
 
-# Gerçek OpenGL penceresinde otomatik masaüstü kontrolü; tamamlanınca kapanır
+# Automated desktop check in a real OpenGL window; exits when complete
 .\gradlew.bat :lwjgl3:run --args=--smoke
 
-# Java runtime gerektiren masaüstü dağıtımı
+# Desktop distribution that requires an installed Java runtime
 .\gradlew.bat :lwjgl3:installDist
 .\lwjgl3\build\install\lwjgl3\bin\lwjgl3.bat
 
-# SDK olmadan üç Android ABI kütüphanesini hazırlama
+# Prepare the three Android ABI libraries without an SDK
 .\gradlew.bat :android:extractNatives
 
-# Android SDK kuruluysa
+# Build with an installed Android SDK
 .\gradlew.bat :android:assembleDebug
 
-# Commit sürümüyle APK, checksum ve BUILD.json dışa aktarımı
+# Export the APK, checksum, and BUILD.json using the commit version
 .\gradlew.bat :android:packageDebugApk
 ```
 
-**Başındaki `:` önemlidir:** `:check` yalnızca kök kontrol görevini çalıştırır;
-`check` alt projelerin Android lint görevlerini de seçebilir ve SDK isteyebilir.
+**The leading `:` matters:** `:check` runs only the root verification task;
+`check` may also select Android lint tasks in subprojects and require an SDK.
 
-Android SDK'da `platforms;android-36`, `build-tools;35.0.0` ve `platform-tools`
-bulunmalı; SDK lisansları SDK Manager üzerinden kabul edilmiş olmalı.
-AGP 8.13'ün varsayılan build-tools sürümü 35.0.0'dır; compile/target SDK yine 36'dır.
-SDK yöneticisi mevcutsa kurulum komutu:
+The Android SDK must contain `platforms;android-36`, `build-tools;35.0.0`, and `platform-tools`,
+with the package licenses accepted through SDK Manager.
+AGP 8.13 defaults to build-tools 35.0.0; compile/target SDK remain 36.
+If SDK Manager is available:
 
 ```text
 sdkmanager "platforms;android-36" "build-tools;35.0.0" "platform-tools"
 ```
 
-SDK yolunu `ANDROID_HOME` ile tanımla veya kökte git tarafından dışlanan
-`local.properties` oluştur:
+Set the SDK location through `ANDROID_HOME` or create a Git-ignored
+`local.properties` file in the project root:
 
 ```properties
 sdk.dir=C\:/Users/YOUR_USER/AppData/Local/Android/Sdk
 ```
 
 APK: `android/build/outputs/apk/debug/android-debug.apk`.
-Bağlı cihazda: `adb install -r android/build/outputs/apk/debug/android-debug.apk`.
+On a connected device: `adb install -r android/build/outputs/apk/debug/android-debug.apk`.
 
-## Mimari
+## Architecture
 
 ```text
 core/       com.projectblue.game
-  ProjectBlueGame             Uygulama ve kaynak sahipliği
-  config/GameConfig          Oyun dengesi, süre, skor, limitler
-  logic/                     Saf Java GameWorld, Rules, LevelResult, seed'li random
-  events/GameEvents          Senkron, nesne üretmeyen oyun olayı dağıtımı
+  ProjectBlueGame             Application and resource ownership
+  config/GameConfig          Game balance, timing, scoring, and limits
+  logic/                     Pure Java GameWorld, Rules, LevelResult, seeded random
+  events/GameEvents          Synchronous game event dispatch without allocations
   input/                     PlayerInput, PointerInput, MenuInput
-  render/OceanRenderer       Programatik sualtı görselleri
-  ui/                        HUD, palet, ortak çizim kaynakları
+  render/OceanRenderer       Programmatic underwater visuals
+  ui/                        HUD, palette, shared drawing resources
   screens/                   Boot, MainMenu, Game, Pause, Result, ScreenRouter
-  assets/GameAssets          Merkezi AssetManager
-  audio/AudioService         Ses/müzik ayarı ve yaşam döngüsü kontrolü
-  save/                      Sürümlü profil, checksum, güvenli varsayılanlar
-  platform/                  Servis interface'leri ve ortak No-Op davranış
-lwjgl3/                      Masaüstü launcher, platform adaptörü, GL smoke kontrolü
-android/                     Android launcher, güvenli pencere inset'leri, No-Op adaptör
-assets/                      Özgün font/ses ve lisans envanteri
-tools/GenerateAssets.java     Asset'lerin çevrimdışı yeniden üretimi
+  assets/GameAssets          Central AssetManager
+  audio/AudioService         Sound/music settings and lifecycle handling
+  save/                      Versioned profile, checksum, safe defaults
+  platform/                  Service interfaces and shared no-op behavior
+lwjgl3/                      Desktop launcher, platform adapter, GL smoke check
+android/                     Android launcher, safe window insets, no-op adapter
+assets/                      Original font/audio and license inventory
+tools/GenerateAssets.java     Offline asset regeneration
 ```
 
-- Simülasyon **60 sabit adım/saniye**; uzun frame/resume aralığı en fazla 0.1 saniye.
-  `GameWorld`, Android veya libGDX import etmez. UI kurallara müdahale etmez.
-- Mermi, drone, plastik, kaplumbağa, salvage ve parçacıklar sabit kapasiteli,
-  önceden oluşturulmuş havuzlardan gelir. Görsel efekt random akışı gameplay'den ayrıdır.
-- HUD yeniden kullanılan StringBuilder'larla saniyede 10 kez güncellenir.
-  Ekranlar ortak GPU kaynaklarını dispose etmez; uygulama kapatırken sahipleri dispose eder.
-- ScreenRouter geçişleri frame sonunda uygular. Pause ekranı mevcut GameScreen'i tutar,
-  simülasyonu ilerletmez; sonuç veya menüde önceki bölümün abonelikleri bırakılır.
-- Android `onPause/onResume` libGDX üzerinden yönlendirilir. Arka plana geçişte input
-  sıfırlanır, oyun ve ses durur, profil yazılır. Geri gelince kullanıcı **Resume Dive** seçer.
-- Android sistem çubukları ve cutout inset'leri oyun View'ına uygulanır. FitViewport,
-  geniş ekran/tablet veya yeniden boyutlandırmada oyun alanını kırpmaz; boş alan bırakır.
-- `AdsService`, `ConsentService`, `AchievementService`, `AnalyticsService`,
-  `PlatformService` üzerinden platform sınırı çizilir. No-Op reklam servisi hazır
-  değildir ve hiçbir ödül vermez; ağ izni, reklam SDK'sı veya hesap bağlantısı yoktur.
-- Profil şeması **v1**, açık v0 geçişi ve CRC32 ile yazım bozulması kontrolü içerir.
-  Yazarken geçici dosya/yedek kullanılır; eksik, bozuk veya bilinmeyen şemada varsayılan
-  profil açılır. Depolama hatası oyunu kapatmaz ve menü/sonuçta gösterilir.
-  CRC32 güvenlik/anti-cheat amacı taşımaz.
-- Desktop kayıt: kullanıcı klasöründe `.projectblue/profile.properties`.
-  Android kayıt: uygulamanın özel files dizini. Smoke modu ayrı `build/smoke/profile` kullanır.
-- İşletim sistemi süreci tamamen öldürürse yeni açılış ana menüdür; devam eden dalış
-  diskten geri yüklenmez. Ayarlar ve tamamlanan dalışların sonuçları kalıcıdır.
+- The simulation runs at **60 fixed steps/second**; long frame/resume intervals are capped
+  at 0.1 seconds. `GameWorld` imports neither Android nor libGDX. UI code does not own game rules.
+- Bullets, drones, plastic, turtles, salvage, and particles use fixed-capacity,
+  preallocated pools. Visual effects have a separate random stream from gameplay.
+- The HUD updates 10 times per second using reusable StringBuilders.
+  Screens do not dispose shared GPU resources; their owners dispose them at shutdown.
+- ScreenRouter applies transitions at the end of a frame. The pause screen retains the
+  current GameScreen without advancing its simulation. Results/menu transitions release
+  subscriptions from the previous run.
+- Android `onPause/onResume` is handled through libGDX. Backgrounding resets input,
+  pauses gameplay/audio, and saves the profile. Returning requires selecting **Resume Dive**.
+- Android system bar and cutout insets are applied to the game View. FitViewport preserves
+  the full play area with letterboxing on wide screens, tablets, and window resizing.
+- `AdsService`, `ConsentService`, `AchievementService`, `AnalyticsService`, and `PlatformService`
+  define the platform boundary. The no-op ads service reports unavailable and never grants
+  rewards. No network permission, ad SDK, or account connection is included.
+- Profile schema **v1** includes explicit v0 migration and CRC32 corruption detection.
+  Writes use temporary files and backups; missing, corrupt, or unknown schemas fall back
+  to defaults. Storage errors are shown in the menu/results without crashing the game.
+  CRC32 is not a security or anti-cheat mechanism.
+- Desktop saves: `.projectblue/profile.properties` in the user's home directory.
+  Android saves: the app's private files directory. Smoke mode uses `build/smoke/profile`.
+- After the operating system kills the process, a new launch opens the main menu.
+  In-progress dives are not restored from disk. Settings and completed run results persist.
 
-## Bölüm ve değerlendirme kuralları
+## Level and scoring rules
 
-Bölümde 40 drone, 36 plastik, 5 kaplumbağa bulunur. Sabit seed, değişmeyen spawn takvimi
-ve bölümün sonundaki boşluk aynı bölümün öğrenilebilir olmasını sağlar.
+The level contains 40 drones, 36 plastic items, and 5 turtles. A fixed seed, a deterministic
+spawn schedule, and a quiet final stretch make the level learnable.
 
-- Combat = yok edilen / 40; Cleanup = toplanan / 36; Rescue = kurtarılan / 5.
-- Integrity = kalan sağlık / 100. Yüzdeler 0–100 aralığında tutulur.
-- Drone 100, plastik 40, kurtarma 300, her salvage birimi 20 puan.
-  Her drone 5 salvage bırakır. Bölüm tamamlanınca 500 + kalan sağlık × 5 eklenir.
-- Başarısız dalış **0 yıldız**; tamamlanan dalış en az **1 yıldız**.
-  Dört kategori ortalaması ≥45 ise **2**; ortalama ≥75 ve her kategori ≥50 ise **3 yıldız**.
-- Görsel iyileşme: Cleanup × %55 + Rescue × %45.
+- Combat = destroyed / 40; Cleanup = collected / 36; Rescue = rescued / 5.
+- Integrity = remaining health / 100. Percentages are clamped to 0-100.
+- Drones award 100 points, plastic 40, rescues 300, and each salvage unit 20.
+  Each drone drops 5 salvage. Completing the level adds 500 + remaining health x 5.
+- A failed dive earns **0 stars**; a completed dive earns at least **1 star**.
+  An average of at least 45 across the four categories earns **2 stars**.
+  An average of at least 75 with every category at least 50 earns **3 stars**.
+- Visual recovery: Cleanup x 55% + Rescue x 45%.
 
-## Doğrulananlar ve sınırlar
+## Verification and limitations
 
-2026-09-16 Windows x64 oturumunda:
+Verified in the Windows x64 development session on 2026-09-16:
 
-- **32 JUnit 5 testi başarılı:** istenen yedi kural grubu yanında çarpışma, havuz,
-  sürekli kurtarma, salvage, seed tekrarlanabilirliği, 180 saniyelik hayatta kalma,
-  kayıt round-trip, bozulma, şema geçişi ve yazma hatası.
-- Gerçek LWJGL3/OpenGL penceresinde boot → menü → drag → pause → resume →
-  lifecycle pause/resume → geniş viewport → 180 saniye → sonuç → kayıt → tekrar oynama başarılı.
-- Masaüstü dağıtımı üretildi. Test raporu `core/build/reports/tests/test/index.html`;
-  ekran görüntüleri `build/smoke/` içinde.
-- Android SDK 36 kuruldu; **debug APK üretildi**. Paket kimliği, min/target SDK,
-  üç ABI, APK imzası ve **16 KB ZIP hizalaması** doğrulandı. arm64-v8a/x86_64 ELF LOAD
-  segmentleri de **16384 bayt hizalı**. Android lint hata vermeden tamamlandı;
-  portre yönü, sürüm önerisi ve manifest uyumluluğuyla ilgili uyarılar raporda görülebilir.
-- **Bağlı Android cihaz/emülatör olmadığından gerçek Android açılışı, dokunma ve GPU
-  context kaybı testi yapılmadı.** APK üretimi bu testlerin veya Play mağazasına yayın
-  hazırlığının yerine geçmez.
-- Görsel/sesler özgün placeholder'lardır; profesyonel sanat, gerçek müzik prodüksiyonu,
-  lokalizasyon, farklı cihazlarda performans profilleme ve kapsamlı oyun dengelemesi yapılmadı.
-- Bölüm/pilot seçimi, upgrade sistemi, gerçek reklam, consent SDK, Google Play Games,
-  çevrimiçi analytics ve ek bölümler bu aşamanın kapsamı dışındadır.
+- **32 JUnit 5 tests passed:** the seven requested rule groups, plus collisions, pooling,
+  uninterrupted rescue, salvage, seeded reproducibility, 180-second survival,
+  save round trips, corruption, schema migration, and write failures.
+- A real LWJGL3/OpenGL window passed boot, menu, drag, pause/resume, lifecycle pause/resume,
+  wide viewport, 180-second completion, results, saving, and replay checks.
+- Desktop distributions were built. Test report: `core/build/reports/tests/test/index.html`;
+  screenshots: `build/smoke/`. See [local packaging](docs/LOCAL_PACKAGING.md) for installer validation status.
+- Android SDK 36 was installed and a **debug APK was built**. Application ID, minimum/target
+  SDK, three ABIs, APK signature, and **16 KB ZIP alignment** were verified.
+  The arm64-v8a/x86_64 ELF LOAD segments are also aligned to **16384 bytes**.
+  Android lint completed without errors; warnings about portrait orientation, version
+  recommendations, and manifest compatibility are available in the report.
+- **No Android device/emulator was connected, so actual Android launch, touch input, and
+  GPU context loss were not tested.** Building an APK does not replace device testing
+  or establish readiness for Play Store publication.
+- Visuals/audio are original placeholders. Professional artwork, music production,
+  localization, cross-device performance profiling, and comprehensive balancing are pending.
+- Level/pilot selection, upgrades, real ads, a consent SDK, Google Play Games,
+  online analytics, and additional levels are outside this phase.
 
-Asset politikası ve kaynak envanteri: [ASSET_LICENSES.md](assets/licenses/ASSET_LICENSES.md).
-Kaynağı/lisansı doğrulanmayan veya doğrulanmış hash'i değişen asset paketlemeyi durdurur.
+Asset policy and source inventory: [ASSET_LICENSES.md](assets/licenses/ASSET_LICENSES.md).
+Unverified sources/licenses or changes to verified asset hashes stop packaging.
+
+## Repository language
+
+All repository content, filenames, code comments, generated instructions, and commit
+messages use English. See [AGENTS.md](AGENTS.md) for the repository conventions.

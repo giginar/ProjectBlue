@@ -1,38 +1,38 @@
-# Commit tabanlı sürümleme
+# Commit-based versioning
 
-Her commit için sürüm build sırasında otomatik hesaplanır:
+The build calculates a version automatically for each commit:
 
 ```text
-versionName = <major>.<minor>.<commit sayısı>-g<commit'in ilk 12 karakteri>
-versionCode = Git geçmişindeki erişilebilir commit sayısı
+versionName = <major>.<minor>.<commit count>-g<first 12 characters of the commit ID>
+versionCode = number of reachable commits in Git history
 ```
 
-Örnek: `0.1.5-gabc123def456`, Android `versionCode=5`.
-`major` ve `minor`, kökteki `version.properties` dosyasındadır.
-Patch alanı commit sayısıdır; her commit'te elle dosya artırmaya gerek yoktur.
-Yeni bir ana/alt ürün sürümüne geçerken yalnızca major/minor değiştirilir;
-Android versionCode sayacı sıfırlanmaz.
+Example: `0.1.5-gabc123def456` with Android `versionCode=5`.
+`major` and `minor` are stored in `version.properties` at the project root.
+The patch component is the commit count; no manual increment is needed for each commit.
+Change only major/minor for a new major or minor product release.
+The Android versionCode counter is not reset.
 
-Sürümün tek kaynağı `gradle/versioning.gradle` dosyasıdır. Bu değer:
+`gradle/versioning.gradle` is the single source of truth. Its values are used in:
 
-- Android manifest'inin `versionName` ve `versionCode` alanlarına,
-- Gradle modül/dağıtım sürümlerine,
-- Üretilen `BuildInfo` sınıfı üzerinden menü ve desktop pencere başlığına,
-- APK adına, artifact klasörüne ve GitHub artifact adına yazılır.
-- Yerel `paketle.bat` çıktısındaki Android/Windows dosya adlarına ve `dist/<sürüm>` klasörüne yazılır.
+- The Android manifest's `versionName` and `versionCode`.
+- Gradle module and distribution versions.
+- The menu and desktop window title through the generated `BuildInfo` class.
+- APK filenames, artifact directories, and GitHub artifact names.
+- Android/Windows filenames and `dist/<version>` directories produced by `package.bat`.
 
-## Komutlar ve çıktılar
+## Commands and output
 
 ```powershell
-.\paketle.bat All
+.\package.bat All
 .\android.bat version
 .\android.bat build
 .\android.bat install
 ```
 
-SDK gerektirmeyen sürüm sorgusu: `gradlew.bat -q :printVersion`.
-Arkadaşa göndermek için APK, Java dahil Windows kurulum EXE'si ve portable ZIP:
-[Yerel paketleme](LOCAL_PACKAGING.md). Push gerektirmez.
+Query the version without an SDK: `gradlew.bat -q :printVersion`.
+For a shareable APK, Windows installer with bundled Java, and portable ZIP, see
+[local packaging](LOCAL_PACKAGING.md). No push is required.
 
 ```text
 build/version/version.json
@@ -42,47 +42,50 @@ build/artifacts/0.1.5-gabc123def456/
   BUILD.json
 ```
 
-`BUILD.json`: sürüm adı/kodu, tam commit kimliği, dirty durumu, APK adı ve SHA-256.
-Bu metadata ve APK aynı Gradle yapılandırmasından üretilir; Windows ve GitHub script'leri
-ayrı sayaç tutmaz. APK export görevi `:android:packageDebugApk`'dir.
-Standart AGP çıktısı `android/build/outputs/apk/debug/android-debug.apk` olarak kalır;
-bunun içindeki sürüm de otomatik hesaplanır.
+`BUILD.json` contains the version name/code, full commit ID, dirty state, APK filename,
+and SHA-256. Metadata and the APK come from the same Gradle configuration.
+Windows and GitHub scripts do not maintain separate counters.
+The APK export task is `:android:packageDebugApk`.
+The standard AGP output remains `android/build/outputs/apk/debug/android-debug.apk`;
+its embedded version is also calculated automatically.
 
-## Tekrarlanabilirlik ve Git geçmişi
+## Reproducibility and Git history
 
-- Aynı temiz commit'in yerel ve CI build'leri **aynı sürümü** alır. Yeniden çalıştırma
-  sürümü artırmaz. İmza anahtarı/SDK ortamı farklı olduğundan APK byte'larının aynı
-  olması garanti edilmez.
-- Commit'lenmemiş değişiklik veya ignore edilmemiş yeni dosya varsa sürüme
-  `-dirty` eklenir. Ignore edilen build/SDK dosyaları bunu etkilemez.
-  Dirty build, yeni commit veya yeni versionCode yaratmaz.
-- Git geçmişi tam olmalıdır. Shallow clone yanlış küçük bir versionCode üretmek yerine
-  açıklayıcı hatayla durur; `git fetch --unshallow` ile düzeltilir.
-- Proje kendi Git checkout'unun kökünde ve en az bir commit'e sahip olmalıdır.
-  Git'siz ZIP kaynak veya üst dizindeki ilgisiz Git deposu sürüm kaynağı olarak kullanılmaz.
-- Normal, geçmişi koruyan `main` ilerleyişinde versionCode artar. Merge'lerde sayaç
-  erişilebilir bütün commit'leri sayar; değer birden fazla artabilir.
-- Farklı dallar aynı commit sayısına sahip olabilir. Kısa hash sürüm adlarını ayırır;
-  versionCode tüm dallar arasında küresel sıra değildir. Android'e dağıtım sırası
-  `main` üzerinden izlenmelidir. Geçmişi yeniden yazmak/force-push sayaç garantisini bozar.
-- Android versionCode için 1–2.100.000.000 aralığı kontrol edilir.
-  [Android sürümleme kuralları](https://developer.android.com/studio/publish/versioning).
+- Local and CI builds of the same clean commit receive **the same version**.
+  Rebuilding does not increment it. APK bytes are not guaranteed to match because
+  signing keys and SDK environments may differ.
+- Uncommitted changes or new files not excluded by Git add a `-dirty` suffix.
+  Ignored build/SDK files do not affect it. A dirty build creates neither a new commit
+  nor a new versionCode.
+- Full Git history is required. Shallow clones fail with an explanatory error instead
+  of producing an incorrectly low versionCode. Use `git fetch --unshallow` to fix this.
+- The project must be at the root of its own Git checkout and have at least one commit.
+  A source ZIP without Git or an unrelated parent repository cannot supply its version.
+- Normal history-preserving development on `main` increases versionCode.
+  Merges count all reachable commits, so the value may increase by more than one.
+- Different branches can have equal commit counts. The short hash distinguishes their
+  version names; versionCode is not a global ordering across branches.
+  Track Android distribution order through `main`. Rewriting history or force-pushing
+  invalidates the counter's monotonicity guarantee.
+- Android versionCode is checked against the range 1-2,100,000,000.
+  [Android versioning rules](https://developer.android.com/studio/publish/versioning).
 
-Git hook'u, otomatik sürüm commit'i veya build'in kaynak dosyalarını değiştirmesi yoktur.
-Bu nedenle sürüm artışı kendini tetikleyen commit/push döngüsü oluşturmaz.
+There are no Git hooks, automatic version commits, or build-time source changes.
+Version increments therefore cannot trigger a self-sustaining commit/push loop.
 
-## CI ve doğrulama
+## CI and validation
 
-GitHub checkout `fetch-depth: 0` kullanır. Pull request'lerde kaynak commit'in kendisi
-derlenir; geçici merge commit'i sürüm kimliği olarak kullanılmaz. Her dal push'unda son
-commit için APK oluşur. Birden fazla commit tek push ile gönderilirse CI son commit'i
-derler; önceki commit'lerin sürümleri de checkout edilerek aynı kuralla hesaplanabilir.
+GitHub checkout uses `fetch-depth: 0`. Pull requests build their source commit rather
+than a temporary merge commit. Each branch push produces an APK for the latest commit.
+If a push contains multiple commits, CI builds the last one; earlier commits can be
+checked out and built with the same versioning rules.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/test-versioning.ps1
 ```
 
-Geçici Git depolarıyla test edilenler: temiz/tekrarlanan build, dirty ve untracked
-değişiklikler, commit sonrası sayaç artışı, eşit sayılı farklı dalların ayrılması,
-commitsiz, iç içe ve shallow depo reddi. Aynı test GitHub'da PowerShell Core ile çalışır.
-Test fixture'ları git dışında kalan `build/versioning-tests/` altında oluşturulur.
+Temporary Git repositories test clean/repeated builds, dirty/untracked changes,
+counter increments after commits, distinct branches with equal commit counts, and
+rejection of unborn, nested, and shallow repositories.
+The same tests run on GitHub with PowerShell Core.
+Fixtures are created under the Git-ignored `build/versioning-tests/` directory.
