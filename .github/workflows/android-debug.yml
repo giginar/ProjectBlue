@@ -28,7 +28,12 @@ jobs:
           cache: gradle
       - name: Install Android SDK packages
         run: |
-          sdkmanager --install "platforms;android-36" "build-tools;35.0.0" "platform-tools"
+          managers=("$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager)
+          if [[ ! -x "${managers[0]}" ]]; then
+            echo "Android SDK manager is missing under $ANDROID_HOME/cmdline-tools" >&2
+            exit 1
+          fi
+          "${managers[0]}" --sdk_root="$ANDROID_HOME" --install "platforms;android-36" "build-tools;35.0.0" "platform-tools"
       - name: Verify rules and build APK
         run: ./gradlew :check :android:assembleDebug :android:lintDebug --console=plain
       - name: Prepare APK and checksum
