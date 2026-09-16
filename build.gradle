@@ -1,0 +1,35 @@
+plugins { id 'base' }
+allprojects {
+    group = 'com.projectblue.game'
+    version = '0.1.0'
+}
+ext {
+    gdxVersion = '1.14.2'
+    junitVersion = '5.13.4'
+}
+tasks.register('verifyAssetLicenses') {
+    inputs.dir('assets')
+    doLast {
+        def approved = [
+            'fonts/blue.fnt', 'fonts/blue.png',
+            'audio/pulse.wav', 'audio/collect.wav', 'audio/ocean.wav'
+        ] as Set
+        def actual = fileTree('assets').matching { exclude 'licenses/**' }.files.collect {
+            file('assets').toPath().relativize(it.toPath()).toString().replace('\\', '/')
+        } as Set
+        if (actual != approved) throw new GradleException("Asset allowlist mismatch: ${actual - approved}; missing: ${approved - actual}")
+        if (!file('assets/licenses/ASSET_LICENSES.md').exists()) {
+            throw new GradleException('Asset license inventory missing')
+        }
+        def verified = new Properties()
+        file('assets/licenses/verified-assets.properties').withInputStream { verified.load(it) }
+        approved.each { path ->
+            def hash = java.security.MessageDigest.getInstance('SHA-256')
+                .digest(file("assets/$path").bytes).encodeHex().toString()
+            if (hash != verified.getProperty(path)) {
+                throw new GradleException("Asset changed since license review: $path")
+            }
+        }
+    }
+}
+tasks.named('check') { dependsOn 'verifyAssetLicenses', ':core:test' }

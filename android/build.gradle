@@ -1,0 +1,49 @@
+plugins { id 'com.android.application' version '8.13.2' }
+android {
+    namespace = 'com.projectblue.game'
+    compileSdk = 36
+    defaultConfig {
+        applicationId = 'com.projectblue.game'
+        minSdk = 26
+        targetSdk = 36
+        versionCode = 1
+        versionName = project.version.toString()
+        ndk { abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64' }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    sourceSets.main {
+        assets.srcDirs = [rootProject.file('assets')]
+        jniLibs.srcDirs = [layout.buildDirectory.dir('generated/jniLibs')]
+    }
+    packaging { jniLibs { useLegacyPackaging = false } }
+}
+configurations { natives }
+dependencies {
+    implementation project(':core')
+    implementation "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
+    natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-arm64-v8a"
+    natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
+    natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86_64"
+}
+def nativeProject = project
+tasks.register('extractNatives') {
+    inputs.files(configurations.natives)
+    outputs.dir(layout.buildDirectory.dir('generated/jniLibs'))
+    doLast {
+        nativeProject.sync { spec ->
+            spec.into(layout.buildDirectory.dir('generated/jniLibs'))
+            configurations.natives.files.each { archive ->
+                def abi = ['arm64-v8a', 'armeabi-v7a', 'x86_64'].find { archive.name.contains(it) }
+                if (abi == null) throw new GradleException("Unknown native ABI: $archive.name")
+                spec.from(zipTree(archive)) {
+                    include '*.so'
+                    into abi
+                }
+            }
+        }
+    }
+}
+tasks.named('preBuild') { dependsOn 'extractNatives', rootProject.tasks.named('verifyAssetLicenses') }
