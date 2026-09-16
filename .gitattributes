@@ -1,9 +1,13 @@
 * text=auto
 *.java text eol=lf
 *.gradle text eol=lf
+*.fnt text eol=lf
+*.properties text eol=lf
+*.yml text eol=lf
+*.ps1 text eol=lf
+*.bat text eol=crlf
 gradlew text eol=lf
 gradlew.bat text eol=crlf
 *.png binary
 *.wav binary
 *.jar binary
-
