@@ -69,9 +69,12 @@ Kaynaklar: [libGDX sürümleri](https://libgdx.com/dev/versions/),
 
 Android APK üretimi ve telefona kurulum için [Android deneme rehberi](docs/ANDROID_TESTING.md).
 Windows'ta `android.bat build` eksik SDK'yı kurar, test/lint kontrollerini çalıştırır ve
-`build/artifacts/ProjectBlue-debug.apk` üretir. USB ile bağlı telefon için
+`build/artifacts/<sürüm>/ProjectBlue-<sürüm>-debug.apk` üretir. USB ile bağlı telefon için
 `android.bat install` APK'yı kurup oyunu açar.
-GitHub Actions, her `main` push'unda indirilebilir APK artifact'i hazırlar.
+GitHub Actions, her dalın push'unda indirilebilir ve sürüm içeren APK artifact'i hazırlar.
+Sürüm Git commit sayısı ve kimliğinden otomatik üretilir; `android.bat version` ile
+görülebilir. Aynı sürüm menüde ve masaüstü pencere başlığında da gösterilir.
+Ayrıntılar ve dal/geçmiş kuralları: [Sürümleme](docs/VERSIONING.md).
 
 ```powershell
 # Android SDK olmadan saf Java testleri ve asset lisans kontrolü
@@ -89,6 +92,9 @@ GitHub Actions, her `main` push'unda indirilebilir APK artifact'i hazırlar.
 
 # Android SDK kuruluysa
 .\gradlew.bat :android:assembleDebug
+
+# Commit sürümüyle APK, checksum ve BUILD.json dışa aktarımı
+.\gradlew.bat :android:packageDebugApk
 ```
 
 **Başındaki `:` önemlidir:** `:check` yalnızca kök kontrol görevini çalıştırır;

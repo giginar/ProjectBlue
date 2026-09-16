@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('setup', 'build', 'install', 'devices', 'logs')]
+    [ValidateSet('setup', 'build', 'install', 'devices', 'logs', 'version')]
     [string]$Command = 'build',
     [string]$Serial,
     [string]$SdkPath
@@ -112,20 +112,17 @@ function Build-Apk {
     Ensure-AndroidSdk
     Push-Location $projectRoot
     try {
-        & '.\gradlew.bat' ':check' ':android:assembleDebug' ':android:lintDebug' '--console=plain'
+        & '.\gradlew.bat' ':check' ':android:lintDebug' ':android:packageDebugApk' '--console=plain'
         if ($LASTEXITCODE -ne 0) { throw "Gradle build failed with exit code $LASTEXITCODE" }
-        $source = Join-Path $projectRoot 'android\build\outputs\apk\debug\android-debug.apk'
-        if (-not (Test-Path -LiteralPath $source)) { throw "APK missing: $source" }
-        & (Join-Path $sdkRoot 'build-tools\35.0.0\apksigner.bat') verify $source
+        $version = Get-Content -LiteralPath (Join-Path $projectRoot 'build\version\version.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+        $artifactDir = Join-Path (Join-Path $projectRoot 'build\artifacts') $version.versionName
+        $script:apk = Join-Path $artifactDir $version.apkFileName
+        if (-not (Test-Path -LiteralPath $script:apk)) { throw "APK missing: $script:apk" }
+        & (Join-Path $sdkRoot 'build-tools\35.0.0\apksigner.bat') verify $script:apk
         if ($LASTEXITCODE -ne 0) { throw 'APK signature verification failed.' }
-        & (Join-Path $sdkRoot 'build-tools\35.0.0\zipalign.exe') -c -P 16 4 $source
+        & (Join-Path $sdkRoot 'build-tools\35.0.0\zipalign.exe') -c -P 16 4 $script:apk
         if ($LASTEXITCODE -ne 0) { throw 'APK 16 KB alignment verification failed.' }
-        $artifactDir = Join-Path $projectRoot 'build\artifacts'
-        New-Item -ItemType Directory -Path $artifactDir -Force | Out-Null
-        $script:apk = Join-Path $artifactDir 'ProjectBlue-debug.apk'
-        Copy-Item -LiteralPath $source -Destination $script:apk -Force
-        $digest = (Get-FileHash -LiteralPath $script:apk -Algorithm SHA256).Hash.ToLowerInvariant()
-        [System.IO.File]::WriteAllText("$script:apk.sha256", "$digest  ProjectBlue-debug.apk`n", $utf8)
+        Write-Host "Version: $($version.versionName) (Android code $($version.versionCode))"
         Write-Host "APK ready: $script:apk"
     } finally { Pop-Location }
 }
@@ -145,6 +142,15 @@ function Get-Device {
 }
 
 try {
+    if ($Command -eq 'version') {
+        Set-JavaEnvironment
+        Push-Location $projectRoot
+        try {
+            & '.\gradlew.bat' '-q' ':printVersion'
+            if ($LASTEXITCODE -ne 0) { throw 'Could not determine the Git version.' }
+        } finally { Pop-Location }
+        exit 0
+    }
     if ($Command -eq 'setup') { Install-AndroidSdk; exit 0 }
     if ($Command -in @('build', 'install')) { Build-Apk }
     else { Ensure-AndroidSdk }

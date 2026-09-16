@@ -11,6 +11,9 @@ Windows için kökteki `android.bat` kullanılır. Telefon için **Android 8.0 v
 
 # Yalnızca Android SDK kurulumu / paket hazırlığı
 .\android.bat setup
+
+# SDK kurmadan mevcut commit'in sürümünü göster
+.\android.bat version
 ```
 
 SDK varsayılan olarak `%LOCALAPPDATA%\Android\Sdk` altına kurulur. Mevcut
@@ -30,8 +33,12 @@ kaynak kodu deposuna eklenmez.
 Her build JUnit testlerini, asset doğrulamasını ve Android lint'i çalıştırır.
 APK imzası ve 16 KB ZIP hizalaması doğrulandıktan sonra şu dosyalar hazırlanır:
 
-- `build/artifacts/ProjectBlue-debug.apk`
-- `build/artifacts/ProjectBlue-debug.apk.sha256`
+- `build/artifacts/<sürüm>/ProjectBlue-<sürüm>-debug.apk`
+- Aynı APK adıyla `.sha256` dosyası ve `BUILD.json`
+
+Örnek: `ProjectBlue-0.1.5-gabc123def456-debug.apk`. Sürüm, Android paket bilgisi ve
+dosya adında aynıdır; her sürüm ayrı klasörde tutulur. Önceki APK'lar korunur.
+Sürüm kuralları: [VERSIONING.md](VERSIONING.md).
 
 APK'yı telefona kopyalayıp dosya yöneticisinden açabilirsin. Android sorarsa APK'yı açtığın
 dosya yöneticisi/tarayıcı için “bu kaynaktan uygulama yükleme” iznini ver.
@@ -65,13 +72,13 @@ Windows'ta bazı telefonlar üreticinin ADB USB sürücüsünü gerektirebilir.
 ## GitHub'dan APK indir
 
 [Android Debug APK iş akışı](https://github.com/giginar/ProjectBlue/actions/workflows/android-debug.yml)
-`main` dalına her push'ta, pull request'lerde ve **Run workflow** ile elle çalışır.
+Bütün dallara yapılan push'larda, pull request'lerde ve **Run workflow** ile elle çalışır.
 
 1. GitHub hesabınla giriş yapıp iş akışının başarılı çalışmasını aç.
-2. **Artifacts** bölümünden `ProjectBlue-debug-<run numarası>` arşivini indir.
-3. ZIP'i açıp `ProjectBlue-debug.apk` dosyasını telefona kopyala ve yükle.
+2. **Artifacts** bölümünden `ProjectBlue-<sürüm>-debug` arşivini indir.
+3. ZIP'i açıp `ProjectBlue-<sürüm>-debug.apk` dosyasını telefona kopyala ve yükle.
 
-Arşiv APK, SHA-256 ve kaynak commit'ini belirten `BUILD.txt` içerir. APK artifact'leri
+Arşiv APK, SHA-256 ve sürüm/kaynak commit'ini belirten `BUILD.json` içerir. APK artifact'leri
 30 gün, test/lint raporları 14 gün saklanır.
 [GitHub artifact indirme belgesi](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts).
 
@@ -94,4 +101,3 @@ Mağazaya yayın, release anahtarı ve kalıcı CI imza yönetimi bu akışın k
 Fiziksel cihaz/emülatör bağlı olmadığından bu oturumda gerçek Android açılışı ve
 dokunma/GPU context davranışı doğrulanamadı. APK derleme, imza, hizalama ve statik
 lint kontrolü cihaz testinin yerine geçmez.
-

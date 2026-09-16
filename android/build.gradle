@@ -6,8 +6,8 @@ android {
         applicationId = 'com.projectblue.game'
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = project.version.toString()
+        versionCode = rootProject.buildVersion.versionCode
+        versionName = rootProject.buildVersion.versionName
         ndk { abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64' }
     }
     compileOptions {
@@ -47,3 +47,30 @@ tasks.register('extractNatives') {
     }
 }
 tasks.named('preBuild') { dependsOn 'extractNatives', rootProject.tasks.named('verifyAssetLicenses') }
+
+// Keep the AGP output unchanged; export a versioned, self-describing test package.
+def versionInfo = rootProject.buildVersion
+def exportDirectory = rootProject.layout.buildDirectory.dir("artifacts/${versionInfo.versionName}")
+tasks.register('packageDebugApk') {
+    group = 'distribution'
+    description = 'Export the debug APK with its Git version, checksum and build metadata.'
+    dependsOn 'assembleDebug', rootProject.tasks.named('writeVersionInfo')
+    def sourceApk = layout.buildDirectory.file('outputs/apk/debug/android-debug.apk')
+    inputs.file(sourceApk)
+    inputs.properties(versionInfo)
+    outputs.dir(exportDirectory)
+    doLast {
+        def directory = exportDirectory.get().asFile
+        directory.mkdirs()
+        def apk = new File(directory, versionInfo.apkFileName)
+        java.nio.file.Files.copy(sourceApk.get().asFile.toPath(), apk.toPath(),
+            java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        def checksum = java.security.MessageDigest.getInstance('SHA-256').digest(apk.bytes).encodeHex().toString()
+        new File(directory, apk.name + '.sha256').setText(checksum + '  ' + apk.name + '\n', 'UTF-8')
+        def details = new LinkedHashMap(versionInfo)
+        details.sha256 = checksum
+        new File(directory, 'BUILD.json').setText(
+            groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(details)) + '\n', 'UTF-8')
+        logger.lifecycle("APK ready: ${apk}")
+    }
+}

@@ -1,0 +1,59 @@
+import groovy.json.JsonOutput
+
+// Full Git history is the source of truth. No counters, timestamps or generated commits.
+def gitOutput = { List<String> arguments ->
+    def output = providers.exec {
+        workingDir rootDir
+        commandLine(['git'] + arguments)
+        ignoreExitValue = true
+    }
+    if (output.result.get().exitValue != 0) {
+        throw new GradleException("Cannot determine the build version. Build from a Git checkout with at least one commit.")
+    }
+    output.standardOutput.asText.get().trim()
+}
+if (new File(gitOutput(['rev-parse', '--show-toplevel'])).canonicalFile != rootDir.canonicalFile) {
+    throw new GradleException('The project directory must be the root of its own Git checkout.')
+}
+if (gitOutput(['rev-parse', '--is-shallow-repository']) == 'true') {
+    throw new GradleException('Versioning needs complete Git history. Run git fetch --unshallow; CI must use fetch-depth: 0.')
+}
+
+def release = new Properties()
+file('version.properties').withInputStream { release.load(it) }
+['major', 'minor'].each { key ->
+    if (!(release.getProperty(key, '') ==~ /0|[1-9][0-9]*/)) {
+        throw new GradleException("version.properties must contain a non-negative integer for $key")
+    }
+}
+def commit = gitOutput(['rev-parse', '--verify', 'HEAD'])
+def count = gitOutput(['rev-list', '--count', 'HEAD']).toLong()
+if (count < 1 || count > 2100000000L) {
+    throw new GradleException('Commit count is outside the Android versionCode range.')
+}
+def dirty = !gitOutput(['status', '--porcelain', '--untracked-files=normal']).isEmpty()
+def name = "${release.major}.${release.minor}.${count}-g${commit.take(12)}${dirty ? '-dirty' : ''}".toString()
+ext.buildVersion = [
+    versionName: name,
+    versionCode: (int) count,
+    gitCommit: commit,
+    dirty: dirty,
+    apkFileName: "ProjectBlue-${name}-debug.apk".toString()
+].asImmutable()
+
+def metadata = buildVersion
+tasks.register('writeVersionInfo') {
+    inputs.properties(metadata)
+    def target = layout.buildDirectory.file('version/version.json')
+    outputs.file(target)
+    doLast {
+        def output = target.get().asFile
+        output.parentFile.mkdirs()
+        output.setText(JsonOutput.prettyPrint(JsonOutput.toJson(metadata)) + '\n', 'UTF-8')
+    }
+}
+tasks.register('printVersion') {
+    group = 'help'
+    description = 'Print the version derived from this Git commit.'
+    doLast { println metadata.versionName }
+}

@@ -1,6 +1,7 @@
 package com.projectblue.game.screens;
 
 import com.projectblue.game.ProjectBlueGame;
+import com.projectblue.game.config.BuildInfo;
 import com.projectblue.game.ui.Palette;
 
 public final class MainMenuScreen extends BaseMenuScreen {
@@ -35,7 +36,7 @@ public final class MainMenuScreen extends BaseMenuScreen {
         ui.centered(best, 69, .61f, Palette.GOLD);
         if (game.saves().writeFailed()) ui.centered("PROFILE NOT SAVED / STORAGE UNAVAILABLE", 34, .54f, Palette.RED);
         else if (game.saves().recovered()) ui.centered("PROFILE RECOVERED TO DEFAULTS", 34, .54f, Palette.GOLD);
-        else ui.centered("PROJECT BLUE / FIRST DIVE", 34, .5f, Palette.MUTED);
+        else ui.centered("BUILD " + BuildInfo.VERSION_NAME, 34, .5f, Palette.MUTED);
         ui.endText();
     }
     protected void click(float x, float y) {
@@ -45,4 +46,3 @@ public final class MainMenuScreen extends BaseMenuScreen {
     }
     protected void back() { game.router().request(ScreenRouter.Route.EXIT); }
 }
-

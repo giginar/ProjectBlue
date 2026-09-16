@@ -1,7 +1,8 @@
 plugins { id 'base' }
+apply from: 'gradle/versioning.gradle'
 allprojects {
     group = 'com.projectblue.game'
-    version = '0.1.0'
+    version = rootProject.buildVersion.versionName
 }
 ext {
     gdxVersion = '1.14.2'

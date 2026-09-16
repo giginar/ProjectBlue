@@ -2,12 +2,13 @@ package com.projectblue.game.lwjgl3;
 
 import com.badlogic.gdx.backends.lwjgl3.*;
 import com.projectblue.game.ProjectBlueGame;
+import com.projectblue.game.config.BuildInfo;
 
 public final class DesktopLauncher {
     public static void main(String[] args) {
         boolean smoke = args.length > 0 && args[0].equals("--smoke");
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
-        config.setTitle("Project Blue");
+        config.setTitle("Project Blue " + BuildInfo.VERSION_NAME);
         config.setWindowedMode(486, 864);
         config.setWindowSizeLimits(270, 480, -1, -1);
         config.useVsync(true);

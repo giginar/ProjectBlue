@@ -2,7 +2,7 @@ name: Android Debug APK
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
   workflow_dispatch:
 
@@ -20,12 +20,18 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Set up Java 17
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
+      - name: Test commit versioning
+        shell: pwsh
+        run: ./tools/test-versioning.ps1
       - name: Install Android SDK packages
         run: |
           managers=("$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager)
@@ -35,21 +41,25 @@ jobs:
           fi
           "${managers[0]}" --sdk_root="$ANDROID_HOME" --install "platforms;android-36" "build-tools;35.0.0" "platform-tools"
       - name: Verify rules and build APK
-        run: ./gradlew :check :android:assembleDebug :android:lintDebug --console=plain
-      - name: Prepare APK and checksum
+        run: ./gradlew :check :android:lintDebug :android:packageDebugApk --console=plain
+      - name: Verify versioned APK
+        id: apk
         run: |
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify android/build/outputs/apk/debug/android-debug.apk
-          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 android/build/outputs/apk/debug/android-debug.apk
-          mkdir -p build/artifacts
-          cp android/build/outputs/apk/debug/android-debug.apk build/artifacts/ProjectBlue-debug.apk
-          cd build/artifacts
-          sha256sum ProjectBlue-debug.apk > ProjectBlue-debug.apk.sha256
-          printf 'Commit: %s\nRun: %s\n' "$GITHUB_SHA" "$GITHUB_RUN_NUMBER" > BUILD.txt
+          version=$(jq -r .versionName build/version/version.json)
+          filename=$(jq -r .apkFileName build/version/version.json)
+          test "$(jq -r .dirty build/version/version.json)" = false
+          test "$(jq -r .gitCommit build/version/version.json)" = "$(git rev-parse HEAD)"
+          apk="build/artifacts/$version/$filename"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$apk"
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 "$apk"
+          (cd "build/artifacts/$version" && sha256sum -c "$filename.sha256")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "APK version: $version" >> "$GITHUB_STEP_SUMMARY"
       - name: Upload test APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: ProjectBlue-debug-${{ github.run_number }}
-          path: build/artifacts/
+          name: ProjectBlue-${{ steps.apk.outputs.version }}-debug
+          path: build/artifacts/${{ steps.apk.outputs.version }}/
           if-no-files-found: error
           retention-days: 30
       - name: Upload test and lint reports
