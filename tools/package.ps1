@@ -201,7 +201,7 @@ try {
         $artifacts += $name
         $name = "$prefix-windows-x64-portable.zip"
         # .NET includes every runtime/legal file, including files Compress-Archive may skip.
-        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
         $zip = [IO.Compression.ZipFile]::Open((Join-Path $output $name), [IO.Compression.ZipArchiveMode]::Create)
         try {
             Get-ChildItem -LiteralPath $imagePath -File -Recurse -Force | ForEach-Object {

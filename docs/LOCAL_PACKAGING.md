@@ -112,6 +112,15 @@ Build çıktıları, araçlar ve imza anahtarları kaynak koduna commit edilmez.
 `dist/LATEST.txt` değiştirilmez; geçici çalışma dosyaları belirtilen `build/packaging/`
 dizininde teşhis için kalır. Scriptin başarılı çıktısı `READY: ...` satırıdır.
 
+## Doğrulama durumu
+
+32 JUnit testi, Android lint/imza/16 KB hizalama, iki platformun birlikte paketlenmesi,
+Android'in ayrı/başka çalışma dizininden paketlenmesi ve paket içindeki Java ile gerçek
+OpenGL oyun testi doğrulandı. Eşzamanlı paketleme ve geçersiz hedef/test birleşimi reddedildi.
+Bu geliştirme ortamında sessiz Windows kurulum denemesi sonuçlanmadı; installer oluşturma
+ve iç sürüm bilgisi kontrol edildi, kurulum/güncelleme/kaldırma akışı henüz uçtan uca
+doğrulanmadı. Fiziksel Android cihazında deneme de bağlı cihaz gerektirir.
+
 Resmî teknik kaynaklar: [JDK 21 jpackage](https://docs.oracle.com/en/java/javase/21/docs/specs/man/jpackage.html),
 [WiX 3.14.1](https://github.com/wixtoolset/wix3/releases/tag/wix3141rtm),
 [Windows Installer sürüm alanları](https://learn.microsoft.com/en-us/windows/win32/msi/productversion).
