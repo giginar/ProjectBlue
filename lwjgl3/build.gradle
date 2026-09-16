@@ -15,10 +15,19 @@ dependencies {
 }
 sourceSets.main.resources.srcDirs = [rootProject.file('assets')]
 tasks.named('processResources') { dependsOn rootProject.tasks.named('verifyAssetLicenses') }
+
+// jpackage reads this directory and bundles its jars with a private Java runtime.
+tasks.register('prepareWindowsPackage', Sync) {
+    group = 'distribution'
+    description = 'Collect the desktop application and dependencies for local Windows packaging.'
+    dependsOn tasks.named('jar')
+    from tasks.named('jar')
+    from configurations.runtimeClasspath
+    into layout.buildDirectory.dir('windows-package-input')
+}
 tasks.named('run') {
     workingDir = rootProject.projectDir
     if (System.getProperty('os.name').toLowerCase().contains('mac')) {
         jvmArgs '-XstartOnFirstThread'
     }
 }
-

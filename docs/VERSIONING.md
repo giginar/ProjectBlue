@@ -19,16 +19,20 @@ Sürümün tek kaynağı `gradle/versioning.gradle` dosyasıdır. Bu değer:
 - Gradle modül/dağıtım sürümlerine,
 - Üretilen `BuildInfo` sınıfı üzerinden menü ve desktop pencere başlığına,
 - APK adına, artifact klasörüne ve GitHub artifact adına yazılır.
+- Yerel `paketle.bat` çıktısındaki Android/Windows dosya adlarına ve `dist/<sürüm>` klasörüne yazılır.
 
 ## Komutlar ve çıktılar
 
 ```powershell
+.\paketle.bat All
 .\android.bat version
 .\android.bat build
 .\android.bat install
 ```
 
 SDK gerektirmeyen sürüm sorgusu: `gradlew.bat -q :printVersion`.
+Arkadaşa göndermek için APK, Java dahil Windows kurulum EXE'si ve portable ZIP:
+[Yerel paketleme](LOCAL_PACKAGING.md). Push gerektirmez.
 
 ```text
 build/version/version.json

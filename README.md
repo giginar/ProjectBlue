@@ -8,6 +8,26 @@ mercanlar ve balık yoğunluğu gözle görülür biçimde iyileşir.
 Sky Force yalnızca tür düzeyinde referanstır; isim, asset, UI, bölüm, düşman, hikâye
 veya kod kopyası kullanılmamıştır. İnternetten oyun asset'i indirilmemiştir.
 
+## Arkadaşına göndermek için paketle
+
+Kökteki **`paketle.bat` dosyasına çift tıkla**. Android APK, Windows x64 kurulum EXE'si
+ve kurulumsuz ZIP hazırlanır; bitince dosyaların bulunduğu klasör açılır.
+Windows paketinin içinde Java vardır; arkadaşının JDK/SDK kurması gerekmez.
+
+Terminalden, pencere açmadan ve tuş beklemeden:
+
+```powershell
+.\paketle.bat All
+```
+
+Gönderilecek dosyalar **`dist/<sürüm>/`** altındadır. Telefona `*-android.apk`, Windows'a
+`*-windows-x64-setup.exe` gönder. `*-portable.zip` kurmadan denemek isteyenler içindir.
+Her yeni commit sürümü artırır; tekrar paketlemek artırmaz. Commit'lenmemiş kod `-dirty`
+olarak işaretlenir. GitHub hesabı, push veya Actions adımı gerekmez.
+
+Yalnızca bir platform, test seçeneği ve ilk kurulum ayrıntıları:
+[Yerel paketleme rehberi](docs/LOCAL_PACKAGING.md).
+
 ## Hızlı başlangıç — Windows / IntelliJ IDEA Community
 
 1. Kök dizini **Gradle projesi olarak** aç. Gradle dağıtımı için **Wrapper** seç.

@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('setup', 'build', 'install', 'devices', 'logs', 'version')]
+    [ValidateSet('setup', 'prepare', 'build', 'verify', 'install', 'devices', 'logs', 'version')]
     [string]$Command = 'build',
     [string]$Serial,
     [string]$SdkPath
@@ -114,17 +114,21 @@ function Build-Apk {
     try {
         & '.\gradlew.bat' ':check' ':android:lintDebug' ':android:packageDebugApk' '--console=plain'
         if ($LASTEXITCODE -ne 0) { throw "Gradle build failed with exit code $LASTEXITCODE" }
-        $version = Get-Content -LiteralPath (Join-Path $projectRoot 'build\version\version.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-        $artifactDir = Join-Path (Join-Path $projectRoot 'build\artifacts') $version.versionName
-        $script:apk = Join-Path $artifactDir $version.apkFileName
-        if (-not (Test-Path -LiteralPath $script:apk)) { throw "APK missing: $script:apk" }
-        & (Join-Path $sdkRoot 'build-tools\35.0.0\apksigner.bat') verify $script:apk
-        if ($LASTEXITCODE -ne 0) { throw 'APK signature verification failed.' }
-        & (Join-Path $sdkRoot 'build-tools\35.0.0\zipalign.exe') -c -P 16 4 $script:apk
-        if ($LASTEXITCODE -ne 0) { throw 'APK 16 KB alignment verification failed.' }
-        Write-Host "Version: $($version.versionName) (Android code $($version.versionCode))"
-        Write-Host "APK ready: $script:apk"
+        Test-Apk
     } finally { Pop-Location }
+}
+
+function Test-Apk {
+    $version = Get-Content -LiteralPath (Join-Path $projectRoot 'build\version\version.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+    $artifactDir = Join-Path (Join-Path $projectRoot 'build\artifacts') $version.versionName
+    $script:apk = Join-Path $artifactDir $version.apkFileName
+    if (-not (Test-Path -LiteralPath $script:apk)) { throw "APK missing: $script:apk" }
+    & (Join-Path $sdkRoot 'build-tools\35.0.0\apksigner.bat') verify $script:apk
+    if ($LASTEXITCODE -ne 0) { throw 'APK signature verification failed.' }
+    & (Join-Path $sdkRoot 'build-tools\35.0.0\zipalign.exe') -c -P 16 4 $script:apk
+    if ($LASTEXITCODE -ne 0) { throw 'APK 16 KB alignment verification failed.' }
+    Write-Host "Version: $($version.versionName) (Android code $($version.versionCode))"
+    Write-Host "APK ready: $script:apk"
 }
 
 function Get-Device {
@@ -156,6 +160,8 @@ try {
     else { Ensure-AndroidSdk }
     $script:adb = Join-Path $sdkRoot 'platform-tools\adb.exe'
     switch ($Command) {
+        'prepare' { Write-Host "Android SDK ready: $sdkRoot" }
+        'verify' { Test-Apk }
         'devices' {
             & $script:adb devices -l
             if ($LASTEXITCODE -ne 0) { throw 'adb devices failed.' }

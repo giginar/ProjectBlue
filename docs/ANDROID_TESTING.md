@@ -3,6 +3,10 @@
 Android Studio kurmadan IntelliJ IDEA Community ve JDK 17/21 ile APK hazırlanabilir.
 Windows için kökteki `android.bat` kullanılır. Telefon için **Android 8.0 veya üzeri** gerekir.
 
+**Arkadaşına göndermek için:** kökte `paketle.bat` dosyasına çift tıkla veya
+`paketle.bat Android` çalıştır. Gönderilecek APK `dist/<sürüm>/` klasörüne konur.
+Windows installer da aynı komutla hazırlanabilir: [Yerel paketleme](LOCAL_PACKAGING.md).
+
 ## Bu bilgisayarda
 
 ```powershell

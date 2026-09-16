@@ -16,6 +16,7 @@ kendi lisanslarıyla dağıtılır.
 | Kaplumbağa, mercan, balık, akıntı, parçacık | `OceanRenderer.java` | Project Blue için Codex tarafından üretildi | Proje için üretilmiş özgün içerik; üçüncü taraf asset lisansı yok | Yok — çalışma anında çizim | Kod içindeki geometrik şekiller; doğrulandı |
 | Menü, HUD, yıldızlar, yükleme çubuğu | `ui/` ve `screens/` | Project Blue için Codex tarafından üretildi | Proje için üretilmiş özgün içerik; üçüncü taraf asset lisansı yok | Yok — çalışma anında çizim | Haricî UI skin veya ikon yok; doğrulandı |
 | `android/src/main/res/drawable/ic_blue.xml` | Özgün Android vector path | Project Blue için Codex tarafından üretildi | Proje için üretilmiş özgün içerik; üçüncü taraf asset lisansı yok | Yok — yerel üretim | Launcher simgesi; doğrulandı |
+| Windows `ProjectBlue.ico` (build çıktısı) | `tools/GenerateWindowsIcon.java`, özgün Android simgesinin geometrisi | Project Blue için Codex tarafından üretildi | Proje için üretilmiş özgün içerik; üçüncü taraf asset lisansı yok | Yok — paketleme sırasında yerel üretim | Windows EXE/installer simgesi; haricî görsel kullanılmaz; doğrulandı |
 
 Bu envanter üçüncü taraf materyale hak atfetmez. Özgün oluşturulan dosyalar Project Blue
 kapsamında kullanım ve değişiklik için sağlanır; projenin genel kaynak kodu dağıtım lisansı
@@ -35,4 +36,3 @@ için kaydedilir; gerekli lisans metni ve satın alma kanıtı uygun yerde sakla
 Sky Force'a ait asset, arayüz, bölüm veya ayırt edici tasarım kullanılmaz.
 
 Yeniden üretim: proje kökünde `java tools/GenerateAssets.java`.
-

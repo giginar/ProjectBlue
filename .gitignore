@@ -6,6 +6,7 @@ local.properties
 *.log
 captures/
 .projectblue/
+dist/
 *.apk
 *.aab
 *.jks
