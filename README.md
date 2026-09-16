@@ -67,6 +67,12 @@ Kaynaklar: [libGDX sürümleri](https://libgdx.com/dev/versions/),
 
 ## Test, dağıtım ve Android build
 
+Android APK üretimi ve telefona kurulum için [Android deneme rehberi](docs/ANDROID_TESTING.md).
+Windows'ta `android.bat build` eksik SDK'yı kurar, test/lint kontrollerini çalıştırır ve
+`build/artifacts/ProjectBlue-debug.apk` üretir. USB ile bağlı telefon için
+`android.bat install` APK'yı kurup oyunu açar.
+GitHub Actions, her `main` push'unda indirilebilir APK artifact'i hazırlar.
+
 ```powershell
 # Android SDK olmadan saf Java testleri ve asset lisans kontrolü
 .\gradlew.bat :check
@@ -101,7 +107,7 @@ SDK yolunu `ANDROID_HOME` ile tanımla veya kökte git tarafından dışlanan
 `local.properties` oluştur:
 
 ```properties
-sdk.dir=C:/Users/YOUR_USER/AppData/Local/Android/Sdk
+sdk.dir=C\:/Users/YOUR_USER/AppData/Local/Android/Sdk
 ```
 
 APK: `android/build/outputs/apk/debug/android-debug.apk`.
@@ -177,12 +183,13 @@ ve bölümün sonundaki boşluk aynı bölümün öğrenilebilir olmasını sağ
   lifecycle pause/resume → geniş viewport → 180 saniye → sonuç → kayıt → tekrar oynama başarılı.
 - Masaüstü dağıtımı üretildi. Test raporu `core/build/reports/tests/test/index.html`;
   ekran görüntüleri `build/smoke/` içinde.
-- Üç Android ABI'si doğru klasörlere çıkarıldı. arm64-v8a/x86_64 ELF LOAD segmentleri
-  **16384 bayt hizalı** olarak kontrol edildi. APK paket hizalaması ve cihaz davranışı
-  ancak Android build/cihaz testiyle doğrulanabilir.
-- **Android SDK/adb/sdkmanager bulunmadığı için debug APK üretilmedi; gerçek Android
-  cihaz/emülatör ve GPU context kaybı testi yapılmadı.** Hedef SDK yapılandırması bu
-  testlerin veya Play mağazasına yayın hazırlığının yerine geçmez.
+- Android SDK 36 kuruldu; **debug APK üretildi**. Paket kimliği, min/target SDK,
+  üç ABI, APK imzası ve **16 KB ZIP hizalaması** doğrulandı. arm64-v8a/x86_64 ELF LOAD
+  segmentleri de **16384 bayt hizalı**. Android lint hata vermeden tamamlandı;
+  portre yönü, sürüm önerisi ve manifest uyumluluğuyla ilgili uyarılar raporda görülebilir.
+- **Bağlı Android cihaz/emülatör olmadığından gerçek Android açılışı, dokunma ve GPU
+  context kaybı testi yapılmadı.** APK üretimi bu testlerin veya Play mağazasına yayın
+  hazırlığının yerine geçmez.
 - Görsel/sesler özgün placeholder'lardır; profesyonel sanat, gerçek müzik prodüksiyonu,
   lokalizasyon, farklı cihazlarda performans profilleme ve kapsamlı oyun dengelemesi yapılmadı.
 - Bölüm/pilot seçimi, upgrade sistemi, gerçek reklam, consent SDK, Google Play Games,
