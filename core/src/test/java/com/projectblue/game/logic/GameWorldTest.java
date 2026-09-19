@@ -68,8 +68,10 @@ class GameWorldTest {
             assertEquals(a.drones.at(i).y,b.drones.at(i).y);
         }
     }
-    @Test void fullThreeMinuteLevelCanBeSurvivedAndFinishesOnce() {
-        GameWorld w=world();
+    @Test void legacyThreeMinuteSimulationStillFinishesOnce() {
+        GameWorld w=new GameWorld(RandomProvider.seeded(LEVEL_SEED),
+            com.projectblue.game.config.RunSpec.create(2,com.projectblue.game.config.Difficulty.NORMAL,
+                com.projectblue.game.config.Loadout.standard()));
         int[] finishedEvents={0};
         w.events.subscribe((type,x,y,value)->{if(type==GameEvents.Type.FINISHED)finishedEvents[0]++;});
         for(int i=0;i<11000 && !w.finished();i++) {

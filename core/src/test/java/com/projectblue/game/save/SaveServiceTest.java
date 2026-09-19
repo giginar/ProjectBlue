@@ -43,7 +43,7 @@ class SaveServiceTest {
         SaveService service=new SaveService(store);
         assertFalse(service.recovered()); assertEquals(PROFILE_VERSION,service.profile().version);
         assertEquals(250,service.profile().bestScore); assertEquals(0,service.profile().bestStars);
-        service.save(); assertTrue(store.data.startsWith("version=1"));
+        service.save(); assertTrue(store.data.startsWith("version=" + PROFILE_VERSION));
     }
     @Test void unavailableStorageKeepsGameUsableAndReportsFailure() {
         MemoryStore store=new MemoryStore(); store.fail=true;
@@ -53,4 +53,3 @@ class SaveServiceTest {
         store.fail=false; assertTrue(service.save()); assertFalse(service.writeFailed());
     }
 }
-

@@ -6,7 +6,8 @@ import com.projectblue.game.config.BuildInfo;
 
 public final class DesktopLauncher {
     public static void main(String[] args) {
-        boolean smoke = args.length > 0 && args[0].equals("--smoke");
+        boolean reload = args.length > 0 && args[0].equals("--smoke-reload");
+        boolean smoke = reload || (args.length > 0 && args[0].equals("--smoke"));
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
         config.setTitle("Project Blue " + BuildInfo.VERSION_NAME);
         config.setWindowedMode(486, 864);
@@ -17,7 +18,7 @@ public final class DesktopLauncher {
         config.setAudioConfig(16, 512, 9);
         config.setPauseWhenLostFocus(!smoke);
         config.setPauseWhenMinimized(true);
-        ProjectBlueGame game = smoke ? new DesktopSmokeGame() : new ProjectBlueGame(new DesktopPlatformService());
+        ProjectBlueGame game = smoke ? new DesktopSmokeGame(reload) : new ProjectBlueGame(new DesktopPlatformService());
         new Lwjgl3Application(game, config);
     }
 }

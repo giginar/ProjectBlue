@@ -6,17 +6,20 @@ import com.projectblue.game.ProjectBlueGame;
 import com.projectblue.game.input.PointerInput;
 import com.projectblue.game.logic.*;
 import com.projectblue.game.ui.Hud;
+import com.projectblue.game.config.RunSpec;
 import static com.projectblue.game.config.GameConfig.*;
 
 public final class GameScreen extends ScreenAdapter {
     private final ProjectBlueGame game;
-    private final GameWorld world = new GameWorld(RandomProvider.seeded(LEVEL_SEED));
+    private final GameWorld world;
     private final PointerInput input;
     private final Hud hud;
     private float accumulator;
     private boolean disposed;
-    public GameScreen(ProjectBlueGame game) {
+    public GameScreen(ProjectBlueGame game, RunSpec spec) {
         this.game = game;
+        if (!game.saves().profile().canPlay(spec.level().id(), spec.difficulty())) throw new IllegalArgumentException("Locked dive");
+        world = new GameWorld(RandomProvider.seeded(spec.level().seed()), spec);
         input = new PointerInput(game.ui().viewport, world, () -> game.router().request(ScreenRouter.Route.PAUSE));
         hud = new Hud(game.ui());
         world.events.subscribe(hud);
@@ -47,4 +50,3 @@ public final class GameScreen extends ScreenAdapter {
         world.events.unsubscribe(game.audio());
     }
 }
-

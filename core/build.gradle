@@ -17,8 +17,10 @@ test { useJUnitPlatform() }
 
 def buildVersion = rootProject.buildVersion
 def generatedSources = layout.buildDirectory.dir('generated/sources/buildInfo')
+def developmentBuild = providers.gradleProperty('developmentBuild').map { it.toBoolean() }.getOrElse(false)
 tasks.register('generateBuildInfo') {
     inputs.properties(buildVersion)
+    inputs.property('developmentBuild', developmentBuild)
     outputs.dir(generatedSources)
     doLast {
         def source = generatedSources.get().file('com/projectblue/game/config/BuildInfo.java').asFile
@@ -31,6 +33,7 @@ public final class BuildInfo {
     public static final String VERSION_NAME = "${buildVersion.versionName}";
     public static final int VERSION_CODE = ${buildVersion.versionCode};
     public static final String GIT_COMMIT = "${buildVersion.gitCommit}";
+    public static final boolean DEVELOPMENT_BUILD = ${developmentBuild};
 }
 """, 'UTF-8')
     }

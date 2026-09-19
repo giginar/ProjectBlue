@@ -5,5 +5,5 @@ public interface PlatformService {
     AchievementService achievements();
     AnalyticsService analytics();
     String saveDirectory();
+    default boolean developmentBuild() { return false; }
 }
-
