@@ -69,7 +69,7 @@ and provisional balance are documented in [equipment systems](EQUIPMENT_SYSTEMS.
 
 Profile v5 stores per-sector unlocks/records/completed difficulties, salvage, completed
 runs, crew/vessel/weapon selection, earned equipment access, upgrade levels, achievement
-progress/unlocks/pending notices, cumulative counters, audio settings and reduced motion.
+progress/unlocks/pending notices, cumulative counters, audio settings and reduced visual effects.
 No advertising preferences or SDK state are introduced.
 
 The codec verifies CRC32 before normalization. v0 migrates settings and score only. v1

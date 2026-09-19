@@ -103,7 +103,7 @@ public abstract class StageMenuScreen extends ScreenAdapter {
     }
     public void render(float delta) {
         if (!profile.reducedMotion) time += Math.min(Math.max(delta, 0), .1f);
-        game.ocean().backdrop(time, backdropRestoration(), backdropType());
+        game.ocean().backdrop(time, backdropRestoration(), backdropType(), profile.reducedMotion);
         if (game.saves().writeFailed()) status.setText("SAVE FAILED / RETRY IN SETTINGS");
         else if (game.saves().recoveredBackup()) status.setText("PROFILE RESTORED FROM BACKUP");
         else if (game.saves().recovered()) status.setText("DAMAGED PROFILE / DEFAULTS RESTORED");

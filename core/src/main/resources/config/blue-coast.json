@@ -10,6 +10,7 @@
   "netSeconds": 2.1,
   "netSpeedMultiplier": 0.55,
   "hostileBulletLimit": 96,
+  "salvageCap": 369,
   "boss": {
     "name": "Shoreline Compactor",
     "start": 240,

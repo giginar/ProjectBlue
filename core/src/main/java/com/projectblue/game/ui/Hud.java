@@ -11,6 +11,8 @@ public final class Hud implements GameEvents.Listener {
     private final StringBuilder score = new StringBuilder(32), stats = new StringBuilder(64), time = new StringBuilder(24);
     private final StringBuilder health = new StringBuilder(24), ecology = new StringBuilder(32);
     private final StringBuilder resource = new StringBuilder(32), secondary = new StringBuilder(32);
+    private final StringBuilder escapeObjective = new StringBuilder(80), restorationObjective = new StringBuilder(96);
+    private final StringBuilder facilityObjective = new StringBuilder(72);
     private float refresh, noticeTime;
     private String notice = "DRAG TO MOVE / AUTO FIRE";
     private String mission;
@@ -39,6 +41,17 @@ public final class Hud implements GameEvents.Listener {
         else if (w.hasPressure()) resource.append("PRESSURE ").append(Math.round(w.pressureLoad())).append('/').append(Math.round(w.pressureCapacity()));
         else if (w.hasVortex()) resource.append("CLEANUP COMBO x").append(w.cleanupCombo());
         if (w.hasPressure()) secondary.append("PRESSURE ").append(Math.round(w.pressureLoad())).append('/').append(Math.round(w.pressureCapacity()));
+        escapeObjective.setLength(0);
+        escapeObjective.append("CORE COLLAPSE / REACH AND HOLD THE UPPER EXIT / ")
+            .append(w.leviathanCore()==null?0:Math.max(0,(int)Math.ceil(w.leviathanCore().escapeRemaining())));
+        restorationObjective.setLength(0);
+        if (w.leviathanCore()!=null) restorationObjective.append("CLEAN ").append(w.leviathanCore().cleanupProgress())
+            .append('/').append(w.leviathanCore().cleanupRequired()).append("  RESCUE ")
+            .append(w.leviathanCore().rescueProgress()).append('/').append(w.leviathanCore().rescueRequired())
+            .append("  SONAR ").append(w.leviathanCore().sonarProgress()).append('/').append(w.leviathanCore().sonarRequired());
+        facilityObjective.setLength(0);
+        if (w.mission()!=null) facilityObjective.append("HEADQUARTERS ENTRY / DISABLE POWER CORES ")
+            .append(w.energyStationsDisabled()).append('/').append(w.mission().boss.powerCores());
     }
     public void draw(GameWorld w) {
         ui.beginShapes();
@@ -81,11 +94,10 @@ public final class Hud implements GameEvents.Listener {
         else if (noticeTime > 0) ui.centered(notice, 793, .62f, Palette.TEXT);
         else if (w.midpointActive()) ui.centered(w.mission().midpointMessage,812,.58f,Palette.GOLD);
         else if (w.escapingVortex()) ui.centered("VORTEX CORE COLLAPSING / RIDE THE CURRENT OUT",812,.58f,Palette.AQUA);
-        else if (w.escapingCore()) ui.centered("CORE COLLAPSE / REACH AND HOLD THE UPPER EXIT / "
-            +Math.max(0,(int)Math.ceil(w.leviathanCore().escapeRemaining())),812,.58f,Palette.RED);
+        else if (w.escapingCore()) ui.centered(escapeObjective,812,.58f,Palette.RED);
         else if (w.recovering()) ui.centered("HABITAT RECOVERING / COLOR RETURNING", 812, .58f, Palette.AQUA);
         else if (w.boss.active && w.mission() != null) {
-            String objective = bossObjective(w);
+            CharSequence objective = bossObjective(w);
             ui.centered(objective, 812, .58f, Palette.GOLD);
         } else if (w.boss.active) ui.centered("WARDEN / DISABLE BEFORE SURFACING", 812, .58f, Palette.GOLD);
         else if (w.mission()!=null && w.mission().type==com.projectblue.game.config.MissionConfig.MissionType.NEREID_CORE)
@@ -94,7 +106,7 @@ public final class Hud implements GameEvents.Listener {
         else if (w.cleaning()) ui.centered("CLEANUP BEAM / THRUST REDUCED", 812, .58f, Palette.AQUA);
         ui.endText();
     }
-    private static String bossObjective(GameWorld w) {
+    private CharSequence bossObjective(GameWorld w) {
         return switch (w.mission().boss.kind()) {
             case SHORELINE_COMPACTOR -> switch (w.compactor().state()) {
                 case PRESS_WARNING -> "PRESS ARMS OPENING / MOVE TO THE CENTER";
@@ -174,9 +186,8 @@ public final class Hud implements GameEvents.Listener {
                 case SHIELD_WARNING -> "SHIELD GENERATORS OPENING / WATCH THE LANES";
                 case SHIELD_GENERATORS -> finalAttackWarning(w,"DESTROY BOTH SHIELD GENERATORS");
                 case RESTORATION_WARNING -> "RECOVERY SYSTEMS CAPTURED / PREPARE TO CLEAN AND RESCUE";
-                case RESTORATION_SYSTEMS -> finalAttackWarning(w,"CLEAN " + w.leviathanCore().cleanupProgress()+"/"+w.leviathanCore().cleanupRequired()
-                    + "  RESCUE " + w.leviathanCore().rescueProgress()+"/"+w.leviathanCore().rescueRequired()
-                    + "  SONAR " + w.leviathanCore().sonarProgress()+"/"+w.leviathanCore().sonarRequired());
+                case RESTORATION_SYSTEMS -> w.leviathanCore().warningAttack()==null
+                    ? restorationObjective : finalAttackWarning(w,"");
                 case CORE_WARNING -> "CENTRAL CORE OPENING / FINAL ATTACK INCOMING";
                 case CORE_EXPOSED -> finalAttackWarning(w,"CENTRAL CORE EXPOSED / END NEREID");
                 case ESCAPE_WARNING -> "CORE COLLAPSE DETECTED / UPPER EXIT OPENING";
@@ -198,13 +209,12 @@ public final class Hud implements GameEvents.Listener {
             case COLLAPSE -> "WARNING / FACILITY COLLAPSE";
         };
     }
-    private static String finalFacilityObjective(GameWorld world) {
+    private CharSequence finalFacilityObjective(GameWorld world) {
         if (world.elapsed()<70) return "FACILITY APPROACH / READ THE ALARM LANES";
         if (world.elapsed()<155) return "DEFENSE GRID / BREAK THE DRONE FORMATIONS";
         if (world.elapsed()<225) return "CAPTURED NEREID SYSTEMS / CONTROL THE COMBINATION";
         if (world.elapsed()<275) return "CORE SENTINEL / CLEAR THE CENTRAL ACCESS";
-        return "HEADQUARTERS ENTRY / DISABLE POWER CORES " + world.energyStationsDisabled()+"/"
-            +world.mission().boss.powerCores();
+        return facilityObjective;
     }
     public void onEvent(GameEvents.Type type, float x, float y, int value) {
         switch (type) {

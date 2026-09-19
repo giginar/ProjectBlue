@@ -1,5 +1,7 @@
 package com.projectblue.game.save;
 import java.io.IOException;
+import com.projectblue.game.config.*;
+import com.projectblue.game.logic.LevelResult;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static com.projectblue.game.config.GameConfig.*;
@@ -51,5 +53,31 @@ class SaveServiceTest {
         assertFalse(service.save()); assertTrue(service.writeFailed());
         assertNotNull(service.profile());
         store.fail=false; assertTrue(service.save()); assertFalse(service.writeFailed());
+    }
+    @Test void completedResultSurvivesAWriteFailureAndPersistsOnRetry() {
+        MemoryStore store=new MemoryStore(); SaveService service=new SaveService(store);
+        assertTrue(service.save());
+        RunSpec spec=RunSpec.create(1,Difficulty.NORMAL,Loadout.standard());
+        LevelResult result=new LevelResult(spec,true,spec.combatTargets(),36,5,100,100);
+        store.fail=true;
+        assertEquals(SaveService.RecordResult.SAVE_FAILED,service.record(result));
+        assertTrue(service.writeFailed());
+        assertTrue(service.profile().canPlay(2,Difficulty.NORMAL));
+        assertEquals(100,service.profile().totalSalvage);
+        assertFalse(new SaveService(store).profile().canPlay(2,Difficulty.NORMAL));
+        store.fail=false;
+        assertTrue(service.save());
+        Profile reopened=new SaveService(store).profile();
+        assertTrue(reopened.canPlay(2,Difficulty.NORMAL));
+        assertEquals(100,reopened.totalSalvage);
+        assertEquals(1,reopened.completedRuns);
+    }
+    @Test void lockedResultIsRejectedWithoutChangingTheProfile() {
+        SaveService service=new SaveService(new MemoryStore());
+        RunSpec spec=RunSpec.create(2,Difficulty.NORMAL,Loadout.standard());
+        assertEquals(SaveService.RecordResult.REJECTED,service.record(
+            new LevelResult(spec,true,spec.combatTargets(),36,5,100,100)));
+        assertEquals(0,service.profile().totalSalvage);
+        assertFalse(service.profile().canPlay(2,Difficulty.NORMAL));
     }
 }

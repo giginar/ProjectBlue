@@ -33,7 +33,7 @@ class WeaponSystemsTest {
         GameWorld w = world(Weapon.SPREAD_CANNON); step(w,1);
         assertEquals(3,w.bullets.activeCount()); assertTrue(w.bullets.at(0).vx > 0);
         assertEquals(0,w.bullets.at(1).vx,.001f); assertTrue(w.bullets.at(2).vx < 0);
-        assertEquals(6,w.bullets.at(0).damage);
+        assertEquals(Math.round(10*Weapon.SPREAD_CANNON.definition().damageMultiplier()),w.bullets.at(0).damage);
     }
     @Test void laserHitsNearestInLaneAndDoesNotDamageOffAxisTargets() {
         GameWorld w = world(Weapon.FOCUS_LASER);
@@ -41,7 +41,8 @@ class WeaponSystemsTest {
         Entity behind = enemy(w,w.player.x,w.player.y+240,10);
         Entity side = enemy(w,w.player.x+100,w.player.y+80,10);
         step(w,1);
-        assertEquals(5,near.health); assertEquals(10,behind.health); assertEquals(10,side.health);
+        assertEquals(10-Math.round(10*Weapon.FOCUS_LASER.definition().damageMultiplier()),near.health);
+        assertEquals(10,behind.health); assertEquals(10,side.health);
         assertEquals(0,w.bullets.activeCount()); assertTrue(w.laser.timer > 0);
         step(w,8); assertFalse(near.active); assertEquals(1,w.kills());
     }
@@ -60,7 +61,7 @@ class WeaponSystemsTest {
         SaveService saves = new SaveService(new SaveStore() {
             public String read() { return null; } public void write(String s) {}
         });
-        saves.profile().totalSalvage = 50; saves.purchase(Upgrade.SUPPORT_DRONE);
+        saves.profile().totalSalvage = Upgrade.SUPPORT_DRONE.cost(0); saves.purchase(Upgrade.SUPPORT_DRONE);
         GameWorld auxiliary = new GameWorld(() -> .1f,RunSpec.create(1,Difficulty.NORMAL,Loadout.from(saves.profile())));
         step(auxiliary,1); assertEquals(2,auxiliary.bullets.activeCount());
         assertEquals(10,auxiliary.bullets.at(0).damage); assertEquals(2,auxiliary.bullets.at(1).damage);
@@ -93,7 +94,7 @@ class WeaponSystemsTest {
         SaveService saves = new SaveService(new SaveStore() {
             public String read() { return null; } public void write(String s) {}
         });
-        saves.profile().totalSalvage = 1000;
+        saves.profile().totalSalvage = 2000;
         for (int i = 0; i < 5; i++) { saves.purchase(Upgrade.CLEANUP_BEAM); saves.purchase(Upgrade.RESCUE_SYSTEM); }
         GameWorld w = new GameWorld(() -> .1f,RunSpec.create(1,Difficulty.NORMAL,Loadout.from(saves.profile())));
         Entity plastic = w.plastics.obtain(); plastic.x = w.player.x; plastic.y = w.player.y;

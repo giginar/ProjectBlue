@@ -1,6 +1,7 @@
 package com.projectblue.game.save;
 import java.io.IOException;
 import com.projectblue.game.config.Loadout.*;
+import com.projectblue.game.logic.LevelResult;
 import java.util.function.Predicate;
 import com.projectblue.game.config.ContentCatalog;
 
@@ -45,6 +46,31 @@ public final class SaveService {
         catch (IOException | RuntimeException e) { writeFailed = true; return false; }
     }
     public enum PurchaseResult { PURCHASED, MAX_LEVEL, INSUFFICIENT_SALVAGE, SAVE_FAILED }
+    public enum RecordResult { RECORDED, REJECTED, SAVE_FAILED }
+    /**
+     * Results keep their candidate in memory when storage is temporarily unavailable. A later
+     * lifecycle or Settings save can retry without making the player repeat a completed dive.
+     */
+    public synchronized RecordResult record(LevelResult result) {
+        Profile candidate;
+        try {
+            candidate = codec.decode(codec.encode(profile));
+            if (!candidate.record(result)) return RecordResult.REJECTED;
+            candidate.normalize();
+        } catch (IOException | RuntimeException e) {
+            return RecordResult.REJECTED;
+        }
+        try {
+            store.write(codec.encode(candidate));
+            profile.copyFrom(candidate);
+            writeFailed = false;
+            return RecordResult.RECORDED;
+        } catch (IOException | RuntimeException e) {
+            profile.copyFrom(candidate);
+            writeFailed = true;
+            return RecordResult.SAVE_FAILED;
+        }
+    }
     public synchronized PurchaseResult purchase(Upgrade upgrade) {
         var definition = profile.content().upgrade(upgrade.name());
         int current = profile.upgradeLevel(upgrade);

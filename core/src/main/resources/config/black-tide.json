@@ -16,6 +16,7 @@
   "netSpeedMultiplier": 0.5,
   "currentStrength": 26,
   "hostileBulletLimit": 74,
+  "salvageCap": 335,
   "boss": {
     "kind": "OIL_KRAKEN", "name": "Oil Kraken", "start": 305,
     "coreHealth": 980, "pipeHealth": 130, "droneBudget": 5,

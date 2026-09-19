@@ -67,9 +67,12 @@ public final class ScreenRouter {
                     boolean levelWasOpen = profile.canPlay(nextLevel, Difficulty.NORMAL);
                     Difficulty nextDifficulty = result.difficulty == Difficulty.ABYSS ? null : Difficulty.values()[result.difficulty.ordinal() + 1];
                     boolean difficultyWasOpen = profile.canPlay(result.levelId, nextDifficulty);
-                    profile.record(result);
-                    game.saves().save();
+                    var recordResult = game.saves().record(result);
                     String unlocked = "";
+                    if (recordResult == com.projectblue.game.save.SaveService.RecordResult.SAVE_FAILED)
+                        unlocked += "Progress is retained in memory. Retry Save in Settings before exiting. ";
+                    else if (recordResult == com.projectblue.game.save.SaveService.RecordResult.REJECTED)
+                        unlocked += "Result was rejected and progression was not changed. ";
                     if (!levelWasOpen && profile.canPlay(nextLevel, Difficulty.NORMAL)) unlocked += "Sector " + nextLevel + " unlocked. ";
                     if (!difficultyWasOpen && nextDifficulty != null && profile.canPlay(result.levelId, nextDifficulty)) unlocked += nextDifficulty + " unlocked for this sector.";
                     if (result.completed && result.levelId==CampaignConfig.LEVEL_COUNT) switchTo(new FinaleScreen(game));

@@ -20,8 +20,8 @@ class ContentCatalogTest {
         String j = json();
         return Stream.of("{", "{}", "",
             j.replace("\"id\": \"MANTA\"","\"id\": \"TIDE\""),
-            j.replace("\"cost\": 30","\"cost\": -1"),
-            j.replace("\"cost\": 60","\"cost\": 20"),
+            j.replace("\"cost\": 45","\"cost\": -1"),
+            j.replace("\"cost\": 90","\"cost\": 20"),
             j.replace("\"level\": 2","\"level\": 6"),
             j.replace("\"level\": 2","\"level\": 1"),
             j.replace("\"level\": 2","\"level\": 2.5"),
@@ -63,7 +63,7 @@ class ContentCatalogTest {
         for (Achievement a : Achievement.values()) assertNotNull(c.achievement(a.name()));
     }
     @Test void tunedCostsAndEffectsReachProfileAndGameplayWithoutCodeChanges() throws IOException {
-        ContentCatalog c = ContentCatalog.parse(json().replace("\"cost\": 30","\"cost\": 7").replace("\"effect\": 10","\"effect\": 11"));
+        ContentCatalog c = ContentCatalog.parse(json().replace("\"cost\": 45","\"cost\": 7").replace("\"effect\": 10","\"effect\": 11"));
         SaveService saves = new SaveService(new SaveStore() {
             public String read() { return null; }
             public void write(String value) {}

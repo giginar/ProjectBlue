@@ -16,6 +16,7 @@
   "netSpeedMultiplier": 0.5,
   "currentStrength": 12,
   "hostileBulletLimit": 82,
+  "salvageCap": 419,
   "thermal": {
     "maxHeat": 100,
     "damageThreshold": 72,

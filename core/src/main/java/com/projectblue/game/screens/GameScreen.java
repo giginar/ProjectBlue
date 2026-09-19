@@ -20,6 +20,7 @@ public final class GameScreen extends ScreenAdapter {
         this.game = game;
         if (!game.saves().profile().canPlay(spec.level().id(), spec.difficulty())) throw new IllegalArgumentException("Locked dive");
         world = new GameWorld(RandomProvider.seeded(spec.level().seed()), spec);
+        world.setReducedEffects(game.saves().profile().reducedMotion);
         input = new PointerInput(game.ui().viewport, world, () -> game.router().request(ScreenRouter.Route.PAUSE));
         hud = new Hud(game.ui());
         world.events.subscribe(hud);

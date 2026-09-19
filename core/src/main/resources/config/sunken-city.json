@@ -16,6 +16,7 @@
   "netSpeedMultiplier": 0.52,
   "currentStrength": 18,
   "hostileBulletLimit": 70,
+  "salvageCap": 307,
   "boss": {
     "kind": "URBAN_SALVAGER", "name": "Urban Salvager", "start": 285,
     "coreHealth": 900, "pipeHealth": 120, "droneBudget": 5,

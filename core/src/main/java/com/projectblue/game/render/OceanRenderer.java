@@ -9,6 +9,11 @@ import static com.projectblue.game.config.GameConfig.*;
 
 /** Original procedural art. Visual geometry is in logical pixels; all gameplay tuning is in GameConfig. */
 public final class OceanRenderer {
+    private static final Color CITY_RESTORED = new Color(.38f,.65f,.28f,1);
+    private static final Color TIDE_RESTORED = new Color(.72f,.28f,.06f,1);
+    private static final Color REEF_RESTORED = new Color(.08f,.92f,.86f,1);
+    private static final Color FROZEN_RESTORED = new Color(.95f,.42f,.08f,1);
+    private static final Color VULNERABLE = new Color(.34f,.86f,.12f,1);
     private final UiPainter ui;
     private final ShapeRenderer s;
     private final Color top = new Color(), bottom = new Color(), reef = new Color(), entityTint = new Color();
@@ -18,6 +23,10 @@ public final class OceanRenderer {
         backdrop(time,restored,MissionConfig.MissionType.BLUE_COAST);
     }
     public void backdrop(float time,float restored,MissionConfig.MissionType type) {
+        backdrop(time,restored,type,false);
+    }
+    public void backdrop(float time,float restored,MissionConfig.MissionType type,boolean reducedEffects) {
+        float visualTime = reducedEffects ? 0 : time;
         ui.beginShapes();
         if (type==MissionConfig.MissionType.CORAL_GARDENS) {
             top.set(.035f,.27f+restored*.12f,.30f+restored*.14f,1);
@@ -55,39 +64,42 @@ public final class OceanRenderer {
         s.triangle(70, HEIGHT, 200, HEIGHT, 390, 0);
         s.triangle(290, HEIGHT, 345, HEIGHT, 520, 180);
         // Slow current contours and faster suspended motes create depth without texture downloads.
-        for (int row = 0; row < 9; row++) {
-            float y = ((row * 137f - time * 18) % 1200 + 1200) % 1200 - 120;
+        for (int row = 0; row < 9; row += reducedEffects ? 2 : 1) {
+            float y = ((row * 137f - visualTime * 18) % 1200 + 1200) % 1200 - 120;
             s.setColor(.07f, .26f + restored * .06f, .31f + restored * .08f, 1);
-            for (int x = -30; x < WIDTH; x += 30) {
+            int spacing = reducedEffects ? 60 : 30;
+            for (int x = -spacing; x < WIDTH; x += spacing) {
                 float a = y + (float) Math.sin(x * .014f + row) * 23;
-                float b = y + (float) Math.sin((x + 30) * .014f + row) * 23;
-                s.rectLine(x, a, x + 30, b, 1);
+                float b = y + (float) Math.sin((x + spacing) * .014f + row) * 23;
+                s.rectLine(x, a, x + spacing, b, 1);
             }
         }
-        for (int i = 0; i < 48; i++) {
-            float x = (i * 173 % WIDTH) + (float) Math.sin(time * .2f + i) * 7;
-            float y = ((i * 97 - time * (18 + i % 4 * 8)) % HEIGHT + HEIGHT) % HEIGHT;
+        for (int i = 0; i < (reducedEffects ? 16 : 48); i++) {
+            float x = (i * 173 % WIDTH) + (float) Math.sin(visualTime * .2f + i) * 7;
+            float y = ((i * 97 - visualTime * (18 + i % 4 * 8)) % HEIGHT + HEIGHT) % HEIGHT;
             s.setColor(.18f, .40f + restored * .18f, .45f + restored * .1f, 1);
             s.circle(x, y, i % 3 == 0 ? 2 : 1, 8);
         }
         if (type==MissionConfig.MissionType.CORAL_GARDENS) reef.set(.34f,.34f,.35f,1).lerp(Palette.RED,restored*.8f);
         else if (type==MissionConfig.MissionType.GHOST_NETS) reef.set(.18f,.24f,.21f,1).lerp(Palette.TEXT,restored*.4f);
-        else if (type==MissionConfig.MissionType.SUNKEN_CITY) reef.set(.36f,.17f,.09f,1).lerp(new Color(.38f,.65f,.28f,1),restored*.55f);
-        else if (type==MissionConfig.MissionType.BLACK_TIDE) reef.set(.035f,.045f,.052f,1).lerp(new Color(.72f,.28f,.06f,1),restored*.45f);
-        else if (type==MissionConfig.MissionType.SILENT_REEF) reef.set(.16f,.08f,.27f,1).lerp(new Color(.08f,.92f,.86f,1),restored*.65f);
-        else if (type==MissionConfig.MissionType.FROZEN_DEPTHS) reef.set(.62f,.78f,.88f,1).lerp(new Color(.95f,.42f,.08f,1),restored*.42f);
+        else if (type==MissionConfig.MissionType.SUNKEN_CITY) reef.set(.36f,.17f,.09f,1).lerp(CITY_RESTORED,restored*.55f);
+        else if (type==MissionConfig.MissionType.BLACK_TIDE) reef.set(.035f,.045f,.052f,1).lerp(TIDE_RESTORED,restored*.45f);
+        else if (type==MissionConfig.MissionType.SILENT_REEF) reef.set(.16f,.08f,.27f,1).lerp(REEF_RESTORED,restored*.65f);
+        else if (type==MissionConfig.MissionType.FROZEN_DEPTHS) reef.set(.62f,.78f,.88f,1).lerp(FROZEN_RESTORED,restored*.42f);
         else if (type==MissionConfig.MissionType.ABYSS_MINE) reef.set(.12f,.08f,.16f,1).lerp(entityTint.set(.08f,.72f,.95f,1),restored*.7f);
         else if (type==MissionConfig.MissionType.PLASTIC_VORTEX) reef.set(.29f,.28f,.27f,1).lerp(entityTint.set(.05f,.52f,.72f,1),restored*.72f);
         else if (type==MissionConfig.MissionType.NEREID_CORE) reef.set(.045f,.05f,.055f,1).lerp(entityTint.set(.05f,.82f,.55f,1),restored*.88f);
         else reef.set(.18f, .22f, .24f, 1).lerp(Palette.AQUA, restored * .72f);
-        for (int i = 0; i < 10; i++) {
-            float y = ((i * 113 - time * 26) % 1130 + 1130) % 1130 - 80;
+        for (int i = 0; i < (reducedEffects ? 6 : 10); i++) {
+            float y = ((i * 113 - visualTime * 26) % 1130 + 1130) % 1130 - 80;
             float x = i % 2 == 0 ? 8 : WIDTH - 8;
             coral(x, y, i % 2 == 0 ? 1 : -1, reef, i);
         }
-        for (int i = 0; i < 2 + (int) (restored * 16); i++) {
-            float x = (time * (14 + i % 3 * 5) + i * 117) % (WIDTH + 100) - 50;
-            float y = 150 + i * 107 % 650 + (float) Math.sin(time + i) * 8;
+        int fish = 2 + (int) (restored * 16);
+        if (reducedEffects) fish = Math.max(2, fish / 2);
+        for (int i = 0; i < fish; i++) {
+            float x = (visualTime * (14 + i % 3 * 5) + i * 117) % (WIDTH + 100) - 50;
+            float y = 150 + i * 107 % 650 + (float) Math.sin(visualTime + i) * 8;
             s.setColor(.24f, .51f + restored * .2f, .54f + restored * .16f, 1);
             s.ellipse(x, y, 17, 7, 12);
             s.triangle(x, y + 3, x - 6, y - 1, x - 6, y + 8);
@@ -107,7 +119,7 @@ public final class OceanRenderer {
     }
     public void world(GameWorld world) {
         MissionConfig.MissionType type=world.mission()==null?MissionConfig.MissionType.BLUE_COAST:world.mission().type;
-        backdrop(world.elapsed(), world.restoration(),type);
+        backdrop(world.elapsed(), world.restoration(),type,world.reducedEffects());
         ui.beginShapes();
         if (type==MissionConfig.MissionType.NEREID_CORE) drawCoreFacility(world);
         if (type==MissionConfig.MissionType.PLASTIC_VORTEX) drawCurrents(world);
@@ -587,7 +599,7 @@ public final class OceanRenderer {
         s.setColor(Palette.INK); s.rect(b.x-118,b.y-49,236,98);
         s.setColor(.42f,.18f,.08f,1); s.rect(b.x-101,b.y-35,202,70);
         for (int i=-3;i<=3;i++) { s.setColor(Palette.MUTED); s.rect(b.x+i*27,b.y-42,15,84); }
-        s.setColor(world.bossCoreVulnerable()?new Color(.34f,.86f,.12f,1):Palette.EDGE); s.circle(b.x,b.y,24,20);
+        s.setColor(world.bossCoreVulnerable()?VULNERABLE:Palette.EDGE); s.circle(b.x,b.y,24,20);
         if (controller.telegraphing()) ring(b.x,b.y,82,0,Palette.GOLD);
         drawPipe(world.bossLeftPipe); drawPipe(world.bossRightPipe);
         ui.bar(b.x-112,b.y+65,224,7,(float)b.health/Math.max(1,b.maxHealth),Palette.RED);

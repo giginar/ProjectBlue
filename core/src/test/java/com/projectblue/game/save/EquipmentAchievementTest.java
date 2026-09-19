@@ -86,7 +86,8 @@ class EquipmentAchievementTest {
         assertEquals(Submarine.TIDE,new SaveService(store).profile().selectedSubmarine);
     }
     @Test void competingPurchasesCannotOverspendOnePurchaseBalance() throws Exception {
-        Store store = new Store(); SaveService saves = new SaveService(store); saves.profile().totalSalvage = 30;
+        Store store = new Store(); SaveService saves = new SaveService(store);
+        saves.profile().totalSalvage = Upgrade.HULL.cost(0);
         ExecutorService pool = Executors.newFixedThreadPool(2);
         try {
             var a = pool.submit(() -> saves.purchase(Upgrade.HULL));

@@ -188,6 +188,7 @@ tools/GenerateAssets.java     Offline asset regeneration
   at 0.1 seconds. `GameWorld` imports neither Android nor libGDX. UI code does not own game rules.
 - Bullets, drones, plastic, turtles, salvage, and particles use fixed-capacity,
   preallocated pools. Visual effects have a separate random stream from gameplay.
+- Settings can reduce background geometry, motion, and cosmetic particles for slower devices.
 - The HUD updates 10 times per second using reusable StringBuilders.
   Screens do not dispose shared GPU resources; their owners dispose them at shutdown.
 - ScreenRouter applies transitions at the end of a frame. The pause screen retains the
@@ -202,10 +203,11 @@ tools/GenerateAssets.java     Offline asset regeneration
 - `AdsService`, `ConsentService`, `AchievementService`, `AnalyticsService`, and `PlatformService`
   define the platform boundary. The no-op ads service reports unavailable and never grants
   rewards. No network permission, ad SDK, or account connection is included.
-- Profile schema **v3** includes explicit v0/v1/v2 migrations and CRC32 corruption detection.
+- Profile schema **v5** includes explicit v0/v1/v2 migrations, additive v3/v4 handling, and CRC32 corruption detection.
   Equipment selections, upgrade purchases and achievement notifications persist locally.
   Purchases commit to disk before updating the live profile; write failures spend no salvage.
-  Writes use temporary files, atomic replacement and verified backups; corrupt profiles try the backup before
+  Completed results remain retryable in memory after a storage error. Writes use verified temporary files,
+  atomic replacement where supported, and verified backups; corrupt profiles try the backup before
   falling back to defaults. Storage errors appear throughout the menus; Settings provides
   a save retry. An old v1 completion becomes Level 1 / Normal progress without inventing
   historical cleanup/rescue percentages.
@@ -242,12 +244,14 @@ Higher difficulties increase enemy density, health, bullet speed, firing frequen
 Each boss has telegraphed state changes and gated core damage. Mission timelines are in the ten
 JSON files under [`config`](core/src/main/resources/config); difficulty tuning remains in
 [`campaign.properties`](core/src/main/resources/config/campaign.properties).
+The first-clear economy assumptions, upgrade curves, and equipment tradeoffs are documented in
+[`docs/BALANCING.md`](docs/BALANCING.md).
 
 ## Verification and limitations
 
 Verified in the Windows x64 development session on 2026-09-19:
 
-- **180 JUnit 5 tests passed:** the original rule groups, plus collisions, pooling,
+- **188 JUnit 5 tests passed:** the original rule groups, plus collisions, pooling,
   uninterrupted rescue, salvage, seeded reproducibility, Blue Coast completion,
   save round trips, corruption, schema migration, and write failures. Added coverage includes
   all difficulty multipliers, live spawn/shot/boss behavior, independent locks, replay records,

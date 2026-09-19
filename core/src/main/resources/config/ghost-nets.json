@@ -16,6 +16,7 @@
   "netSpeedMultiplier": 0.48,
   "currentStrength": 42,
   "hostileBulletLimit": 68,
+  "salvageCap": 309,
   "boss": {
     "kind": "GHOST_NET_HARVESTER",
     "name": "Ghost Net Harvester",

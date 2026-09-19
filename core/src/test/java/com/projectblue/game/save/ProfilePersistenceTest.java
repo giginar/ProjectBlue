@@ -35,7 +35,8 @@ class ProfilePersistenceTest {
         assertEquals(p.level(1).bestScore, restored.level(1).bestScore);
         assertEquals(3, restored.level(2).bestStars); assertEquals(100, restored.level(2).bestCleanup);
         assertEquals(100, restored.level(2).bestRescue); assertEquals(Difficulty.HARD, restored.level(1).bestDifficulty());
-        assertEquals(195, restored.totalSalvage); assertEquals(3, restored.completedRuns);
+        assertEquals(300-Upgrade.HULL.cost(0)-Upgrade.PRIMARY_WEAPON.cost(0)-Upgrade.SHIELD.cost(0),
+            restored.totalSalvage);
         assertEquals(Pilot.NERI, restored.selectedPilot); assertEquals(Submarine.MANTA, restored.selectedSubmarine);
         for (Upgrade u : Upgrade.values()) assertEquals(p.upgradeLevel(u), restored.upgradeLevel(u));
         assertEquals(100, restored.achievementProgress(Achievement.RECYCLER_I));

@@ -16,6 +16,7 @@
   "netSpeedMultiplier": 0.56,
   "currentStrength": 12,
   "hostileBulletLimit": 62,
+  "salvageCap": 277,
   "boss": {
     "kind": "REEF_BREAKER",
     "name": "Reef Breaker",

@@ -43,8 +43,8 @@
       "description": "Heavy armored craft with slower steering.",
       "baseHealth": 140,
       "movementSpeed": 825,
-      "primaryDamage": 15,
-      "fireRate": 4,
+      "primaryDamage": 13,
+      "fireRate": 3.85,
       "cleanupPower": 1,
       "rescueSpeed": 1,
       "shieldCapacity": 20,
@@ -131,27 +131,27 @@
       "levels": [
         {
           "level": 1,
-          "cost": 40,
+          "cost": 60,
           "effect": 2
         },
         {
           "level": 2,
-          "cost": 80,
+          "cost": 120,
           "effect": 4
         },
         {
           "level": 3,
-          "cost": 120,
+          "cost": 180,
           "effect": 6
         },
         {
           "level": 4,
-          "cost": 160,
+          "cost": 270,
           "effect": 8
         },
         {
           "level": 5,
-          "cost": 200,
+          "cost": 360,
           "effect": 10
         }
       ]
@@ -164,27 +164,27 @@
       "levels": [
         {
           "level": 1,
-          "cost": 30,
+          "cost": 45,
           "effect": 10
         },
         {
           "level": 2,
-          "cost": 60,
+          "cost": 90,
           "effect": 20
         },
         {
           "level": 3,
-          "cost": 90,
+          "cost": 135,
           "effect": 30
         },
         {
           "level": 4,
-          "cost": 120,
+          "cost": 200,
           "effect": 40
         },
         {
           "level": 5,
-          "cost": 150,
+          "cost": 280,
           "effect": 50
         }
       ]
@@ -197,27 +197,27 @@
       "levels": [
         {
           "level": 1,
-          "cost": 25,
+          "cost": 35,
           "effect": 0.15
         },
         {
           "level": 2,
-          "cost": 50,
+          "cost": 70,
           "effect": 0.3
         },
         {
           "level": 3,
-          "cost": 75,
+          "cost": 110,
           "effect": 0.45
         },
         {
           "level": 4,
-          "cost": 100,
+          "cost": 165,
           "effect": 0.6
         },
         {
           "level": 5,
-          "cost": 125,
+          "cost": 240,
           "effect": 0.75
         }
       ]
@@ -230,27 +230,27 @@
       "levels": [
         {
           "level": 1,
-          "cost": 35,
+          "cost": 50,
           "effect": 10
         },
         {
           "level": 2,
-          "cost": 70,
+          "cost": 100,
           "effect": 20
         },
         {
           "level": 3,
-          "cost": 105,
+          "cost": 150,
           "effect": 30
         },
         {
           "level": 4,
-          "cost": 140,
+          "cost": 225,
           "effect": 40
         },
         {
           "level": 5,
-          "cost": 175,
+          "cost": 320,
           "effect": 50
         }
       ]
@@ -263,27 +263,27 @@
       "levels": [
         {
           "level": 1,
-          "cost": 25,
+          "cost": 35,
           "effect": 0.1
         },
         {
           "level": 2,
-          "cost": 50,
+          "cost": 70,
           "effect": 0.2
         },
         {
           "level": 3,
-          "cost": 75,
+          "cost": 110,
           "effect": 0.3
         },
         {
           "level": 4,
-          "cost": 100,
+          "cost": 165,
           "effect": 0.4
         },
         {
           "level": 5,
-          "cost": 125,
+          "cost": 240,
           "effect": 0.5
         }
       ]
@@ -296,27 +296,27 @@
       "levels": [
         {
           "level": 1,
-          "cost": 50,
+          "cost": 70,
           "effect": 2
         },
         {
           "level": 2,
-          "cost": 100,
+          "cost": 140,
           "effect": 4
         },
         {
           "level": 3,
-          "cost": 150,
+          "cost": 210,
           "effect": 6
         },
         {
           "level": 4,
-          "cost": 200,
+          "cost": 315,
           "effect": 8
         },
         {
           "level": 5,
-          "cost": 250,
+          "cost": 420,
           "effect": 10
         }
       ]
@@ -345,7 +345,7 @@
       "displayName": "Spread Cannon",
       "description": "Three weaker shots cover adjacent lanes.",
       "behavior": "SPREAD",
-      "damageMultiplier": 0.6,
+      "damageMultiplier": 0.48,
       "rateMultiplier": 0.75,
       "projectileSpeed": 630,
       "projectiles": 3,
@@ -362,8 +362,8 @@
       "displayName": "Focus Laser",
       "description": "A narrow beam hits the nearest target in its lane.",
       "behavior": "LASER",
-      "damageMultiplier": 0.5,
-      "rateMultiplier": 1.5,
+      "damageMultiplier": 0.7,
+      "rateMultiplier": 1.45,
       "projectileSpeed": 1000,
       "projectiles": 1,
       "spreadRadians": 0,
@@ -379,8 +379,8 @@
       "displayName": "Homing Micro-Torpedo",
       "description": "Slow guided shots track nearby enemies.",
       "behavior": "HOMING",
-      "damageMultiplier": 1.6,
-      "rateMultiplier": 0.5,
+      "damageMultiplier": 1.8,
+      "rateMultiplier": 0.55,
       "projectileSpeed": 430,
       "projectiles": 1,
       "spreadRadians": 0,
@@ -396,8 +396,8 @@
       "displayName": "Support Drone",
       "description": "An orbiting drone aims at the nearest enemy.",
       "behavior": "DRONE",
-      "damageMultiplier": 1.1,
-      "rateMultiplier": 0.8,
+      "damageMultiplier": 1.15,
+      "rateMultiplier": 0.85,
       "projectileSpeed": 620,
       "projectiles": 1,
       "spreadRadians": 0,

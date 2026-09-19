@@ -79,6 +79,8 @@ class MissionConfigTest {
             () -> MissionConfig.parse(json.replaceFirst("\\\"count\\\": 3","\\\"count\\\": -1")));
         assertThrows(IllegalArgumentException.class,
             () -> MissionConfig.parse(json.replaceFirst("\\\"spacing\\\": 135","\\\"spacing\\\": 300")));
+        assertThrows(IllegalArgumentException.class,
+            () -> MissionConfig.parse(json.replace("\"salvageCap\": 369","\"salvageCap\": -1")));
     }
     @Test void sectorsEightAndNineValidatePressureVortexAndEnemyRosters() throws IOException {
         MissionConfig mine=MissionConfig.ABYSS_MINE,vortex=MissionConfig.PLASTIC_VORTEX;

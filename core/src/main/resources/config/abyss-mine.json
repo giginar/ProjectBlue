@@ -16,6 +16,7 @@
   "netSpeedMultiplier": 0.52,
   "currentStrength": 8,
   "hostileBulletLimit": 88,
+  "salvageCap": 490,
   "sonar": {
     "maxEnergy": 110,
     "pulseCost": 24,

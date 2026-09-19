@@ -16,9 +16,10 @@ public final class SettingsScreen extends StageMenuScreen {
             profile.musicVolume = nextVolume(profile.musicVolume); game.audio().apply(); save(); rebuild();
         });
         note("Tap a volume to cycle through 0, 25, 50, 75 and 100 percent.");
-        action("motion", "Menu motion / " + (profile.reducedMotion ? "Reduced" : "Full"), () -> {
+        action("motion", "Visual effects / " + (profile.reducedMotion ? "Reduced" : "Full"), () -> {
             profile.reducedMotion = !profile.reducedMotion; save(); rebuild();
         });
+        note("Reduced effects lowers background geometry, motion and gameplay particles for slower devices.");
         action("save", "Save profile / Retry", this::save);
         if (game.platform().developmentBuild()) {
             note("Development tools");

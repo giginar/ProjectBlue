@@ -38,7 +38,7 @@ multipliers against the original 0.42-second cleanup and 1.5-second rescue durat
 |---|---:|---:|---:|---:|---:|---:|---:|---|
 | TIDE | 100 | 1100 | 10 | 5.556 | 1 | 1 | 0 | Initially |
 | MANTA | 85 | 1320 | 9 | 5.556 | 1.2 | 1 | 0 | Sector 2 |
-| LEVIATHAN | 140 | 825 | 15 | 4 | 1 | 1 | 20 | Sector 4 |
+| LEVIATHAN | 140 | 825 | 13 | 3.85 | 1 | 1 | 20 | Sector 4 |
 
 `specialAbility` describes a passive hull trait: Steady Current, Reef Sweep and Deep Guard.
 Their effects are already represented in the numeric fields; they are not a second bonus
@@ -48,16 +48,16 @@ at sector 2 with +15% maximum hull; Neri at sector 2 with +20% rescue speed; Roo
 
 Upgrade effects are **cumulative totals at the given level**, added to vessel stats,
 then multiplied by pilot bonuses. Hull/damage are rounded to integers. Each of the five
-prices is the base price times the destination level.
+prices follows an authored increasing curve.
 
 | Upgrade | First price | Effect at levels 1 / 5 |
 |---|---:|---|
-| Primary Weapon | 40 | +2 / +10 primary damage |
-| Hull | 30 | +10 / +50 maximum hull |
-| Cleanup Beam | 25 | +0.15 / +0.75 cleanup power |
-| Shield | 35 | +10 / +50 starting shield |
-| Rescue System | 25 | +0.1 / +0.5 rescue speed |
-| Support Drone | 50 | Auxiliary shot damage 2 / 10 |
+| Primary Weapon | 60 | +2 / +10 primary damage |
+| Hull | 45 | +10 / +50 maximum hull |
+| Cleanup Beam | 35 | +0.15 / +0.75 cleanup power |
+| Shield | 50 | +10 / +50 starting shield |
+| Rescue System | 35 | +0.1 / +0.5 rescue speed |
+| Support Drone | 70 | Auxiliary shot damage 2 / 10 |
 
 Shield absorbs hits before hull, refills only at the start of a dive, and does not
 regenerate. Shield damage counts as damage for Untouched. Support Drone upgrades add
@@ -65,7 +65,8 @@ an auxiliary drone to any selected primary, including the Support Drone primary.
 
 Tune effective damage per second, coverage and hit rate together. MANTA sacrifices hull
 and per-shot damage for mobility/cleanup. LEVIATHAN has slower movement and cadence.
-Pilot bonuses intentionally stay small. At maximum upgrade levels, measure clear time,
+Pilot bonuses intentionally stay small. The full cost curve and ten-sector income simulation are
+recorded in [`BALANCING.md`](BALANCING.md). At maximum upgrade levels, measure clear time,
 survival, salvage earnings and whether one pilot or weapon dominates across all difficulties.
 The existing profile IDs, difficulty locks, and star rules remain compatible. Blue Coast now
 owns Level 1 duration, rewards, and encounter denominators. The default is TIDE / Kaia / Pulse
@@ -80,10 +81,10 @@ Newly earned access is permanent even if a later config raises its threshold.
 | Weapon | Unlock | Behavior | Damage / rate multipliers |
 |---|---|---|---|
 | Pulse Cannon | Initially | One forward pulse | 1 / 1 |
-| Spread Cannon | Sector 2 | Three angled projectiles | 0.6 each / 0.75 |
-| Focus Laser | Sector 3 | Immediate narrow beam, nearest target in its lane | 0.5 / 1.5 |
-| Homing Micro-Torpedo | Sector 4 | Guided shot; reacquires the nearest live target | 1.6 / 0.5 |
-| Support Drone | Sector 5 | Orbiting emitter aims at nearest target | 1.1 / 0.8 |
+| Spread Cannon | Sector 2 | Three angled projectiles | 0.48 each / 0.75 |
+| Focus Laser | Sector 3 | Immediate narrow beam, nearest target in its lane | 0.7 / 1.45 |
+| Homing Micro-Torpedo | Sector 4 | Guided shot; reacquires the nearest live target | 1.8 / 0.55 |
+| Support Drone | Sector 5 | Orbiting emitter aims at nearest target | 1.15 / 0.85 |
 
 `WeaponController` selects a stateless `WeaponBehavior` from a registry, with independent
 primary and auxiliary timers. Projectiles carry their damage and guidance values in the
@@ -92,9 +93,9 @@ procedural geometry. No external art, audio or dependencies were added.
 
 ## Transactions and persistence
 
-Profile schema **v3** preserves the existing per-sector records and independent difficulty
-flags. v0/v1 migrations remain supported; a frozen checksummed v2 fixture exercises the
-new migration. Old selections map as follows:
+Current profile schema **v5** preserves the equipment format introduced in v3, the existing
+per-sector records, and independent difficulty flags. v0/v1 migrations remain supported; a
+frozen checksummed v2 fixture exercises the equipment migration. Old selections map as follows:
 
 - Minnow -> TIDE, Needle -> MANTA, Bastion -> LEVIATHAN.
 - Marin and Sol -> Kaia, Neri -> Neri. Old freely available vessel/pilot access is retained.
@@ -114,8 +115,8 @@ A failed write changes neither equipment/upgrade level nor salvage and leaves a 
 retry message. The next dive uses a new snapshot; an active dive never changes.
 
 `GdxSaveStore` writes/validates a temporary file, forces it to storage, preserves a verified
-backup and atomically replaces the primary in the same directory. Unsupported atomic
-replacement is reported as a save failure; it does not silently downgrade to copy/delete.
+backup through its own temporary file, and atomically replaces the primary where supported.
+Filesystems without atomic rename use replace-in-place only after the verified backup is durable.
 Existing corruption recovery and Settings > Save Profile / Retry remain available.
 
 ## Local achievements

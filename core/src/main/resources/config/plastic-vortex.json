@@ -16,6 +16,7 @@
   "netSpeedMultiplier": 0.58,
   "currentStrength": 0,
   "hostileBulletLimit": 92,
+  "salvageCap": 484,
   "vortex": {
     "currentStrength": 68,
     "directionSeconds": 12,

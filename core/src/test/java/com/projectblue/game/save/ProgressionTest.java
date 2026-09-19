@@ -96,7 +96,7 @@ class ProgressionTest {
         assertFalse(p.purchase(Upgrade.HULL));
         p.totalSalvage = 1000;
         Loadout before = Loadout.from(p);
-        assertTrue(p.purchase(Upgrade.HULL)); assertEquals(970, p.totalSalvage);
+        assertTrue(p.purchase(Upgrade.HULL)); assertEquals(1000-Upgrade.HULL.cost(0), p.totalSalvage);
         assertEquals(110, Loadout.from(p).health()); assertEquals(100, before.health());
         for (int i = 1; i < 5; i++) assertTrue(p.purchase(Upgrade.HULL));
         int remaining = p.totalSalvage;

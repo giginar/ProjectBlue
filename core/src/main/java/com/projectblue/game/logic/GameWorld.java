@@ -52,6 +52,7 @@ public final class GameWorld {
     private int oilSpawned, oilCleaned, valvesClosed, bossOilTotal, drillPointsDisabled, energyStationsDisabled;
     private int finalBossDronesLaunched;
     private boolean finished, bossSpawned, cleaning, recovering, finalObjectivesSpawned;
+    private boolean reducedEffects;
     private LevelResult result;
 
     public GameWorld(RandomProvider random) {
@@ -163,7 +164,7 @@ public final class GameWorld {
         if (finished) return;
         finished = true;
         MissionOutcome outcome = new MissionOutcome(kills, Math.max(1, enemiesEncountered), plasticCount, cleanedCount,
-            rescueCount, salvageCount, player.health, damageTaken, coralDamage, combatScore, restoration());
+            rescueCount, salvageCount(), player.health, damageTaken, coralDamage, combatScore, restoration());
         result = new LevelResult(spec, completed, outcome);
         events.emit(FINISHED, player.x, player.y, result.score);
     }
@@ -1370,7 +1371,8 @@ public final class GameWorld {
         e.x=Rules.clamp(e.x,-DESPAWN_MARGIN,WIDTH+DESPAWN_MARGIN);
     }
     private void burst(float x, float y, int color) {
-        for (int i = 0; i < PARTICLES_PER_BURST; i++) {
+        int count = reducedEffects ? Math.max(1, PARTICLES_PER_BURST / 3) : PARTICLES_PER_BURST;
+        for (int i = 0; i < count; i++) {
             Entity e = particles.obtain();
             if (e == null) return;
             double angle = effects.nextFloat() * Math.PI * 2;
@@ -1503,8 +1505,8 @@ public final class GameWorld {
     public int kills() { return kills; }
     public int plasticCount() { return plasticCount; }
     public int rescueCount() { return rescueCount; }
-    public int salvageCount() { return salvageCount; }
-    public int score() { return Rules.score(0,cleanedCount,rescueCount,salvageCount,player.health,false)+combatScore; }
+    public int salvageCount() { return mission==null?salvageCount:Math.min(salvageCount,mission.salvageCap); }
+    public int score() { return Rules.score(0,cleanedCount,rescueCount,salvageCount(),player.health,false)+combatScore; }
     public int cleanedCount() { return mission==null?plasticCount:cleanedCount; }
     public int wasteTotal() { return mission==null?PLASTIC_COUNT:mission.cleanupCount(); }
     public int turtleTotal() { return mission==null?TURTLE_COUNT:mission.rescueCount(); }
@@ -1574,6 +1576,8 @@ public final class GameWorld {
     public boolean cleaning() { return cleaning; }
     public boolean slowed() { return slowTimer>0; }
     public boolean recovering() { return recovering; }
+    public void setReducedEffects(boolean reducedEffects) { this.reducedEffects = reducedEffects; }
+    public boolean reducedEffects() { return reducedEffects; }
     public float recoveryProgress() { return mission==null?0:Rules.clamp(recoveryTimer/mission.recoverySeconds,0,1); }
     public int hostileBullets() { return hostileBulletCount(); }
     public boolean invulnerable() { return invulnerability > 0; }

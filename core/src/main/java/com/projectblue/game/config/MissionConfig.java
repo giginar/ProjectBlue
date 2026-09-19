@@ -63,7 +63,7 @@ public final class MissionConfig {
     public final MissionType type;
     public final float durationSeconds, deadlineSeconds, recoverySeconds, cleaningSpeedMultiplier, netSeconds, netSpeedMultiplier;
     public final float midpointStart, midpointDuration, currentStrength;
-    public final int hostileBulletLimit;
+    public final int hostileBulletLimit, salvageCap;
     public final Boss boss;
     public final Sonar sonar;
     public final Thermal thermal;
@@ -79,7 +79,7 @@ public final class MissionConfig {
         {"schemaVersion":1,"id":"BLUE_COAST_SAFE","displayName":"Blue Coast",
         "briefing":"Mission data was unavailable. Complete the safe recovery route and disable the Shoreline Compactor.",
         "durationSeconds":240,"deadlineSeconds":300,"recoverySeconds":5,"cleaningSpeedMultiplier":0.72,
-        "netSeconds":2,"netSpeedMultiplier":0.55,"hostileBulletLimit":48,
+        "netSeconds":2,"netSpeedMultiplier":0.55,"hostileBulletLimit":48,"salvageCap":369,
         "boss":{"name":"Shoreline Compactor","start":200,"coreHealth":600,"pipeHealth":60,"droneBudget":2,
         "arrivalSeconds":2,"telegraphSeconds":1.5,"attackInterval":3.5,"pressInset":100,"salvage":30},
         "enemies":[{"id":"SCOUT","displayName":"Scout Drone","movement":"DESCEND","weapon":"SINGLE",
@@ -123,6 +123,7 @@ public final class MissionConfig {
         midpointDuration = optionalNumber(root,"midpointDuration",8,3,20);
         currentStrength = optionalNumber(root,"currentStrength",0,0,90);
         hostileBulletLimit = integer(root,"hostileBulletLimit",16,120);
+        salvageCap = integer(root,"salvageCap",50,1000);
         JsonValue b = required(root,"boss");
         boss = new Boss(BossKind.valueOf(optionalString(b,"kind","SHORELINE_COMPACTOR")),string(b,"name"),
             number(b,"start",180,durationSeconds-20),integer(b,"coreHealth",300,3000),

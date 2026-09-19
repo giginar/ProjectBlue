@@ -152,7 +152,8 @@ final class DesktopSmokeGame extends ProjectBlueGame {
             }
             case 22 -> { capture("11-upgrades"); clickActor("upgrade-HULL"); next(); }
             case 23 -> {
-                require(saves().profile().upgradeLevel(Upgrade.HULL) == 1 && saves().profile().totalSalvage == 170, "one click purchases exactly once");
+                require(saves().profile().upgradeLevel(Upgrade.HULL) == 1
+                    && saves().profile().totalSalvage == 200-Upgrade.HULL.cost(0), "one click purchases exactly once");
                 clickActor("back"); next();
             }
             case 24 -> { clickActor("back"); next(); }
@@ -284,7 +285,7 @@ final class DesktopSmokeGame extends ProjectBlueGame {
         require(p.level(1).bestStars > 0 && p.level(1).bestScore > 0, "persisted records");
         require(p.selectedPilot == Pilot.NERI && p.selectedSubmarine == Submarine.MANTA, "persisted equipment");
         require(p.selectedWeapon == Weapon.SPREAD_CANNON, "persisted weapon");
-        require(p.upgradeLevel(Upgrade.HULL) == 1 && p.totalSalvage >= 170, "persisted economy");
+        require(p.upgradeLevel(Upgrade.HULL) == 1 && p.totalSalvage >= 200-Upgrade.HULL.cost(0), "persisted economy");
         require(!p.soundEnabled && p.achievementProgress(Achievement.FIRST_DIVE) == 1, "persisted settings and achievements");
     }
     private void next() { step++; stepFrames = 0; }
