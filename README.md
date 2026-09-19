@@ -1,19 +1,20 @@
 # Project Blue
 
 An original, Android-first 2D underwater shooter prototype written in Java/libGDX
-and played in portrait orientation. Pilot a submarine through **Blue Coast**, disable
-NEREID recovery drones, remove several kinds of waste, rescue turtles, protect coral,
-and shut down the Shoreline Compactor. Cleanup and rescue visibly improve the water.
+and played in portrait orientation. Pilot a submarine through **Blue Coast**, **Coral Gardens**,
+**Ghost Nets**, **Sunken City**, and **Black Tide** to stop NEREID extraction, protect habitats,
+clear industrial pollution, and rescue wildlife and divers. Cleanup and rescue visibly improve each habitat.
 
-The campaign keeps **10 stable sector records**, with Blue Coast as the only authored playable
-sector in this pass. It includes four difficulties, persistent progression, a Hangar,
+The campaign keeps **10 stable sector records**, with the first five sectors authored and playable.
+It includes four difficulties, persistent progression, a Hangar,
 crew/vessel selection, permanent upgrades,
 achievements, settings, and dive reports. Data-driven TIDE/MANTA/LEVIATHAN vessels, four
-pilots, six upgrades, five weapons and twelve local achievements extend that progression.
+pilots, six upgrades, five weapons and fourteen local achievements extend that progression.
 The new default is TIDE / Kaia / Pulse Cannon; Kaia adds a cleanup bonus. The original
 simulation fixture remains covered by regression tests. See
 [equipment systems and balance](docs/EQUIPMENT_SYSTEMS.md) and
-[meta-progression](docs/META_PROGRESSION.md), and [Blue Coast](docs/BLUE_COAST.md) for
+[meta-progression](docs/META_PROGRESSION.md), [Blue Coast](docs/BLUE_COAST.md), and
+[Sectors 2-3](docs/SECTORS_2_3.md) for
 architecture, provisional balance, and manual checks.
 
 Sky Force is a genre reference only. No names, assets, UI, levels, enemies, story,
@@ -178,7 +179,7 @@ core/       com.projectblue.game
 lwjgl3/                      Desktop launcher, platform adapter, GL smoke check
 android/                     Android launcher, safe window insets, no-op adapter
 assets/                      Original font/audio and license inventory
-core/src/main/resources/     Campaign/difficulty properties and equipment/achievement JSON
+core/src/main/resources/     Campaign, mission, equipment, and achievement configuration
 tools/GenerateAssets.java     Offline asset regeneration
 ```
 
@@ -215,7 +216,8 @@ tools/GenerateAssets.java     Offline asset regeneration
 
 ## Level and scoring rules
 
-Level 1 is the authored **Blue Coast** mission. Its five-minute target route uses a deterministic
+Levels 1-5 are authored JSON missions in the shared `GameScreen` and `GameWorld`. Blue Coast's
+five-minute target route uses a deterministic
 JSON timeline with 36 scheduled drones, 52 cleanup targets, 3 turtles, 4 coral areas, and the
 three-stage Shoreline Compactor. Six component-based enemy definitions share movement, weapon,
 stats, and reward systems.
@@ -230,29 +232,31 @@ stats, and reward systems.
 - Visual recovery combines cleanup, rescue, and coral integrity, then completes its transition
   during the six-second post-boss recovery sequence.
 
-Only Level 1 / Normal is open in a new profile. Completing Blue Coast with at least one star
-records the Sector 2 unlock, while Sectors 2-10 remain visibly unavailable until their authored
-content is implemented. Blue Coast difficulties open **Normal > Hard > Expert > Abyss** in order.
+Only Level 1 / Normal is open in a new profile. One-star clears open Coral Gardens, Ghost Nets,
+Sunken City, Black Tide, and then the saved Sector 6 record. Sector 6 remains unavailable until its
+authored content is implemented. Every playable sector opens **Normal > Hard > Expert > Abyss** in order.
 Best stars, score, cleanup, rescue, and completed difficulties are saved independently.
 
 Higher difficulties increase enemy density, health, bullet speed, firing frequency, and boss cadence.
-The Shoreline Compactor uses telegraphed press arms, two destructible discharge pipes, and a gated
-core. The authored timeline is in [`blue-coast.json`](core/src/main/resources/config/blue-coast.json);
-difficulty tuning remains in [`campaign.properties`](core/src/main/resources/config/campaign.properties).
+Each boss has telegraphed state changes and gated core damage. Mission timelines are in the five
+JSON files under [`config`](core/src/main/resources/config); difficulty tuning remains in
+[`campaign.properties`](core/src/main/resources/config/campaign.properties).
 
 ## Verification and limitations
 
 Verified in the Windows x64 development session on 2026-09-19:
 
-- **130 JUnit 5 tests passed:** the original rule groups, plus collisions, pooling,
+- **149 JUnit 5 tests passed:** the original rule groups, plus collisions, pooling,
   uninterrupted rescue, salvage, seeded reproducibility, Blue Coast completion,
   save round trips, corruption, schema migration, and write failures. Added coverage includes
   all difficulty multipliers, live spawn/shot/boss behavior, independent locks, replay records,
   purchases, loadouts, achievements, real file persistence, backup recovery and reset gating.
   Equipment coverage includes config validation/fallback, concurrent purchase and save-failure
-  rollback, all five weapon behaviors, shield/cleanup/rescue effects and v2 profile migration.
+  rollback, all five weapon behaviors, shield/cleanup/rescue effects, v2 profile migration,
+  all five authored timelines, reusable net cutting and environment systems, v3-to-v4 profile migration,
+  and the Reef Breaker, Ghost Net Harvester, Urban Salvager, and Oil Kraken states.
 - A real LWJGL3/OpenGL window passed boot, menu, drag, pause/resume, lifecycle pause/resume,
-  wide viewport, Blue Coast completion, results, saving, and replay checks. All requested
+  wide viewport, Blue Coast and Coral Gardens completion, Ghost Nets entry, results, saving, and replay checks. All requested
   screens, purchases, settings, narrow/wide menu layouts, and Shoreline Compactor rendering were exercised.
   Weapon selection and locks were also exercised. A separate application launch verified
   profile persistence, including vessel, pilot and weapon choices.
@@ -268,9 +272,9 @@ Verified in the Windows x64 development session on 2026-09-19:
   or establish readiness for Play Store publication.
 - Visuals/audio are original placeholders. Professional artwork, music production,
   localization, cross-device performance profiling, and comprehensive balancing are pending.
-- Sectors 2-10 are configurable missions using the current procedural ocean, enemy roster,
-  and ecology schedule; distinct handcrafted environments and comprehensive balancing are
-  pending. Real ads, a consent SDK, Google Play Games and online analytics remain outside this phase.
+- Sectors 6-10 retain stable records but do not have authored playable content. Professional art,
+  comprehensive balance passes, real ads, a consent SDK, Google Play Games, and online analytics
+  remain outside this phase.
 
 Asset policy and source inventory: [ASSET_LICENSES.md](assets/licenses/ASSET_LICENSES.md).
 Unverified sources/licenses or changes to verified asset hashes stop packaging.

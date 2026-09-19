@@ -5,31 +5,47 @@ import com.badlogic.gdx.utils.JsonValue;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import static com.projectblue.game.config.GameConfig.*;
 
 /** Immutable authored mission. All parsing and expansion occur before simulation begins. */
 public final class MissionConfig {
-    public enum Movement { DESCEND, SWEEP, HOLD }
+    public enum MissionType { BLUE_COAST, CORAL_GARDENS, GHOST_NETS, SUNKEN_CITY, BLACK_TIDE }
+    public enum Movement { DESCEND, SWEEP, HOLD, HUNTER, BURROW }
     public enum WeaponPattern { SINGLE, TRIPLE, NET, AIMED, NONE }
+    public enum EnemyAbility {
+        NONE, CORAL_CUTTER, SHIELD_CARRIER, NET_RECYCLER,
+        CHEMICAL_BOMBER, RUIN_TURRET, SALVAGE_MECH, AMBUSH_DRONE,
+        OIL_SPREADER, IGNITION_DRONE, PRESSURE_TANKER, PIPELINE_GUARD
+    }
     public enum WasteKind { BOTTLE, BAG, METAL, NET, DIRTY_WATER }
-    public enum SpawnKind { ENEMY, WASTE, TURTLE, CORAL }
+    public enum CreatureKind { TURTLE, SEAHORSE, MANTA, REEF_FISH, SEAL, FISH_SCHOOL, RESEARCH_DIVER, RESCUE_DIVER }
+    public enum EnvironmentKind { CHEMICAL_BARREL, RUIN, COLLAPSIBLE, TOXIC_FIELD, OIL_FIELD, CLEANUP_CAPSULE, VALVE }
+    public enum SpawnKind { ENEMY, WASTE, TURTLE, CREATURE, CORAL, MECHANIC }
+    public enum BossKind { SHORELINE_COMPACTOR, REEF_BREAKER, GHOST_NET_HARVESTER, URBAN_SALVAGER, OIL_KRAKEN }
     public record Stats(int health, float speed, float radius, float shotInterval, float bulletSpeed,
                         int damage, float lifetime, boolean frontArmor, int repairAmount) {}
     public record Reward(int score, int salvage) {}
-    public record Enemy(String id, String displayName, Movement movement, WeaponPattern weapon, Stats stats, Reward reward) {}
+    public record Enemy(String id, String displayName, Movement movement, WeaponPattern weapon,
+                        EnemyAbility ability, Stats stats, Reward reward) {}
     public record Waste(WasteKind kind, float radius, float cleanMultiplier, float drift, int salvage, boolean plastic) {}
+    public record Creature(CreatureKind kind, float radius, float rescueMultiplier, float drift, float timeoutSeconds) {}
     public record Wave(float time, String enemy, int count, float interval, float x, float spacing) {}
-    public record Prop(float time, SpawnKind kind, WasteKind waste, float x) {}
-    public record Boss(String name, float start, int coreHealth, int pipeHealth, int droneBudget,
+    public record Prop(float time, SpawnKind kind, WasteKind waste, CreatureKind creature,
+                       EnvironmentKind environment, float x) {}
+    public record Boss(BossKind kind, String name, float start, int coreHealth, int pipeHealth, int droneBudget,
                        float arrivalSeconds, float telegraphSeconds, float attackInterval, float pressInset, int salvage) {}
-    public final String id, displayName, briefing;
+    public final String id, displayName, briefing, introMessage, midpointMessage;
+    public final MissionType type;
     public final float durationSeconds, deadlineSeconds, recoverySeconds, cleaningSpeedMultiplier, netSeconds, netSpeedMultiplier;
+    public final float midpointStart, midpointDuration, currentStrength;
     public final int hostileBulletLimit;
     public final Boss boss;
     private final Map<String,Enemy> enemies;
     private final EnumMap<WasteKind,Waste> wastes;
+    private final EnumMap<CreatureKind,Creature> creatures;
     private final List<Wave> waves;
     private final List<Prop> props;
-    public final int wasteCount, plasticCount, turtleCount, coralCount;
+    public final int wasteCount, plasticCount, turtleCount, creatureCount, coralCount, mechanicCount;
     private static final String FALLBACK_JSON = """
         {"schemaVersion":1,"id":"BLUE_COAST_SAFE","displayName":"Blue Coast",
         "briefing":"Mission data was unavailable. Complete the safe recovery route and disable the Shoreline Compactor.",
@@ -50,21 +66,32 @@ public final class MissionConfig {
         "props":[{"time":5,"kind":"WASTE","waste":"BOTTLE","x":180},
         {"time":35,"kind":"TURTLE","x":270},{"time":55,"kind":"CORAL","x":390}]}
         """;
-    public static final MissionConfig BLUE_COAST = load();
+    public static final MissionConfig BLUE_COAST = loadBlueCoast();
+    public static final MissionConfig CORAL_GARDENS = loadRequired("/config/coral-gardens.json");
+    public static final MissionConfig GHOST_NETS = loadRequired("/config/ghost-nets.json");
+    public static final MissionConfig SUNKEN_CITY = loadRequired("/config/sunken-city.json");
+    public static final MissionConfig BLACK_TIDE = loadRequired("/config/black-tide.json");
 
     private MissionConfig(JsonValue root) {
         uniqueKeys(root,0);
         integer(root,"schemaVersion",1,1);
         id = string(root,"id"); displayName = string(root,"displayName"); briefing = string(root,"briefing");
+        type = MissionType.valueOf(optionalString(root,"missionType","BLUE_COAST"));
+        introMessage = optionalString(root,"introMessage",briefing);
+        midpointMessage = optionalString(root,"midpointMessage","MIDPOINT ENCOUNTER");
         durationSeconds = number(root,"durationSeconds",240,360);
         deadlineSeconds = number(root,"deadlineSeconds",durationSeconds,600);
         recoverySeconds = number(root,"recoverySeconds",3,12);
         cleaningSpeedMultiplier = number(root,"cleaningSpeedMultiplier",.4f,.9f);
         netSeconds = number(root,"netSeconds",.5f,4);
         netSpeedMultiplier = number(root,"netSpeedMultiplier",.3f,.8f);
+        midpointStart = optionalNumber(root,"midpointStart",durationSeconds*.45f,30,bossStartLimit(root,durationSeconds)-10);
+        midpointDuration = optionalNumber(root,"midpointDuration",8,3,20);
+        currentStrength = optionalNumber(root,"currentStrength",0,0,90);
         hostileBulletLimit = integer(root,"hostileBulletLimit",16,120);
         JsonValue b = required(root,"boss");
-        boss = new Boss(string(b,"name"),number(b,"start",180,durationSeconds-20),integer(b,"coreHealth",300,3000),
+        boss = new Boss(BossKind.valueOf(optionalString(b,"kind","SHORELINE_COMPACTOR")),string(b,"name"),
+            number(b,"start",180,durationSeconds-20),integer(b,"coreHealth",300,3000),
             integer(b,"pipeHealth",30,300),integer(b,"droneBudget",0,12),number(b,"arrivalSeconds",1,5),
             number(b,"telegraphSeconds",.6f,3),number(b,"attackInterval",2,6),number(b,"pressInset",60,140),integer(b,"salvage",0,500));
         Map<String,Enemy> definitions = new LinkedHashMap<>();
@@ -76,7 +103,8 @@ public final class MissionConfig {
                 number(s,"shotInterval",1,12),number(s,"bulletSpeed",80,250),integer(s,"damage",0,20),
                 number(s,"lifetime",6,45),armor.asBoolean(),integer(s,"repairAmount",0,30));
             definitions.put(key,new Enemy(key,string(e,"displayName"),Movement.valueOf(string(e,"movement")),
-                WeaponPattern.valueOf(string(e,"weapon")),stats,new Reward(integer(r,"score",0,500),integer(r,"salvage",0,50))));
+                WeaponPattern.valueOf(string(e,"weapon")),EnemyAbility.valueOf(optionalString(e,"ability","NONE")),stats,
+                new Reward(integer(r,"score",0,500),integer(r,"salvage",0,50))));
         }
         check(!definitions.isEmpty(),"No enemy definitions");
         enemies = Collections.unmodifiableMap(definitions);
@@ -89,6 +117,19 @@ public final class MissionConfig {
                 number(w,"drift",20,60),integer(w,"salvage",0,10),plastic.asBoolean()));
         }
         check(wastes.size() == WasteKind.values().length,"Missing waste definitions");
+        creatures = new EnumMap<>(CreatureKind.class);
+        JsonValue creatureDefinitions = root.get("creatureDefinitions");
+        if (creatureDefinitions == null) {
+            creatures.put(CreatureKind.TURTLE,new Creature(CreatureKind.TURTLE,TURTLE_RADIUS,1,TURTLE_SPEED,0));
+        } else {
+            check(creatureDefinitions.isArray(),"creatureDefinitions must be an array");
+            for (JsonValue c : creatureDefinitions) {
+                CreatureKind kind=CreatureKind.valueOf(string(c,"kind"));
+                check(!creatures.containsKey(kind),"Duplicate creature kind: "+kind);
+                creatures.put(kind,new Creature(kind,number(c,"radius",12,48),number(c,"rescueMultiplier",.5f,3),
+                    number(c,"drift",10,60),optionalNumber(c,"timeoutSeconds",0,0,35)));
+            }
+        }
         List<Wave> authoredWaves = new ArrayList<>();
         float previous = -1;
         for (JsonValue w : array(root,"waves")) {
@@ -105,7 +146,7 @@ public final class MissionConfig {
         check(!authoredWaves.isEmpty(),"Missing waves");
         waves = Collections.unmodifiableList(authoredWaves);
         List<Prop> authoredProps = new ArrayList<>();
-        int wasteTotal = 0, plastics = 0, turtles = 0, corals = 0;
+        int wasteTotal = 0, plastics = 0, turtles = 0, creatureTotal = 0, corals = 0, mechanics = 0;
         previous = -1;
         for (JsonValue p : array(root,"props")) {
             float time = number(p,"time",0,boss.start()-25), x = number(p,"x",65,475);
@@ -113,20 +154,31 @@ public final class MissionConfig {
             SpawnKind kind = SpawnKind.valueOf(string(p,"kind"));
             check(kind != SpawnKind.ENEMY,"Enemies belong in waves");
             WasteKind waste = kind == SpawnKind.WASTE ? WasteKind.valueOf(string(p,"waste")) : null;
-            authoredProps.add(new Prop(time,kind,waste,x));
+            CreatureKind creature = kind == SpawnKind.TURTLE ? CreatureKind.TURTLE
+                : kind == SpawnKind.CREATURE ? CreatureKind.valueOf(string(p,"creature")) : null;
+            if (creature != null) check(creatures.containsKey(creature),"Missing creature definition: "+creature);
+            EnvironmentKind environment = kind == SpawnKind.MECHANIC ? EnvironmentKind.valueOf(string(p,"environment")) : null;
+            authoredProps.add(new Prop(time,kind,waste,creature,environment,x));
             if (kind == SpawnKind.WASTE) { wasteTotal++; if (wastes.get(waste).plastic()) plastics++; }
             if (kind == SpawnKind.TURTLE) turtles++;
+            if (creature != null) creatureTotal++;
             if (kind == SpawnKind.CORAL) corals++;
+            if (kind == SpawnKind.MECHANIC) mechanics++;
         }
-        check(turtles > 0 && turtles <= 6 && wasteTotal <= 100 && corals > 0 && corals <= 8,"Invalid environment counts");
+        boolean coralMission=type==MissionType.BLUE_COAST || type==MissionType.CORAL_GARDENS || type==MissionType.GHOST_NETS;
+        check(creatureTotal > 0 && creatureTotal <= 8 && wasteTotal <= 100 && corals <= 8
+            && (!coralMission || corals > 0),"Invalid environment counts");
         props = Collections.unmodifiableList(authoredProps);
-        wasteCount = wasteTotal; plasticCount = plastics; turtleCount = turtles; coralCount = corals;
+        wasteCount = wasteTotal; plasticCount = plastics; turtleCount = creatureTotal; creatureCount = creatureTotal;
+        coralCount = corals; mechanicCount = mechanics;
     }
     public Enemy enemy(String id) { return enemies.get(id); }
     public Collection<Enemy> enemies() { return enemies.values(); }
     public Waste waste(WasteKind kind) { return wastes.get(kind); }
+    public Creature creature(CreatureKind kind) { return creatures.get(kind); }
     public List<Wave> waves() { return waves; }
     public List<Prop> props() { return props; }
+    public int cleanupCount() { return wasteCount+mechanicCount; }
     public int enemyCount(float density) {
         int count = boss.droneBudget()+1;
         for (Wave wave : waves) count += Math.max(1,Math.round(wave.count()*density));
@@ -147,10 +199,28 @@ public final class MissionConfig {
             return parse(FALLBACK_JSON);
         }
     }
-    private static MissionConfig load() {
+    public static MissionConfig forLevel(int levelId) {
+        return switch (levelId) {
+            case 1 -> BLUE_COAST;
+            case 2 -> CORAL_GARDENS;
+            case 3 -> GHOST_NETS;
+            case 4 -> SUNKEN_CITY;
+            case 5 -> BLACK_TIDE;
+            default -> null;
+        };
+    }
+    private static MissionConfig loadBlueCoast() {
         try (InputStream input = MissionConfig.class.getResourceAsStream("/config/blue-coast.json")) {
             return readOrFallback(input,System.err);
         } catch (IOException error) { return readOrFallback(null,System.err); }
+    }
+    private static MissionConfig loadRequired(String path) {
+        try (InputStream input=MissionConfig.class.getResourceAsStream(path)) {
+            if (input==null) throw new IOException("Missing mission resource: "+path);
+            return parse(new String(input.readAllBytes(),StandardCharsets.UTF_8));
+        } catch (IOException | RuntimeException error) {
+            throw new IllegalStateException("Cannot load mission "+path,error);
+        }
     }
     private static void uniqueKeys(JsonValue node,int depth) {
         check(node != null && depth < 24,"Invalid or excessively nested mission JSON");
@@ -163,6 +233,19 @@ public final class MissionConfig {
     private static JsonValue required(JsonValue n,String key) { JsonValue v=n.get(key); check(v!=null,"Missing mission field: "+key); return v; }
     private static JsonValue array(JsonValue n,String key) { JsonValue v=required(n,key); check(v.isArray(),key+" must be an array"); return v; }
     private static String string(JsonValue n,String key) { JsonValue v=required(n,key); check(v.isString()&&!v.asString().trim().isEmpty(),"Invalid text: "+key); return v.asString(); }
+    private static String optionalString(JsonValue n,String key,String fallback) {
+        JsonValue v=n.get(key); if (v==null) return fallback;
+        check(v.isString()&&!v.asString().trim().isEmpty(),"Invalid text: "+key); return v.asString();
+    }
+    private static float optionalNumber(JsonValue n,String key,float fallback,float min,float max) {
+        JsonValue v=n.get(key); if (v==null) return fallback;
+        check(v.isNumber(),"Invalid number: "+key); float value=v.asFloat();
+        check(Float.isFinite(value)&&value>=min&&value<=max,"Out of range: "+key); return value;
+    }
+    private static float bossStartLimit(JsonValue root,float duration) {
+        JsonValue boss=required(root,"boss"),start=required(boss,"start");
+        return start.isNumber()?start.asFloat():duration-20;
+    }
     private static float number(JsonValue n,String key,float min,float max) {
         JsonValue v=required(n,key); check(v.isNumber(),"Invalid number: "+key);
         float value=v.asFloat(); check(Float.isFinite(value)&&value>=min&&value<=max,"Out of range: "+key); return value;

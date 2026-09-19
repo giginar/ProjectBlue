@@ -4,19 +4,37 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.projectblue.game.logic.*;
 import com.projectblue.game.ui.*;
+import com.projectblue.game.config.MissionConfig;
 import static com.projectblue.game.config.GameConfig.*;
 
 /** Original procedural art. Visual geometry is in logical pixels; all gameplay tuning is in GameConfig. */
 public final class OceanRenderer {
     private final UiPainter ui;
     private final ShapeRenderer s;
-    private final Color top = new Color(), bottom = new Color(), reef = new Color();
+    private final Color top = new Color(), bottom = new Color(), reef = new Color(), entityTint = new Color();
     public OceanRenderer(UiPainter ui) { this.ui = ui; s = ui.shapes; }
 
     public void backdrop(float time, float restored) {
+        backdrop(time,restored,MissionConfig.MissionType.BLUE_COAST);
+    }
+    private void backdrop(float time,float restored,MissionConfig.MissionType type) {
         ui.beginShapes();
-        top.set(.045f, .23f + restored * .1f, .29f + restored * .07f, 1);
-        bottom.set(.018f, .065f + restored * .06f, .12f + restored * .07f, 1);
+        if (type==MissionConfig.MissionType.CORAL_GARDENS) {
+            top.set(.035f,.27f+restored*.12f,.30f+restored*.14f,1);
+            bottom.set(.035f,.09f+restored*.07f,.13f+restored*.08f,1);
+        } else if (type==MissionConfig.MissionType.GHOST_NETS) {
+            top.set(.025f,.09f+restored*.05f,.18f+restored*.06f,1);
+            bottom.set(.008f,.025f+restored*.03f,.075f+restored*.04f,1);
+        } else if (type==MissionConfig.MissionType.SUNKEN_CITY) {
+            top.set(.04f,.12f+restored*.06f,.17f+restored*.06f,1);
+            bottom.set(.06f+.08f*restored,.045f,.035f,1);
+        } else if (type==MissionConfig.MissionType.BLACK_TIDE) {
+            top.set(.018f,.055f+restored*.035f,.075f+restored*.055f,1);
+            bottom.set(.008f,.012f,.016f,1);
+        } else {
+            top.set(.045f, .23f + restored * .1f, .29f + restored * .07f, 1);
+            bottom.set(.018f, .065f + restored * .06f, .12f + restored * .07f, 1);
+        }
         s.rect(0, 0, WIDTH, HEIGHT, bottom, bottom, top, top);
         s.setColor(.045f, .24f + restored * .08f, .29f + restored * .08f, 1);
         s.triangle(70, HEIGHT, 200, HEIGHT, 390, 0);
@@ -37,7 +55,11 @@ public final class OceanRenderer {
             s.setColor(.18f, .40f + restored * .18f, .45f + restored * .1f, 1);
             s.circle(x, y, i % 3 == 0 ? 2 : 1, 8);
         }
-        reef.set(.18f, .22f, .24f, 1).lerp(Palette.AQUA, restored * .72f);
+        if (type==MissionConfig.MissionType.CORAL_GARDENS) reef.set(.34f,.34f,.35f,1).lerp(Palette.RED,restored*.8f);
+        else if (type==MissionConfig.MissionType.GHOST_NETS) reef.set(.18f,.24f,.21f,1).lerp(Palette.TEXT,restored*.4f);
+        else if (type==MissionConfig.MissionType.SUNKEN_CITY) reef.set(.36f,.17f,.09f,1).lerp(new Color(.38f,.65f,.28f,1),restored*.55f);
+        else if (type==MissionConfig.MissionType.BLACK_TIDE) reef.set(.035f,.045f,.052f,1).lerp(new Color(.72f,.28f,.06f,1),restored*.45f);
+        else reef.set(.18f, .22f, .24f, 1).lerp(Palette.AQUA, restored * .72f);
         for (int i = 0; i < 10; i++) {
             float y = ((i * 113 - time * 26) % 1130 + 1130) % 1130 - 80;
             float x = i % 2 == 0 ? 8 : WIDTH - 8;
@@ -64,14 +86,20 @@ public final class OceanRenderer {
         }
     }
     public void world(GameWorld world) {
-        backdrop(world.elapsed(), world.restoration());
+        MissionConfig.MissionType type=world.mission()==null?MissionConfig.MissionType.BLUE_COAST:world.mission().type;
+        backdrop(world.elapsed(), world.restoration(),type);
         ui.beginShapes();
+        if (type==MissionConfig.MissionType.SUNKEN_CITY) drawRoute(world);
         for (int i = 0; i < world.corals.capacity(); i++) {
             Entity e = world.corals.at(i);
             if (!e.active) continue;
-            Color color = e.health < e.maxHealth ? Palette.RED : reef;
-            coral(e.x, e.y, e.x < WIDTH / 2f ? 1 : -1, color, i);
-            ui.bar(e.x - 28, e.y + 48, 56, 3, (float)e.health / Math.max(1, e.maxHealth), color);
+            if (type==MissionConfig.MissionType.CORAL_GARDENS)
+                entityTint.set(.42f,.42f,.43f,1).lerp(Palette.RED,Rules.clamp(e.progress*(float)e.health/Math.max(1,e.maxHealth),0,1));
+            else entityTint.set(reef);
+            if (e.effectTime>0 || world.reefBreaker()!=null
+                && world.reefBreaker().state()==ReefBreaker.State.CORAL_WARNING) entityTint.set(Palette.GOLD);
+            coral(e.x, e.y, e.x < WIDTH / 2f ? 1 : -1, entityTint, i);
+            ui.bar(e.x - 28, e.y + 48, 56, 3, (float)e.health / Math.max(1, e.maxHealth), entityTint);
         }
         for (int i = 0; i < world.plastics.capacity(); i++) {
             Entity e = world.plastics.at(i);
@@ -79,15 +107,34 @@ public final class OceanRenderer {
             if (e.progress > 0) {
                 s.setColor(Palette.AQUA); s.rectLine(world.player.x, world.player.y + 10, e.x, e.y, 2);
                 float multiplier = e.waste == null ? 1 : e.waste.cleanMultiplier();
-                ring(e.x, e.y, Math.max(22, e.radius + 5), e.progress / (world.spec().loadout().cleanupSeconds() * multiplier), Palette.AQUA);
+                float progress=e.waste!=null && e.waste.kind()==MissionConfig.WasteKind.NET
+                    && type==MissionConfig.MissionType.GHOST_NETS ? e.progress
+                    : e.progress/(world.spec().loadout().cleanupSeconds()*multiplier);
+                ring(e.x, e.y, Math.max(22, e.radius + 5), progress, Palette.AQUA);
             }
             waste(e);
+        }
+        for (int i=0;i<world.hazards.capacity();i++) {
+            Entity e=world.hazards.at(i); if (!e.active) continue;
+            if (e.environment==MissionConfig.EnvironmentKind.OIL_FIELD) {
+                s.setColor(.015f,.018f,.02f,.88f); s.circle(e.x,e.y,e.radius,28);
+                s.setColor(.78f,.25f,.04f,.72f); s.circle(e.x-18,e.y+12,5,10);
+            } else {
+                s.setColor(.25f,.56f,.08f,.58f); s.circle(e.x,e.y,e.radius,28);
+                s.setColor(Palette.GOLD); s.circle(e.x+16,e.y-10,4,10);
+            }
+            if (e.progress>0) ring(e.x,e.y,e.radius+6,
+                e.progress/EnvironmentSystems.interactionSeconds(e.environment,world.spec().difficulty()),Palette.MUTED);
+        }
+        for (int i=0;i<world.environments.capacity();i++) {
+            Entity e=world.environments.at(i); if (e.active) environment(e,world);
         }
         for (int i = 0; i < world.turtles.capacity(); i++) {
             Entity e = world.turtles.at(i);
             if (!e.active) continue;
-            turtle(e.x, e.y, 1, e.friendly);
-            if (!e.friendly) ring(e.x, e.y, 43, e.progress / world.spec().loadout().rescueSeconds(), e.progress > 0 ? Palette.AQUA : Palette.MUTED);
+            creature(e);
+            float multiplier=e.creature==null?1:e.creature.rescueMultiplier();
+            if (!e.friendly) ring(e.x, e.y, Math.max(35,e.radius+10), e.progress/(world.spec().loadout().rescueSeconds()*multiplier), e.progress > 0 ? Palette.AQUA : Palette.MUTED);
         }
         for (int i = 0; i < world.salvage.capacity(); i++) {
             Entity e = world.salvage.at(i);
@@ -99,7 +146,8 @@ public final class OceanRenderer {
         }
         for (int i = 0; i < world.drones.capacity(); i++) {
             Entity e = world.drones.at(i);
-            if (e.active) drone(e);
+            if (e.active && world.enemyVisible(e)) drone(e);
+            else if (e.active) { s.setColor(.02f,.025f,.025f,.7f); s.ellipse(e.x-e.radius,e.y-6,e.radius*2,12,16); }
         }
         for (int i = 0; i < world.bullets.capacity(); i++) {
             Entity b = world.bullets.at(i);
@@ -123,7 +171,13 @@ public final class OceanRenderer {
         if (world.shield() > 0) ring(world.player.x, world.player.y, 48, (float)world.shield() / world.spec().loadout().shieldCapacity(), Palette.GLASS);
         if (world.boss.active) {
             if (world.mission() == null) legacyBoss(world.boss);
-            else compactor(world);
+            else switch (world.mission().boss.kind()) {
+                case SHORELINE_COMPACTOR -> compactor(world);
+                case REEF_BREAKER -> reefBreaker(world);
+                case GHOST_NET_HARVESTER -> ghostNetHarvester(world);
+                case URBAN_SALVAGER -> urbanSalvager(world);
+                case OIL_KRAKEN -> oilKraken(world);
+            }
         }
         if (!world.invulnerable() || (int) (world.elapsed() * 14) % 2 == 0) submarine(world.player.x, world.player.y, 1, world.elapsed());
         for (int i = 0; i < world.particles.capacity(); i++) {
@@ -133,6 +187,7 @@ public final class OceanRenderer {
                 s.circle(e.x, e.y, 4 * e.timer / PARTICLE_LIFE, 8);
             }
         }
+        obscure(world,type);
         ui.endShapes();
     }
     public void submarine(float x, float y, float scale, float time) {
@@ -180,6 +235,51 @@ public final class OceanRenderer {
             s.rectLine(x - 17*k, y + 17*k, x + 17*k, y - 17*k, 2*k);
         }
     }
+    private void creature(Entity e) {
+        MissionConfig.CreatureKind kind=e.creature==null?MissionConfig.CreatureKind.TURTLE:e.creature.kind();
+        switch (kind) {
+            case TURTLE -> turtle(e.x,e.y,1,e.friendly);
+            case SEAHORSE -> seahorse(e.x,e.y,e.friendly);
+            case MANTA -> manta(e.x,e.y,e.friendly);
+            case REEF_FISH, FISH_SCHOOL -> fishSchool(e.x,e.y,e.friendly,kind==MissionConfig.CreatureKind.FISH_SCHOOL?5:3);
+            case SEAL -> seal(e.x,e.y,e.friendly);
+            case RESEARCH_DIVER, RESCUE_DIVER -> diver(e.x,e.y,e.friendly,kind==MissionConfig.CreatureKind.RESEARCH_DIVER);
+        }
+    }
+    private void diver(float x,float y,boolean freed,boolean researcher) {
+        s.setColor(freed?Palette.AQUA:Palette.TEXT); s.circle(x,y+8,8,14); s.rect(x-7,y-18,14,24);
+        s.setColor(researcher?Palette.GOLD:Palette.RED); s.rect(x-13,y-14,7,20);
+        s.setColor(Palette.INK); s.rectLine(x-5,y-18,x-12,y-31,3); s.rectLine(x+5,y-18,x+12,y-31,3);
+        if (!freed) ring(x,y,30,0,Palette.GOLD);
+    }
+    private void seahorse(float x,float y,boolean freed) {
+        s.setColor(freed?Palette.AQUA:Palette.MUTED);
+        s.circle(x,y+9,10,16); s.rectLine(x-2,y+2,x-8,y-18,7); s.circle(x-5,y-23,7,14);
+        s.triangle(x+7,y+13,x+20,y+8,x+8,y+5); s.setColor(Palette.INK); s.circle(x+3,y+12,2,8);
+        if (!freed) netMark(x,y,22);
+    }
+    private void manta(float x,float y,boolean freed) {
+        s.setColor(freed?Palette.AQUA:Palette.MUTED);
+        s.triangle(x-38,y+6,x,y-18,x+38,y+6); s.triangle(x-38,y+6,x-5,y+22,x,y-18);
+        s.triangle(x+38,y+6,x+5,y+22,x,y-18); s.rectLine(x,y-12,x,y-38,3);
+        if (!freed) netMark(x,y,36);
+    }
+    private void fishSchool(float x,float y,boolean freed,int count) {
+        for (int i=0;i<count;i++) {
+            float fx=x+(i%3-1)*17,fy=y+(i/3)*15-(i%2)*8;
+            s.setColor(freed?Palette.AQUA:Palette.TEXT); s.ellipse(fx-8,fy-4,16,8,12);
+            s.triangle(fx-8,fy,fx-16,fy-6,fx-16,fy+6);
+        }
+        if (!freed) netMark(x,y,30);
+    }
+    private void seal(float x,float y,boolean freed) {
+        s.setColor(freed?Palette.AQUA:Palette.MUTED); s.ellipse(x-25,y-12,50,24,20); s.circle(x+23,y+2,13,16);
+        s.triangle(x-22,y,x-36,y+13,x-30,y-6); s.setColor(Palette.INK); s.circle(x+29,y+6,2,8);
+        if (!freed) netMark(x,y,34);
+    }
+    private void netMark(float x,float y,float size) {
+        s.setColor(Palette.GOLD); s.rectLine(x-size,y-size,x+size,y+size,2); s.rectLine(x-size,y+size,x+size,y-size,2);
+    }
     private void plastic(float x, float y) {
         s.setColor(Palette.INK); s.rect(x - 10, y - 16, 20, 32);
         s.setColor(Palette.MUTED); s.rect(x - 8, y - 14, 16, 26);
@@ -215,10 +315,12 @@ public final class OceanRenderer {
         float x = e.x, y = e.y;
         String type = e.enemy == null ? "" : e.enemy.id();
         s.setColor(Palette.INK);
-        float width = "CARRIER".equals(type) ? 94 : "REPAIR".equals(type) ? 58 : 80;
+        float width = "CARRIER".equals(type)||"SHIELD_CARRIER".equals(type) ? 94
+            : "REPAIR".equals(type)||"FAST_HUNTER_DRONE".equals(type) ? 58 : 80;
         s.rect(x - width/2, y - 10, width, 20);
         s.circle(x - 32, y, 15, 18); s.circle(x + 32, y, 15, 18);
-        s.setColor("REPAIR".equals(type) ? Palette.AQUA : "NET_LAUNCHER".equals(type) ? Palette.GOLD : Palette.MUTED);
+        s.setColor("REPAIR".equals(type)||"SHIELD_CARRIER".equals(type) ? Palette.AQUA
+            : "NET_LAUNCHER".equals(type)||"NET_RECYCLER".equals(type) ? Palette.GOLD : Palette.MUTED);
         s.circle(x - 32, y, 10, 16); s.circle(x + 32, y, 10, 16);
         s.setColor(Palette.INK);
         s.circle(x - 32, y, 6, 12); s.circle(x + 32, y, 6, 12);
@@ -229,10 +331,62 @@ public final class OceanRenderer {
         s.setColor("TURRET".equals(type) ? Palette.RED : Palette.GOLD); s.circle(x, y + 2, 6, 12);
         if ("CARRIER".equals(type)) { s.setColor(Palette.TEXT); s.rect(x-31,y-25,62,8); }
         if ("NET_LAUNCHER".equals(type)) { s.setColor(Palette.GOLD); s.rectLine(x-15,y-20,x+15,y+20,2); s.rectLine(x-15,y+20,x+15,y-20,2); }
+        if ("CORAL_CUTTER".equals(type)) { s.setColor(Palette.RED); s.rectLine(x-20,y-22,x-4,y-5,4); s.rectLine(x+20,y-22,x+4,y-5,4); }
+        if ("BURROW_DRONE".equals(type) && e.age<1.1f) { s.setColor(Palette.MUTED); ring(x,y,32,0,Palette.MUTED); }
         if ("TURRET".equals(type)) { s.setColor(Palette.RED); s.rectLine(x,y-3,e.aimX,e.aimY,1); }
         if (e.warned) { s.setColor(Palette.GOLD); s.rectLine(x,y-18,e.aimX,e.aimY,1); ring(e.aimX,e.aimY,13,0,Palette.RED); }
-        if (e.effectTime > 0 && "REPAIR".equals(type)) { s.setColor(Palette.AQUA); s.rectLine(x,y,e.aimX,e.aimY,3); }
+        if (e.effectTime > 0 && ("REPAIR".equals(type)||"CORAL_CUTTER".equals(type)||"NET_RECYCLER".equals(type))) {
+            s.setColor(Palette.AQUA); s.rectLine(x,y,e.aimX,e.aimY,3);
+        }
+        if (e.shieldTime>0)
+            ring(x,y,e.radius+7,0,Palette.AQUA);
         ui.bar(x - 22, y + 30, 44, 3, (float)e.health / Math.max(1, e.maxHealth), Palette.RED);
+    }
+    private void drawRoute(GameWorld world) {
+        EnvironmentSystems.Route route=world.route();
+        s.setColor(.18f,.075f,.035f,1); s.rect(0,44,route.left(),794); s.rect(route.right(),44,WIDTH-route.right(),794);
+        s.setColor(.31f,.16f,.08f,1); s.rect(route.left()-8,44,8,794); s.rect(route.right(),44,8,794);
+        s.setColor(.28f,.52f,.08f,.75f);
+        for (int y=70;y<820;y+=95) { s.circle(route.left()-4,y,5,10); s.circle(route.right()+4,y+37,4,10); }
+    }
+    private void environment(Entity e,GameWorld world) {
+        float x=e.x,y=e.y;
+        switch (e.environment) {
+            case CHEMICAL_BARREL -> {
+                s.setColor(Palette.INK); s.rect(x-19,y-25,38,50);
+                s.setColor(.48f,.19f,.08f,1); s.rect(x-15,y-21,30,42);
+                s.setColor(.35f,.72f,.08f,1); s.rect(x-15,y-4,30,8);
+            }
+            case RUIN -> {
+                s.setColor(.22f,.11f,.065f,1); s.rect(x-40,y-34,80,68);
+                s.setColor(Palette.INK); s.rect(x-24,y-12,18,46); s.rect(x+10,y-34,17,32);
+            }
+            case COLLAPSIBLE -> {
+                if (e.warned&&!e.friendly) s.setColor(Palette.GOLD); else s.setColor(.30f,.14f,.07f,1);
+                s.triangle(x-48,y-30,x+48,y-30,x+25,y+38);
+                if (e.warned&&!e.friendly) ring(x,y,e.radius+9,1-e.timer/EnvironmentSystems.collapseWarning(world.spec().difficulty()),Palette.RED);
+            }
+            case CLEANUP_CAPSULE -> {
+                s.setColor(Palette.AQUA); s.circle(x,y,19,16); s.setColor(Palette.TEXT); s.rect(x-3,y-13,6,26); s.rect(x-13,y-3,26,6);
+            }
+            case VALVE -> {
+                s.setColor(Palette.INK); s.circle(x,y,30,16); s.setColor(.68f,.22f,.05f,1); s.circle(x,y,20,12);
+                for (int i=0;i<4;i++) { double a=i*Math.PI/2; s.rectLine(x,y,x+(float)Math.cos(a)*28,y+(float)Math.sin(a)*28,4); }
+                if (e.progress>0) ring(x,y,37,e.progress/EnvironmentSystems.interactionSeconds(e.environment,world.spec().difficulty()),Palette.GOLD);
+            }
+            case TOXIC_FIELD, OIL_FIELD -> { }
+        }
+        if (e.health>0 && e.maxHealth>1) ui.bar(x-25,y+e.radius+8,50,3,(float)e.health/e.maxHealth,Palette.RED);
+    }
+    private void obscure(GameWorld world,MissionConfig.MissionType type) {
+        if (type!=MissionConfig.MissionType.SUNKEN_CITY && type!=MissionConfig.MissionType.BLACK_TIDE) return;
+        float radius=world.visibilityRadius();
+        if (radius>=700) return;
+        float left=Math.max(0,world.player.x-radius),right=Math.min(WIDTH,world.player.x+radius);
+        float bottom=Math.max(44,world.player.y-radius),top=Math.min(838,world.player.y+radius);
+        s.setColor(type==MissionConfig.MissionType.BLACK_TIDE?new Color(.005f,.007f,.008f,.82f):new Color(.025f,.055f,.065f,.7f));
+        s.rect(0,44,WIDTH,Math.max(0,bottom-44)); s.rect(0,top,WIDTH,Math.max(0,838-top));
+        s.rect(0,bottom,left,Math.max(0,top-bottom)); s.rect(right,bottom,WIDTH-right,Math.max(0,top-bottom));
     }
     private void legacyBoss(Entity b) {
         s.setColor(Palette.INK); s.ellipse(b.x - 68, b.y - 46, 136, 92, 24);
@@ -259,6 +413,64 @@ public final class OceanRenderer {
         if (world.compactor().telegraphing()) ring(b.x,b.y,74,0,Palette.GOLD);
         drawPipe(world.bossLeftPipe); drawPipe(world.bossRightPipe);
         ui.bar(b.x-105,b.y+61,210,7,(float)b.health/Math.max(1,b.maxHealth),Palette.RED);
+    }
+    private void reefBreaker(GameWorld world) {
+        Entity b=world.boss; ReefBreaker controller=world.reefBreaker(); float inset=world.mission().boss.pressInset();
+        if (controller.cuttersActive() || controller.state()==ReefBreaker.State.CUTTER_WARNING) {
+            s.setColor(controller.telegraphing()?Palette.GOLD:Palette.RED);
+            s.triangle(0,100,inset,100,0,770); s.triangle(WIDTH,100,WIDTH-inset,100,WIDTH,770);
+        }
+        s.setColor(Palette.INK); s.ellipse(b.x-112,b.y-50,224,100,24);
+        s.setColor(.45f,.22f,.18f,1); s.ellipse(b.x-96,b.y-38,192,76,22);
+        s.setColor(Palette.RED); s.rectLine(b.x-118,b.y-5,b.x+118,b.y-5,12);
+        s.setColor(world.bossCoreVulnerable()?Palette.GOLD:Palette.EDGE); s.circle(b.x,b.y,23,20);
+        if (controller.telegraphing()) ring(b.x,b.y,78,0,Palette.GOLD);
+        drawPipe(world.bossLeftPipe); drawPipe(world.bossRightPipe);
+        ui.bar(b.x-108,b.y+64,216,7,(float)b.health/Math.max(1,b.maxHealth),Palette.RED);
+    }
+    private void ghostNetHarvester(GameWorld world) {
+        Entity b=world.boss; GhostNetHarvester controller=world.harvester();
+        if (controller.wallsActive() || controller.state()==GhostNetHarvester.State.WALL_WARNING) {
+            float safe=controller.safeLaneX();
+            s.setColor(controller.telegraphing()?Palette.GOLD:Palette.MUTED);
+            for (int y=100;y<790;y+=24) {
+                s.rectLine(0,y,Math.max(0,safe-72),y,2); s.rectLine(Math.min(WIDTH,safe+72),y,WIDTH,y,2);
+            }
+            s.setColor(Palette.AQUA); s.rectLine(safe-72,100,safe-72,790,2); s.rectLine(safe+72,100,safe+72,790,2);
+        }
+        s.setColor(Palette.INK); s.rect(b.x-112,b.y-50,224,100);
+        s.setColor(.12f,.20f,.18f,1); s.rect(b.x-96,b.y-37,192,74);
+        for (int i=-3;i<=3;i++) { s.setColor(Palette.MUTED); s.rectLine(b.x+i*25,b.y-36,b.x+i*25,b.y+36,1); }
+        s.setColor(world.bossCoreVulnerable()?Palette.GOLD:Palette.EDGE); s.circle(b.x,b.y,23,20);
+        if (controller.telegraphing()) ring(b.x,b.y,80,0,Palette.GOLD);
+        drawPipe(world.bossLeftPipe); drawPipe(world.bossRightPipe);
+        ui.bar(b.x-108,b.y+64,216,7,(float)b.health/Math.max(1,b.maxHealth),Palette.RED);
+    }
+    private void urbanSalvager(GameWorld world) {
+        Entity b=world.boss; UrbanSalvager controller=world.urbanSalvager();
+        s.setColor(Palette.INK); s.rect(b.x-118,b.y-49,236,98);
+        s.setColor(.42f,.18f,.08f,1); s.rect(b.x-101,b.y-35,202,70);
+        for (int i=-3;i<=3;i++) { s.setColor(Palette.MUTED); s.rect(b.x+i*27,b.y-42,15,84); }
+        s.setColor(world.bossCoreVulnerable()?new Color(.34f,.86f,.12f,1):Palette.EDGE); s.circle(b.x,b.y,24,20);
+        if (controller.telegraphing()) ring(b.x,b.y,82,0,Palette.GOLD);
+        drawPipe(world.bossLeftPipe); drawPipe(world.bossRightPipe);
+        ui.bar(b.x-112,b.y+65,224,7,(float)b.health/Math.max(1,b.maxHealth),Palette.RED);
+    }
+    private void oilKraken(GameWorld world) {
+        Entity b=world.boss; OilKraken controller=world.oilKraken();
+        s.setColor(.01f,.015f,.018f,1); s.circle(b.x,b.y,76,28);
+        s.setColor(.65f,.20f,.035f,1);
+        for (int i=0;i<6;i++) { double a=i*Math.PI/3; s.rectLine(b.x,b.y,b.x+(float)Math.cos(a)*105,b.y+(float)Math.sin(a)*56,11); }
+        s.setColor(world.bossCoreVulnerable()?Palette.GOLD:Palette.EDGE); s.circle(b.x,b.y,25,20);
+        if (controller.telegraphing()) ring(b.x,b.y,86,0,Palette.GOLD);
+        drawPipe(world.bossLeftPipe); drawPipe(world.bossRightPipe);
+        if (controller.state()==OilKraken.State.VALVES) {
+            if (world.bossLeftPipe.active) ring(world.bossLeftPipe.x,world.bossLeftPipe.y,38,
+                world.bossLeftPipe.progress/EnvironmentSystems.interactionSeconds(MissionConfig.EnvironmentKind.VALVE,world.spec().difficulty()),Palette.GOLD);
+            if (world.bossRightPipe.active) ring(world.bossRightPipe.x,world.bossRightPipe.y,38,
+                world.bossRightPipe.progress/EnvironmentSystems.interactionSeconds(MissionConfig.EnvironmentKind.VALVE,world.spec().difficulty()),Palette.GOLD);
+        }
+        ui.bar(b.x-112,b.y+68,224,7,(float)b.health/Math.max(1,b.maxHealth),Palette.RED);
     }
     private void drawPipe(Entity pipe) {
         if (!pipe.active) return;

@@ -3,6 +3,7 @@ package com.projectblue.game.save;
 import com.projectblue.game.config.*;
 import com.projectblue.game.config.Loadout.*;
 import com.projectblue.game.logic.LevelResult;
+import com.projectblue.game.logic.MissionOutcome;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -26,6 +27,19 @@ class ProgressionTest {
         assertEquals(1, oneStar.stars); p.record(oneStar);
         assertTrue(p.canPlay(2, Difficulty.NORMAL)); assertTrue(p.canPlay(1, Difficulty.HARD));
         assertFalse(p.canPlay(2, Difficulty.HARD)); assertFalse(p.canPlay(3, Difficulty.NORMAL));
+    }
+    @Test void authoredSectorCompletionsOpenSunkenCityBlackTideAndFutureSectorSixRecord() {
+        Profile p=new Profile();
+        assertTrue(p.record(clear(1,Difficulty.NORMAL))); assertTrue(p.canPlay(2,Difficulty.NORMAL));
+        assertTrue(p.record(clear(2,Difficulty.NORMAL))); assertTrue(p.canPlay(3,Difficulty.NORMAL));
+        assertTrue(p.record(clear(3,Difficulty.NORMAL))); assertTrue(p.canPlay(4,Difficulty.NORMAL));
+        assertTrue(CampaignConfig.isAvailable(4));
+        assertTrue(p.record(clear(4,Difficulty.NORMAL))); assertTrue(p.canPlay(5,Difficulty.NORMAL));
+        assertTrue(p.achievementUnlocked(Achievement.SUNKEN_CITY_RESTORED));
+        assertTrue(CampaignConfig.isAvailable(5));
+        assertTrue(p.record(clear(5,Difficulty.NORMAL))); assertTrue(p.canPlay(6,Difficulty.NORMAL));
+        assertTrue(p.achievementUnlocked(Achievement.BLACK_TIDE_CLEARED));
+        assertFalse(CampaignConfig.isAvailable(6));
     }
     @Test void difficultyUnlocksAreSequentialAndLocalToEachLevel() {
         Profile p = new Profile();
@@ -95,9 +109,11 @@ class ProgressionTest {
     }
     @Test void ecologyAndCombatDenominatorsAreIndependentOfDifficultyDensity() {
         RunSpec abyss = RunSpec.create(2, Difficulty.ABYSS, Loadout.standard());
-        LevelResult r = new LevelResult(abyss, true, 40, 18, 1, 0, 100);
-        assertEquals(40f / 81 * 100, r.combat, .001);
-        assertEquals(50, r.cleanup); assertEquals(20, r.rescue);
+        var mission=abyss.mission();
+        MissionOutcome outcome=new MissionOutcome(40,50,12,mission.wasteCount/2,1,0,100,0,0,1000,.5f);
+        LevelResult r = new LevelResult(abyss,true,outcome);
+        assertEquals(80,r.combat,.001);
+        assertEquals(50,r.cleanup,.001); assertEquals(100f/mission.creatureCount,r.rescue,.001);
     }
     @Test void countersCannotOverflowAndCorruptUnlockFlagsCannotBypassProgression() {
         Profile p = new Profile(); p.totalSalvage = Integer.MAX_VALUE; p.completedRuns = Integer.MAX_VALUE;

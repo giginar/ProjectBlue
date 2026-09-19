@@ -47,10 +47,21 @@ public final class Hud implements GameEvents.Listener {
         ui.text(time, 349, 939, .66f, Palette.AQUA);
         ui.text(stats, 24, 862, .64f, Palette.TEXT);
         ui.centered(ecology, 29, .65f, Palette.AQUA);
-        if (noticeTime > 0 || w.elapsed() < 8) ui.centered(notice, 793, .62f, Palette.TEXT);
-        else if (w.recovering()) ui.centered("COAST RECOVERING / WATER CLEARING", 812, .58f, Palette.AQUA);
+        if (w.elapsed()<8 && w.mission()!=null) ui.centered(w.mission().introMessage,793,.62f,Palette.TEXT);
+        else if (noticeTime > 0) ui.centered(notice, 793, .62f, Palette.TEXT);
+        else if (w.midpointActive()) ui.centered(w.mission().midpointMessage,812,.58f,Palette.GOLD);
+        else if (w.recovering()) ui.centered("HABITAT RECOVERING / COLOR RETURNING", 812, .58f, Palette.AQUA);
         else if (w.boss.active && w.mission() != null) {
-            String objective = switch (w.compactor().state()) {
+            String objective = bossObjective(w);
+            ui.centered(objective, 812, .58f, Palette.GOLD);
+        } else if (w.boss.active) ui.centered("WARDEN / DISABLE BEFORE SURFACING", 812, .58f, Palette.GOLD);
+        else if (w.slowed()) ui.centered("NETTED / THRUST REDUCED", 812, .58f, Palette.GOLD);
+        else if (w.cleaning()) ui.centered("CLEANUP BEAM / THRUST REDUCED", 812, .58f, Palette.AQUA);
+        ui.endText();
+    }
+    private static String bossObjective(GameWorld w) {
+        return switch (w.mission().boss.kind()) {
+            case SHORELINE_COMPACTOR -> switch (w.compactor().state()) {
                 case PRESS_WARNING -> "PRESS ARMS OPENING / MOVE TO THE CENTER";
                 case PRESS_ACTIVE -> "PRESS ARMS ACTIVE / STRIKE THE CORE";
                 case PIPE_WARNING -> "DISCHARGE PIPES OPENING";
@@ -58,16 +69,47 @@ public final class Hud implements GameEvents.Listener {
                 case CORE_EXPOSED -> "CORE EXPOSED / SHUT IT DOWN";
                 default -> "SHORELINE COMPACTOR / WATCH THE TELEGRAPH";
             };
-            ui.centered(objective, 812, .58f, Palette.GOLD);
-        } else if (w.boss.active) ui.centered("WARDEN / DISABLE BEFORE SURFACING", 812, .58f, Palette.GOLD);
-        else if (w.slowed()) ui.centered("NETTED / THRUST REDUCED", 812, .58f, Palette.GOLD);
-        else if (w.cleaning()) ui.centered("CLEANUP BEAM / THRUST REDUCED", 812, .58f, Palette.AQUA);
-        ui.endText();
+            case REEF_BREAKER -> switch (w.reefBreaker().state()) {
+                case CUTTER_WARNING -> "CUTTER ARMS OPENING / MOVE TO CENTER";
+                case CUTTER_SWEEP -> "CUTTER ARMS ACTIVE / STRIKE THE CORE";
+                case GENERATOR_WARNING -> "SHIELD GENERATORS OPENING";
+                case GENERATORS -> "DESTROY BOTH SHIELD GENERATORS";
+                case CORAL_WARNING -> "CORAL STRIKE INCOMING / INTERCEPT";
+                case CORE_EXPOSED -> "MAIN CORE EXPOSED / END EXTRACTION";
+                default -> "REEF BREAKER / WATCH THE TELEGRAPH";
+            };
+            case GHOST_NET_HARVESTER -> switch (w.harvester().state()) {
+                case NET_WARNING -> "LARGE NETS INCOMING";
+                case NET_BARRAGE -> "CUT THE NETS / STRIKE THE CORE";
+                case WALL_WARNING -> "NET WALLS SHIFTING / FIND THE CHANNEL";
+                case NET_WALLS -> "STAY INSIDE THE MOVING SAFE CHANNEL";
+                case GENERATOR_WARNING -> "NET GENERATORS OPENING";
+                case GENERATORS -> "DISABLE BOTH NET GENERATORS";
+                case CORE_EXPOSED -> "CENTER CORE EXPOSED / SHUT IT DOWN";
+                default -> "GHOST NET HARVESTER / WATCH THE TELEGRAPH";
+            };
+            case URBAN_SALVAGER -> switch (w.urbanSalvager().state()) {
+                case SCRAP_VOLLEY -> "URBAN SALVAGER / EVADE THE SCRAP VOLLEY";
+                case ARMOR_WARNING -> "METAL ARMOR ASSEMBLING / STAND CLEAR";
+                case ARMOR_PLATES -> "BREAK BOTH ARMOR PLATES";
+                case CORE_EXPOSED -> "ENERGY CORE EXPOSED / SHUT IT DOWN";
+                default -> "URBAN SALVAGER / WATCH THE RUINS";
+            };
+            case OIL_KRAKEN -> switch (w.oilKraken().state()) {
+                case PIPE_ARMS -> "OIL KRAKEN / CLEAR THE SPRAY";
+                case VALVE_WARNING -> "PRESSURE VALVES OPENING";
+                case VALVES -> w.oilKraken().oilClearance()<.6f
+                    ? "CLOSE BOTH VALVES / CLEAN THE BOSS OIL"
+                    : "CLOSE BOTH PRESSURE VALVES";
+                case CORE_EXPOSED -> "CORE VISIBLE / ATTACKS ACCELERATING";
+                default -> "OIL KRAKEN / TRACK THE PIPE ARMS";
+            };
+        };
     }
     public void onEvent(GameEvents.Type type, float x, float y, int value) {
         switch (type) {
             case PLASTIC_COLLECTED -> { notice = "PLASTIC RECOVERED / WATER RESTORED"; noticeTime = 2; }
-            case TURTLE_RESCUED -> { notice = "TURTLE FREE / LIFE RETURNS"; noticeTime = 3; }
+            case TURTLE_RESCUED -> { notice = "WILDLIFE FREE / LIFE RETURNS"; noticeTime = 3; }
             case PLAYER_HIT -> { notice = "HULL HIT / KEEP MOVING"; noticeTime = 1.5f; }
             default -> { }
         }

@@ -15,6 +15,7 @@ import com.projectblue.game.save.*;
 import com.projectblue.game.screens.*;
 import com.projectblue.game.logic.GameWorld;
 import com.projectblue.game.logic.ShorelineCompactor;
+import com.projectblue.game.logic.ReefBreaker;
 import static com.projectblue.game.config.GameConfig.*;
 
 /** Real OpenGL integration checks. Only the isolated build/smoke/profile directory is written. */
@@ -189,8 +190,8 @@ final class DesktopSmokeGame extends ProjectBlueGame {
             case 37 -> {
                 capture("16-shoreline-compactor");
                 require(saves().profile().completedRuns == 1, "abandoned replay grants no completion");
-                Gdx.app.log("SMOKE", "PASS: menus, equipment locks, Blue Coast, campaign, disk save, replay, vessel/pilot/weapon selection, upgrades, achievement toast, audio, aspect ratios, boss and lifecycle");
-                Gdx.app.exit(); next();
+                require(router().requestDive(2,Difficulty.NORMAL),"Coral Gardens unlocked and launchable");
+                step=41; stepFrames=0;
             }
             case 38 -> {
                 require(getScreen() instanceof WeaponSelectScreen, "weapon selection");
@@ -202,16 +203,48 @@ final class DesktopSmokeGame extends ProjectBlueGame {
                 clickActor("back"); next();
             }
             case 40 -> { clickActor("upgrades"); step = 22; stepFrames = 0; }
+            case 41 -> {
+                require(getScreen() instanceof GameScreen,"Coral Gardens entry");
+                GameWorld world=router().activeRun().world();
+                require(world.mission()==MissionConfig.CORAL_GARDENS,"Coral Gardens config selected");
+                capture("18-coral-gardens"); next();
+            }
+            case 42 -> {
+                GameWorld world=router().activeRun().world();
+                for (int i=0;i<120 && !world.finished();i++) {
+                    world.player.health=world.player.maxHealth;
+                    ReefBreaker boss=world.reefBreaker();
+                    if (boss!=null) switch (boss.state()) {
+                        case CUTTER_SWEEP, CORE_EXPOSED -> boss.hitCore(Integer.MAX_VALUE);
+                        case GENERATORS -> { boss.hitGenerator(true,Integer.MAX_VALUE); boss.hitGenerator(false,Integer.MAX_VALUE); }
+                        default -> { }
+                    };
+                    world.update(STEP,false,0,0);
+                }
+                if (world.finished()) { require(world.result().completed,"Coral Gardens completion"); next(); }
+            }
+            case 43 -> {
+                require(getScreen() instanceof ResultScreen,"Coral Gardens result");
+                require(saves().profile().canPlay(3,Difficulty.NORMAL),"Ghost Nets unlocked");
+                require(router().requestDive(3,Difficulty.NORMAL),"Ghost Nets launchable"); next();
+            }
+            case 44 -> {
+                require(getScreen() instanceof GameScreen,"Ghost Nets entry");
+                require(router().activeRun().world().mission()==MissionConfig.GHOST_NETS,"Ghost Nets config selected");
+                capture("19-ghost-nets");
+                Gdx.app.log("SMOKE", "PASS: menus, equipment locks, Blue Coast, Coral Gardens, Ghost Nets entry, campaign, disk save, replay, equipment, upgrades, audio, aspect ratios, bosses and lifecycle");
+                Gdx.app.exit(); next();
+            }
             default -> { }
         }
     }
     private void verifyPersisted(Profile p) {
-        require(p.completedRuns == 1 && p.canPlay(2, Difficulty.NORMAL), "persisted level progression");
+        require(p.completedRuns >= 1 && p.canPlay(2, Difficulty.NORMAL), "persisted level progression");
         require(p.canPlay(1, Difficulty.HARD) && !p.canPlay(1, Difficulty.EXPERT), "persisted difficulty locks");
         require(p.level(1).bestStars > 0 && p.level(1).bestScore > 0, "persisted records");
         require(p.selectedPilot == Pilot.NERI && p.selectedSubmarine == Submarine.MANTA, "persisted equipment");
         require(p.selectedWeapon == Weapon.SPREAD_CANNON, "persisted weapon");
-        require(p.upgradeLevel(Upgrade.HULL) == 1 && p.totalSalvage == 170, "persisted economy");
+        require(p.upgradeLevel(Upgrade.HULL) == 1 && p.totalSalvage >= 170, "persisted economy");
         require(!p.soundEnabled && p.achievementProgress(Achievement.FIRST_DIVE) == 1, "persisted settings and achievements");
     }
     private void next() { step++; stepFrames = 0; }

@@ -26,9 +26,23 @@ public final class ResultScreen extends StageMenuScreen {
     }
     private Table environmentComparison(LevelResult result) {
         Table comparison = new Table(); comparison.defaults().grow().space(10);
-        comparison.add(environmentPanel("BEFORE\nMURKY WATER\nMUTED REEF", new Color(.08f,.20f,.20f,1))).uniformX();
+        MissionConfig mission=MissionConfig.forLevel(result.levelId);
+        String before=mission!=null && mission.type==MissionConfig.MissionType.CORAL_GARDENS
+            ? "BEFORE\nBLEACHED CORAL\nMINERAL SCARS"
+            : mission!=null && mission.type==MissionConfig.MissionType.GHOST_NETS
+            ? "BEFORE\nDARK CURRENT\nGHOST NETS"
+            : mission!=null && mission.type==MissionConfig.MissionType.SUNKEN_CITY
+            ? "BEFORE\nTOXIC RUINS\nTRAPPED DIVERS"
+            : mission!=null && mission.type==MissionConfig.MissionType.BLACK_TIDE
+            ? "BEFORE\nBLACK OIL\nOPEN LEAKS" : "BEFORE\nMURKY WATER\nMUTED REEF";
+        String after=mission!=null && mission.type==MissionConfig.MissionType.CORAL_GARDENS
+            ? "AFTER\nCORAL COLOR +" : mission!=null && mission.type==MissionConfig.MissionType.GHOST_NETS
+            ? "AFTER\nOPEN WATER +" : mission!=null && mission.type==MissionConfig.MissionType.SUNKEN_CITY
+            ? "AFTER\nSAFE CITY +" : mission!=null && mission.type==MissionConfig.MissionType.BLACK_TIDE
+            ? "AFTER\nCLEAN CURRENT +" : "AFTER\nCLEAR WATER +";
+        comparison.add(environmentPanel(before, new Color(.08f,.16f,.19f,1))).uniformX();
         int restored = Math.round(result.afterRestoration * 100);
-        comparison.add(environmentPanel("AFTER\nCLEAR WATER +" + restored + "%\nFISH RETURNED", new Color(.08f,.42f,.39f,1))).uniformX();
+        comparison.add(environmentPanel(after + restored + "%\nWILDLIFE RETURNED", new Color(.08f,.42f,.39f,1))).uniformX();
         return comparison;
     }
     private Stack environmentPanel(String text, Color tint) {

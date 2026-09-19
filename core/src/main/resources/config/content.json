@@ -517,6 +517,24 @@
       "metric": "MAX_UPGRADE",
       "target": 1,
       "threshold": 5
+    },
+    {
+      "id": "SUNKEN_CITY_RESTORED",
+      "displayName": "City of Light",
+      "description": "Complete Sunken City.",
+      "incremental": false,
+      "metric": "LEVEL_COMPLETED",
+      "target": 1,
+      "threshold": 4
+    },
+    {
+      "id": "BLACK_TIDE_CLEARED",
+      "displayName": "Break the Black Tide",
+      "description": "Complete Black Tide.",
+      "incremental": false,
+      "metric": "LEVEL_COMPLETED",
+      "target": 1,
+      "threshold": 5
     }
   ]
 }

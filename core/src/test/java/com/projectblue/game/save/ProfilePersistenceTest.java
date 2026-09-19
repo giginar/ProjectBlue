@@ -77,7 +77,7 @@ class ProfilePersistenceTest {
         assertTrue(p.canPlay(2, Difficulty.NORMAL)); assertTrue(p.canPlay(1, Difficulty.HARD));
         assertFalse(p.canPlay(1, Difficulty.EXPERT)); assertEquals(0, p.level(1).bestCleanup);
         assertEquals(90, p.totalSalvage); assertEquals(3, p.completedRuns); assertFalse(p.soundEnabled);
-        assertTrue(migrated.save()); assertTrue(Files.readString(directory.resolve(SAVE_FILE)).startsWith("version=3\n"));
+        assertTrue(migrated.save()); assertTrue(Files.readString(directory.resolve(SAVE_FILE)).startsWith("version="+PROFILE_VERSION+"\n"));
         assertTrue(open().profile().canPlay(2, Difficulty.NORMAL));
     }
     @Test void legacyV1WithoutACompletedDiveDoesNotInventUnlocks() throws IOException {

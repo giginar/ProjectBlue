@@ -36,7 +36,7 @@ public final class CampaignConfig {
         return levels.get(id - 1);
     }
     public Tuning tuning(Difficulty difficulty) { return difficulties.get(difficulty); }
-    public static boolean isAvailable(int id) { return id == 1; }
+    public static boolean isAvailable(int id) { return id >= 1 && id <= 5; }
 
     public static CampaignConfig read(InputStream source) throws IOException {
         if (source == null) throw new IOException("Missing campaign config");

@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "id": "SUNKEN_CITY",
+  "missionType": "SUNKEN_CITY",
+  "displayName": "Sunken City",
+  "briefing": "NEREID hid illegal waste inside a drowned city. Navigate the ruins, rescue the research divers, and stop the Urban Salvager.",
+  "introMessage": "ENTER THE RUINS / FIND THE DIVER SIGNALS",
+  "midpointMessage": "STRUCTURES UNSTABLE / WATCH THE WARNING MARKS",
+  "midpointStart": 145,
+  "midpointDuration": 14,
+  "durationSeconds": 330,
+  "deadlineSeconds": 395,
+  "recoverySeconds": 7,
+  "cleaningSpeedMultiplier": 0.68,
+  "netSeconds": 2.2,
+  "netSpeedMultiplier": 0.52,
+  "currentStrength": 18,
+  "hostileBulletLimit": 70,
+  "boss": {
+    "kind": "URBAN_SALVAGER", "name": "Urban Salvager", "start": 285,
+    "coreHealth": 900, "pipeHealth": 120, "droneBudget": 5,
+    "arrivalSeconds": 2.5, "telegraphSeconds": 1.4, "attackInterval": 3.1,
+    "pressInset": 105, "salvage": 80
+  },
+  "enemies": [
+    {
+      "id": "CHEMICAL_BOMBER", "displayName": "Chemical Bomber", "movement": "SWEEP", "weapon": "TRIPLE", "ability": "CHEMICAL_BOMBER",
+      "stats": {"health": 48, "speed": 46, "radius": 27, "shotInterval": 4.4, "bulletSpeed": 135, "damage": 7, "lifetime": 34, "frontArmor": false, "repairAmount": 0},
+      "reward": {"score": 170, "salvage": 7}
+    },
+    {
+      "id": "RUIN_TURRET", "displayName": "Ruin Turret", "movement": "HOLD", "weapon": "AIMED", "ability": "RUIN_TURRET",
+      "stats": {"health": 62, "speed": 34, "radius": 29, "shotInterval": 3.5, "bulletSpeed": 175, "damage": 9, "lifetime": 38, "frontArmor": true, "repairAmount": 0},
+      "reward": {"score": 195, "salvage": 9}
+    },
+    {
+      "id": "SALVAGE_MECH", "displayName": "Salvage Mech", "movement": "HUNTER", "weapon": "SINGLE", "ability": "SALVAGE_MECH",
+      "stats": {"health": 82, "speed": 54, "radius": 34, "shotInterval": 4.1, "bulletSpeed": 155, "damage": 10, "lifetime": 36, "frontArmor": true, "repairAmount": 8},
+      "reward": {"score": 230, "salvage": 12}
+    },
+    {
+      "id": "AMBUSH_DRONE", "displayName": "Ambush Drone", "movement": "HUNTER", "weapon": "AIMED", "ability": "AMBUSH_DRONE",
+      "stats": {"health": 34, "speed": 92, "radius": 21, "shotInterval": 2.8, "bulletSpeed": 190, "damage": 8, "lifetime": 25, "frontArmor": false, "repairAmount": 0},
+      "reward": {"score": 150, "salvage": 6}
+    }
+  ],
+  "wasteDefinitions": [
+    {"kind":"BOTTLE","radius":12,"cleanMultiplier":1,"drift":42,"salvage":1,"plastic":true},
+    {"kind":"BAG","radius":16,"cleanMultiplier":1.2,"drift":38,"salvage":1,"plastic":true},
+    {"kind":"METAL","radius":18,"cleanMultiplier":1.7,"drift":34,"salvage":4,"plastic":false},
+    {"kind":"NET","radius":31,"cleanMultiplier":2.4,"drift":29,"salvage":2,"plastic":false},
+    {"kind":"DIRTY_WATER","radius":62,"cleanMultiplier":4.3,"drift":25,"salvage":3,"plastic":false}
+  ],
+  "creatureDefinitions": [
+    {"kind":"RESEARCH_DIVER","radius":25,"rescueMultiplier":1.2,"drift":20,"timeoutSeconds":0},
+    {"kind":"RESCUE_DIVER","radius":25,"rescueMultiplier":1,"drift":22,"timeoutSeconds":0}
+  ],
+  "waves": [
+    {"time":14,"enemy":"AMBUSH_DRONE","count":3,"interval":4,"x":100,"spacing":160},
+    {"time":42,"enemy":"CHEMICAL_BOMBER","count":2,"interval":6,"x":155,"spacing":230},
+    {"time":70,"enemy":"RUIN_TURRET","count":2,"interval":7,"x":160,"spacing":220},
+    {"time":98,"enemy":"SALVAGE_MECH","count":2,"interval":7,"x":150,"spacing":240},
+    {"time":130,"enemy":"AMBUSH_DRONE","count":4,"interval":3,"x":75,"spacing":125},
+    {"time":160,"enemy":"CHEMICAL_BOMBER","count":3,"interval":5,"x":90,"spacing":180},
+    {"time":194,"enemy":"RUIN_TURRET","count":3,"interval":5,"x":90,"spacing":180},
+    {"time":224,"enemy":"SALVAGE_MECH","count":3,"interval":5,"x":100,"spacing":170},
+    {"time":252,"enemy":"AMBUSH_DRONE","count":4,"interval":3,"x":75,"spacing":125}
+  ],
+  "props": [
+    {"time":5,"kind":"MECHANIC","environment":"RUIN","x":110},
+    {"time":10,"kind":"WASTE","waste":"METAL","x":320},
+    {"time":18,"kind":"MECHANIC","environment":"CHEMICAL_BARREL","x":420},
+    {"time":25,"kind":"CREATURE","creature":"RESEARCH_DIVER","x":175},
+    {"time":34,"kind":"WASTE","waste":"BAG","x":360},
+    {"time":44,"kind":"MECHANIC","environment":"COLLAPSIBLE","x":265},
+    {"time":55,"kind":"WASTE","waste":"DIRTY_WATER","x":120},
+    {"time":66,"kind":"MECHANIC","environment":"CHEMICAL_BARREL","x":390},
+    {"time":78,"kind":"CREATURE","creature":"RESCUE_DIVER","x":350},
+    {"time":90,"kind":"WASTE","waste":"METAL","x":145},
+    {"time":104,"kind":"MECHANIC","environment":"RUIN","x":410},
+    {"time":118,"kind":"WASTE","waste":"BOTTLE","x":250},
+    {"time":132,"kind":"MECHANIC","environment":"COLLAPSIBLE","x":150},
+    {"time":146,"kind":"MECHANIC","environment":"CHEMICAL_BARREL","x":365},
+    {"time":160,"kind":"WASTE","waste":"DIRTY_WATER","x":235},
+    {"time":174,"kind":"CREATURE","creature":"RESEARCH_DIVER","x":125},
+    {"time":188,"kind":"MECHANIC","environment":"RUIN","x":390},
+    {"time":202,"kind":"WASTE","waste":"METAL","x":275},
+    {"time":216,"kind":"MECHANIC","environment":"COLLAPSIBLE","x":410},
+    {"time":230,"kind":"WASTE","waste":"BAG","x":150},
+    {"time":244,"kind":"MECHANIC","environment":"CHEMICAL_BARREL","x":300},
+    {"time":256,"kind":"CREATURE","creature":"RESCUE_DIVER","x":410}
+  ]
+}

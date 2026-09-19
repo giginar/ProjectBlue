@@ -22,6 +22,34 @@ class MissionConfigTest {
         assertTrue(m.wasteCount>=40); assertTrue(m.plasticCount>=20);
         assertEquals("Shoreline Compactor",m.boss.name());
     }
+    @Test void sectorsTwoAndThreeDefineTheirDistinctReusableMissionSystems() {
+        MissionConfig coral=MissionConfig.CORAL_GARDENS, nets=MissionConfig.GHOST_NETS;
+        assertTrue(CampaignConfig.isAvailable(2)); assertTrue(CampaignConfig.isAvailable(3));
+        assertSame(coral,MissionConfig.forLevel(2)); assertSame(nets,MissionConfig.forLevel(3));
+        assertEquals(MissionConfig.BossKind.REEF_BREAKER,coral.boss.kind());
+        assertNotNull(coral.enemy("CORAL_CUTTER")); assertNotNull(coral.enemy("SHIELD_CARRIER"));
+        assertNotNull(coral.enemy("BURROW_DRONE")); assertEquals(6,coral.creatureCount);
+        assertEquals(MissionConfig.BossKind.GHOST_NET_HARVESTER,nets.boss.kind());
+        assertNotNull(nets.enemy("NET_LAUNCHER")); assertNotNull(nets.enemy("NET_RECYCLER"));
+        assertNotNull(nets.enemy("FAST_HUNTER_DRONE")); assertTrue(nets.currentStrength>coral.currentStrength);
+        assertTrue(coral.durationSeconds>=300 && coral.durationSeconds<=420);
+        assertTrue(nets.durationSeconds>=300 && nets.durationSeconds<=420);
+    }
+    @Test void sectorsFourAndFiveAreAuthoredFiveToSevenMinuteMissions() {
+        MissionConfig city=MissionConfig.SUNKEN_CITY,tide=MissionConfig.BLACK_TIDE;
+        assertSame(city,MissionConfig.forLevel(4)); assertSame(tide,MissionConfig.forLevel(5));
+        assertEquals(MissionConfig.BossKind.URBAN_SALVAGER,city.boss.kind());
+        assertEquals(MissionConfig.BossKind.OIL_KRAKEN,tide.boss.kind());
+        assertEquals(Set.of("CHEMICAL_BOMBER","RUIN_TURRET","SALVAGE_MECH","AMBUSH_DRONE"),
+            new HashSet<>(city.enemies().stream().map(MissionConfig.Enemy::id).toList()));
+        assertEquals(Set.of("OIL_SPREADER","IGNITION_DRONE","PRESSURE_TANKER","PIPELINE_GUARD"),
+            new HashSet<>(tide.enemies().stream().map(MissionConfig.Enemy::id).toList()));
+        for (MissionConfig mission:List.of(city,tide)) {
+            assertTrue(mission.durationSeconds>=300 && mission.durationSeconds<=420);
+            assertTrue(mission.creatureCount>0); assertTrue(mission.mechanicCount>0);
+            assertTrue(CampaignConfig.isAvailable(mission==city?4:5));
+        }
+    }
     @Test void duplicateIdsNegativeCountsAndInvalidFormationFailClearly() throws IOException {
         String json=source();
         IllegalArgumentException duplicate=assertThrows(IllegalArgumentException.class,
@@ -49,5 +77,19 @@ class MissionConfigTest {
         for(int i=1;i<times.size();i++) assertTrue(times.get(i)>=times.get(i-1));
         int dispatched=timeline.dispatched(); timeline.stop(); timeline.advance(Float.MAX_VALUE,event -> fail());
         assertTrue(timeline.stopped()); assertEquals(dispatched,timeline.dispatched());
+    }
+    @Test void authoredTimelinesScaleEnemyDensityWithoutDuplicatingEnvironmentProps() {
+        for (MissionConfig mission : List.of(MissionConfig.CORAL_GARDENS,MissionConfig.GHOST_NETS,
+            MissionConfig.SUNKEN_CITY,MissionConfig.BLACK_TIDE)) {
+            SpawnTimeline normal=new SpawnTimeline(mission,1), abyss=new SpawnTimeline(mission,2);
+            assertTrue(abyss.size()>normal.size());
+            int props=mission.props().size();
+            assertEquals(mission.waves().stream().mapToInt(MissionConfig.Wave::count).sum()+props,normal.size());
+            List<SpawnTimeline.Event> events=new ArrayList<>();
+            abyss.advance(mission.boss.start(),events::add);
+            assertEquals(abyss.size(),events.size());
+            for (int i=1;i<events.size();i++) assertTrue(events.get(i).time()>=events.get(i-1).time());
+            assertTrue(events.stream().anyMatch(e -> e.kind()==MissionConfig.SpawnKind.CREATURE));
+        }
     }
 }

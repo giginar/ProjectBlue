@@ -73,7 +73,7 @@ public final class ContentCatalog {
         weapons = entries(root,"weapons", n -> new WeaponDef(string(n,"id"),string(n,"displayName"),string(n,"description"),
             Behavior.valueOf(string(n,"behavior")),number(n,"damageMultiplier",.1f,5),number(n,"rateMultiplier",.1f,3),
             number(n,"projectileSpeed",100,1200),integer(n,"projectiles",1,7),number(n,"spreadRadians",0,1),number(n,"tracking",0,15),unlock(n)));
-        achievements = entries(root,"achievements", n -> {
+        Map<String,AchievementDef> parsedAchievements = entries(root,"achievements", n -> {
             JsonValue incremental = required(n,"incremental"); check(incremental.isBoolean(),"incremental must be boolean");
             AchievementMetric metric = AchievementMetric.valueOf(string(n,"metric"));
             int target = integer(n,"target",1,1000000), threshold = integer(n,"threshold",0,100);
@@ -84,6 +84,14 @@ public final class ContentCatalog {
             if (metric == AchievementMetric.MAX_UPGRADE) check(threshold >= 1 && threshold <= 5,"Invalid maximum upgrade level");
             return new AchievementDef(string(n,"id"),string(n,"displayName"),string(n,"description"),incremental.asBoolean(),metric,target,threshold);
         });
+        if (fallback) {
+            Map<String,AchievementDef> complete=new LinkedHashMap<>(parsedAchievements);
+            complete.put("SUNKEN_CITY_RESTORED",new AchievementDef("SUNKEN_CITY_RESTORED","City of Light",
+                "Complete Sunken City.",false,AchievementMetric.LEVEL_COMPLETED,1,4));
+            complete.put("BLACK_TIDE_CLEARED",new AchievementDef("BLACK_TIDE_CLEARED","Break the Black Tide",
+                "Complete Black Tide.",false,AchievementMetric.LEVEL_COMPLETED,1,5));
+            achievements=Collections.unmodifiableMap(complete);
+        } else achievements=parsedAchievements;
         requireIds(submarines,Loadout.Submarine.values()); requireIds(pilots,Loadout.Pilot.values());
         requireIds(upgrades,Loadout.Upgrade.values()); requireIds(weapons,Loadout.Weapon.values());
         requireIds(achievements,com.projectblue.game.save.Achievement.values());

@@ -8,7 +8,7 @@ public record RunSpec(CampaignConfig.Level level, Difficulty difficulty, Campaig
     public static RunSpec create(int level, Difficulty difficulty, Loadout loadout) {
         return new RunSpec(CampaignConfig.DEFAULT.level(level), difficulty, CampaignConfig.DEFAULT.tuning(difficulty), loadout);
     }
-    public MissionConfig mission() { return level.id() == 1 ? MissionConfig.BLUE_COAST : null; }
-    public boolean hasBoss() { return level.id() == 1 || level.boss() || difficulty != Difficulty.NORMAL; }
+    public MissionConfig mission() { return MissionConfig.forLevel(level.id()); }
+    public boolean hasBoss() { return mission() != null || level.boss() || difficulty != Difficulty.NORMAL; }
     public int combatTargets() { return mission() == null ? tuning.droneCount() + (hasBoss() ? 1 : 0) : mission().enemyCount(tuning.spawnDensity()); }
 }

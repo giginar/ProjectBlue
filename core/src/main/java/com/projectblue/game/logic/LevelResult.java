@@ -39,9 +39,9 @@ public final class LevelResult {
         levelId=spec.level().id(); difficulty=spec.difficulty(); this.completed=completed;
         var mission=spec.mission();
         enemiesDestroyed=outcome.kills(); plasticCollected=outcome.plastic(); turtlesRescued=outcome.rescued();
-        wasteCleaned=outcome.cleaned(); wasteTotal=mission.wasteCount; creaturesTotal=mission.turtleCount;
+        wasteCleaned=outcome.cleaned(); wasteTotal=mission.cleanupCount(); creaturesTotal=mission.turtleCount;
         salvage=Math.max(0,outcome.salvage()); damageTaken=outcome.damageTaken(); coralDamage=outcome.coralDamage();
-        float coralLoss=Rules.percentage(coralDamage,mission.coralCount*30)/100f;
+        float coralLoss=Rules.percentage(coralDamage,Math.max(1,mission.coralCount*30))/100f;
         combat=Rules.percentage(enemiesDestroyed,outcome.enemiesEncountered());
         cleanup=Rules.clamp(Rules.percentage(wasteCleaned,wasteTotal)-coralLoss*30,0,100);
         rescue=Rules.percentage(turtlesRescued,creaturesTotal);

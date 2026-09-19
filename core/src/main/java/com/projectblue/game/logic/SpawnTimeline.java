@@ -5,7 +5,9 @@ import java.util.*;
 
 /** Expanded once. Cursor dispatch is deterministic, allocation-free and cannot replay old events. */
 public final class SpawnTimeline {
-    public record Event(float time, MissionConfig.SpawnKind kind, MissionConfig.Enemy enemy, MissionConfig.Waste waste, float x) {}
+    public record Event(float time, MissionConfig.SpawnKind kind, MissionConfig.Enemy enemy,
+                        MissionConfig.Waste waste, MissionConfig.Creature creature,
+                        MissionConfig.EnvironmentKind environment, float x) {}
     @FunctionalInterface public interface Sink { void spawn(Event event); }
     private final Event[] events;
     private int cursor;
@@ -16,10 +18,11 @@ public final class SpawnTimeline {
         for (MissionConfig.Wave wave : config.waves()) {
             int count = Math.max(1,Math.round(wave.count()*density));
             for (int i=0;i<count;i++) expanded.add(new Event(wave.time()+i*wave.interval(),MissionConfig.SpawnKind.ENEMY,
-                config.enemy(wave.enemy()),null,wave.x()+(i % wave.count())*wave.spacing()));
+                config.enemy(wave.enemy()),null,null,null,wave.x()+(i % wave.count())*wave.spacing()));
         }
         for (MissionConfig.Prop prop : config.props()) expanded.add(new Event(prop.time(),prop.kind(),null,
-            prop.waste()==null ? null : config.waste(prop.waste()),prop.x()));
+            prop.waste()==null ? null : config.waste(prop.waste()),
+            prop.creature()==null ? null : config.creature(prop.creature()),prop.environment(),prop.x()));
         expanded.sort(Comparator.comparingDouble(Event::time));
         events = expanded.toArray(new Event[0]);
     }

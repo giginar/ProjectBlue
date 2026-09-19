@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "id": "BLACK_TIDE",
+  "missionType": "BLACK_TIDE",
+  "displayName": "Black Tide",
+  "briefing": "A ruptured NEREID pipeline has buried the shelf in oil. Clear the slick, close the leak valves, rescue trapped divers, and expose the Oil Kraken.",
+  "introMessage": "CLEAR THE OIL / CLOSE EVERY LEAK VALVE",
+  "midpointMessage": "PRESSURE SURGE / HIDDEN CONTACTS IN THE SLICK",
+  "midpointStart": 152,
+  "midpointDuration": 14,
+  "durationSeconds": 350,
+  "deadlineSeconds": 420,
+  "recoverySeconds": 8,
+  "cleaningSpeedMultiplier": 0.65,
+  "netSeconds": 2.4,
+  "netSpeedMultiplier": 0.5,
+  "currentStrength": 26,
+  "hostileBulletLimit": 74,
+  "boss": {
+    "kind": "OIL_KRAKEN", "name": "Oil Kraken", "start": 305,
+    "coreHealth": 980, "pipeHealth": 130, "droneBudget": 5,
+    "arrivalSeconds": 2.6, "telegraphSeconds": 1.5, "attackInterval": 3.2,
+    "pressInset": 110, "salvage": 95
+  },
+  "enemies": [
+    {
+      "id":"OIL_SPREADER","displayName":"Oil Spreader","movement":"SWEEP","weapon":"SINGLE","ability":"OIL_SPREADER",
+      "stats":{"health":52,"speed":45,"radius":28,"shotInterval":4.2,"bulletSpeed":145,"damage":7,"lifetime":36,"frontArmor":false,"repairAmount":0},
+      "reward":{"score":180,"salvage":8}
+    },
+    {
+      "id":"IGNITION_DRONE","displayName":"Ignition Drone","movement":"HUNTER","weapon":"AIMED","ability":"IGNITION_DRONE",
+      "stats":{"health":38,"speed":88,"radius":22,"shotInterval":3,"bulletSpeed":195,"damage":10,"lifetime":25,"frontArmor":false,"repairAmount":0},
+      "reward":{"score":175,"salvage":7}
+    },
+    {
+      "id":"PRESSURE_TANKER","displayName":"Pressure Tanker","movement":"HOLD","weapon":"TRIPLE","ability":"PRESSURE_TANKER",
+      "stats":{"health":92,"speed":36,"radius":36,"shotInterval":4.6,"bulletSpeed":165,"damage":9,"lifetime":40,"frontArmor":true,"repairAmount":0},
+      "reward":{"score":250,"salvage":13}
+    },
+    {
+      "id":"PIPELINE_GUARD","displayName":"Pipeline Guard","movement":"HOLD","weapon":"AIMED","ability":"PIPELINE_GUARD",
+      "stats":{"health":68,"speed":40,"radius":30,"shotInterval":3.7,"bulletSpeed":180,"damage":8,"lifetime":37,"frontArmor":true,"repairAmount":8},
+      "reward":{"score":210,"salvage":10}
+    }
+  ],
+  "wasteDefinitions": [
+    {"kind":"BOTTLE","radius":12,"cleanMultiplier":1,"drift":42,"salvage":1,"plastic":true},
+    {"kind":"BAG","radius":16,"cleanMultiplier":1.2,"drift":38,"salvage":1,"plastic":true},
+    {"kind":"METAL","radius":18,"cleanMultiplier":1.8,"drift":34,"salvage":4,"plastic":false},
+    {"kind":"NET","radius":31,"cleanMultiplier":2.4,"drift":29,"salvage":2,"plastic":false},
+    {"kind":"DIRTY_WATER","radius":64,"cleanMultiplier":4.5,"drift":24,"salvage":3,"plastic":false}
+  ],
+  "creatureDefinitions": [
+    {"kind":"RESEARCH_DIVER","radius":25,"rescueMultiplier":1.25,"drift":19,"timeoutSeconds":0},
+    {"kind":"RESCUE_DIVER","radius":25,"rescueMultiplier":1,"drift":21,"timeoutSeconds":0}
+  ],
+  "waves": [
+    {"time":15,"enemy":"OIL_SPREADER","count":2,"interval":6,"x":150,"spacing":240},
+    {"time":44,"enemy":"IGNITION_DRONE","count":3,"interval":4,"x":100,"spacing":160},
+    {"time":74,"enemy":"PIPELINE_GUARD","count":2,"interval":7,"x":155,"spacing":230},
+    {"time":104,"enemy":"PRESSURE_TANKER","count":2,"interval":8,"x":150,"spacing":240},
+    {"time":138,"enemy":"OIL_SPREADER","count":3,"interval":5,"x":90,"spacing":180},
+    {"time":172,"enemy":"IGNITION_DRONE","count":4,"interval":3,"x":75,"spacing":125},
+    {"time":206,"enemy":"PIPELINE_GUARD","count":3,"interval":5,"x":90,"spacing":180},
+    {"time":238,"enemy":"PRESSURE_TANKER","count":3,"interval":5,"x":100,"spacing":170},
+    {"time":270,"enemy":"OIL_SPREADER","count":3,"interval":4,"x":90,"spacing":180}
+  ],
+  "props": [
+    {"time":5,"kind":"MECHANIC","environment":"OIL_FIELD","x":160},
+    {"time":12,"kind":"MECHANIC","environment":"CLEANUP_CAPSULE","x":390},
+    {"time":22,"kind":"MECHANIC","environment":"VALVE","x":270},
+    {"time":31,"kind":"CREATURE","creature":"RESEARCH_DIVER","x":130},
+    {"time":42,"kind":"MECHANIC","environment":"OIL_FIELD","x":390},
+    {"time":54,"kind":"WASTE","waste":"METAL","x":230},
+    {"time":66,"kind":"MECHANIC","environment":"CLEANUP_CAPSULE","x":110},
+    {"time":78,"kind":"MECHANIC","environment":"VALVE","x":420},
+    {"time":90,"kind":"MECHANIC","environment":"OIL_FIELD","x":260},
+    {"time":104,"kind":"CREATURE","creature":"RESCUE_DIVER","x":380},
+    {"time":118,"kind":"WASTE","waste":"BAG","x":145},
+    {"time":132,"kind":"MECHANIC","environment":"CLEANUP_CAPSULE","x":330},
+    {"time":146,"kind":"MECHANIC","environment":"OIL_FIELD","x":110},
+    {"time":160,"kind":"MECHANIC","environment":"VALVE","x":300},
+    {"time":174,"kind":"WASTE","waste":"DIRTY_WATER","x":430},
+    {"time":188,"kind":"CREATURE","creature":"RESEARCH_DIVER","x":205},
+    {"time":202,"kind":"MECHANIC","environment":"OIL_FIELD","x":375},
+    {"time":216,"kind":"MECHANIC","environment":"CLEANUP_CAPSULE","x":135},
+    {"time":230,"kind":"MECHANIC","environment":"VALVE","x":420},
+    {"time":244,"kind":"WASTE","waste":"METAL","x":270},
+    {"time":258,"kind":"MECHANIC","environment":"OIL_FIELD","x":165},
+    {"time":272,"kind":"CREATURE","creature":"RESCUE_DIVER","x":390}
+  ]
+}

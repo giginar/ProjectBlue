@@ -1,8 +1,8 @@
 # Blue Coast
 
-Blue Coast is the only authored playable sector in this content pass. It runs in the shared
-`GameScreen` and `GameWorld`; later sectors can supply another validated mission config without
-copying the screen or simulation.
+Blue Coast is the first authored sector. It runs in the shared `GameScreen` and `GameWorld` with
+Coral Gardens and Ghost Nets; each sector supplies a validated mission config without copying the
+screen or simulation.
 
 ## Data and runtime structure
 
@@ -43,7 +43,7 @@ speed, firing rate, and boss cadence scale without changing the authored event o
 Defeating the boss stops the timeline, removes hostile projectiles and active drones, and starts
 the recovery sequence. The result records Combat, Cleanup, Rescue, Integrity, salvage, stars, and
 the before/after restoration amount. A successful one-star result opens Sector 2 in the existing
-profile format and updates local achievements. Sector 2 is shown as coming later and cannot launch.
+profile format and updates local achievements. Sector 2 becomes playable on Normal.
 
 ## Manual checks
 
@@ -60,7 +60,7 @@ profile format and updates local achievements. Sector 2 is shown as coming later
 6. Pause during an early wave and a boss warning. Resume after several seconds and confirm the
    timeline and warning continue from the paused time without a jump.
 7. Complete with one or more stars, restart the app, and confirm records, salvage, achievements,
-   and the Sector 2 unlock persist while Sector 2 remains marked `COMING LATER`.
+   and the Sector 2 unlock persist while Coral Gardens is playable on Normal.
 8. Repeat on a tall phone aspect ratio and a wide desktop window. Confirm controls remain inside
    the gameplay viewport and boss telegraphs remain readable.
 

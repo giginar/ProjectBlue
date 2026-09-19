@@ -5,7 +5,7 @@
 All five content groups live in
 [`core/src/main/resources/config/content.json`](../core/src/main/resources/config/content.json).
 This UTF-8 Java resource ships inside the desktop core jar and Android APK. It contains
-three submarines, four pilots, six upgrades, five weapons and twelve achievements.
+three submarines, four pilots, six upgrades, five weapons and fourteen achievements.
 `ContentCatalog` parses it once at startup into immutable records. `Loadout.from(profile)`
 composes the selected equipment and upgrades once for each dive. Gameplay never reads JSON.
 

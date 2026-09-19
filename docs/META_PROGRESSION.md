@@ -40,8 +40,8 @@ Back/Esc follows the parent screen; within Level Select it returns from briefing
 
 `core/src/main/resources/config/campaign.properties` is a Java resource packaged in both
 desktop jars and Android APKs. It is configuration rather than a downloaded game asset.
-Each sector keeps its stable name, region, seed and record ID. Blue Coast is the only playable
-authored sector in this pass. Sectors 2-10 preserve save compatibility and appear as coming later.
+Each sector keeps its stable name, region, seed and record ID. Blue Coast, Coral Gardens, Ghost Nets,
+Sunken City, and Black Tide are authored and playable. Sectors 6-10 preserve save compatibility and appear as coming later.
 
 | Difficulty | Health | Shot speed | Spawn density | Fire rate | Boss cadence | Fan shots | Movement | Phases |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -50,18 +50,18 @@ authored sector in this pass. Sectors 2-10 preserve save compatibility and appea
 | Expert | 1.55 | 1.45 | 1.6 | 1.35 | 1.5 | 5 | 1.5 | 3 |
 | Abyss | 1.9 | 1.75 | 2 | 1.6 | 1.9 | 7 | 1.9 | 3 |
 
-Density increases enemy count without changing Blue Coast's authored event order. Fixed pools
-remain bounded and hostile shots have a mission limit. The Shoreline Compactor enters at 240
-seconds. Its core gates two telegraphed press-arm phases, then two discharge pipes must be closed
-before the final exposed-core phase. A living boss at the deadline fails the mission.
+Density increases enemy count without changing authored event order. Fixed pools remain bounded
+and hostile shots have a mission limit. Every boss uses warning states and explicit damage gates;
+a living boss at the deadline fails the mission.
 
 Combat uses enemies actually encountered. Cleanup uses authored waste and coral damage, Rescue
-uses three turtles, and Integrity uses the loadout's maximum hull plus coral protection. Loadout
-is captured at run creation. See [Blue Coast](BLUE_COAST.md) for the mission details.
+uses configured wildlife, and Integrity uses the loadout's maximum hull plus coral protection.
+Loadout is captured at run creation. See [Blue Coast](BLUE_COAST.md) and
+[Sectors 2-3](SECTORS_2_3.md) and [Sectors 4-5](SECTORS_4_5.md) for mission details.
 
 Three vessels, four pilots and five weapons use permanent unlock conditions from JSON.
 Six upgrades have up to five configured levels, increasing prices and atomic purchases.
-Twelve local achievements track run conditions, campaign facts and cumulative progress;
+Fourteen local achievements track run conditions, campaign facts and cumulative progress;
 unlocks queue persistent in-game notifications. Definitions, formulas, migration mappings
 and provisional balance are documented in [equipment systems](EQUIPMENT_SYSTEMS.md).
 
@@ -136,35 +136,39 @@ Reports: `core/build/reports/tests/test/index.html`,
 `android/build/reports/lint-results-debug.html`.
 Screenshots: `build/smoke/01-menu.png` through the numbered scenario captures, including
 `07-result.png`, `13-phone-settings.png`, `14-wide-credits.png`, `15-reloaded.png`,
-`16-warden.png` and `17-weapons.png`. APK: `android/build/outputs/apk/debug/android-debug.apk`.
+`16-shoreline-compactor.png`, `17-weapons.png`, `18-coral-gardens.png`, and
+`19-ghost-nets.png`. APK: `android/build/outputs/apk/debug/android-debug.apk`.
 
 ## Manual acceptance checklist
 
 1. Run `.\gradlew.bat :lwjgl3:run -PdevelopmentBuild=true`. If using an existing test
    profile, choose Settings > Reset Profile > Confirm. This erases that local profile.
 2. Open Play. Check that only sector 1 is open and its card shows name, region, empty stars,
-   best score and cleared difficulties. Try sector 2: it must remain disabled.
+   best score and cleared difficulties. Sector 2 must remain disabled until sector 1 is cleared.
 3. Open sector 1. Only Normal is enabled. Start, drag to steer, collect plastic, rescue
    turtles, pause and resume. Disable the Shoreline Compactor and complete recovery with at least one star.
 4. Result should show stars and records, plus sector 2 and sector 1 / Hard unlock messages.
-   Return to Level Select. Sector 2 / Normal should be playable; its Hard should remain locked.
-5. Replay sector 1 / Normal. A worse result must not lower any existing best record.
+    Return to Level Select. Sector 2 / Normal should be playable; its Hard should remain locked.
+5. Clear Coral Gardens and confirm Ghost Nets opens. Clear Ghost Nets and confirm the Sector 4
+    mission opens. Clear Sunken City and Black Tide; confirm Sector 6 unlocks while its card remains
+    `COMING LATER` and cannot launch.
+6. Replay sector 1 / Normal. A worse result must not lower any existing best record.
    A failed run must not unlock the next difficulty. Pause > End Dive must not add rewards.
-6. Complete sector 1 / Hard, then Expert, defeating the Shoreline Compactor before the deadline.
+7. Complete sector 1 / Hard, then Expert, defeating the Shoreline Compactor before the deadline.
    Check that each completion opens only the next difficulty of that sector. Abyss opens
    after Expert; check faster fire, denser drones and faster boss attacks.
-7. After unlocking sector 2, select MANTA, Neri and Spread Cannon; buy one Hull upgrade
+8. After unlocking sector 2, select MANTA, Neri and Spread Cannon; buy one Hull upgrade
    with at least 30 salvage. Confirm a single deduction and upgrade level. A new dive
    should start with 95 hull, three-shot spread and faster rescues. Insufficient funds and maximum upgrades must disable buying.
-8. Toggle sound/music, cycle volumes, enable reduced menu motion, and inspect Achievements.
+9. Toggle sound/music, cycle volumes, enable reduced menu motion, and inspect Achievements.
    Exit the application completely and launch it again. Verify progress, records, settings,
    selections, upgrade levels and salvage are unchanged.
-9. Visit every screen and use Back/Esc. Scroll to sector 10, the bottom of Settings and the
+10. Visit every screen and use Back/Esc. Scroll to sector 10, the bottom of Settings and the
    last achievement. Resize desktop to 320 x 640 and 960 x 540; controls must stay reachable.
-10. Run without `-PdevelopmentBuild=true`: Reset Profile must be absent. Install the debug
+11. Run without `-PdevelopmentBuild=true`: Reset Profile must be absent. Install the debug
     APK on a phone: it should be present. Check touch/scrolling, cutout clearance, system
     back, background/resume, sound and a full dive. Repeat on a wide/tall screen if available.
-11. Optional isolated corruption test: run both smoke commands, close the app, replace
+12. Optional isolated corruption test: run both smoke commands, close the app, replace
     `build/smoke/profile/profile.properties` with invalid text, and run `--smoke-reload`.
     The verified backup should restore the profile. Production saves need not be edited.
 
