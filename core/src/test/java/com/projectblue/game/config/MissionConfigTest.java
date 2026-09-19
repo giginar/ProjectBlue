@@ -13,6 +13,11 @@ class MissionConfigTest {
             assertNotNull(input); return new String(input.readAllBytes(),StandardCharsets.UTF_8);
         }
     }
+    private String source(String path) throws IOException {
+        try (InputStream input=getClass().getResourceAsStream(path)) {
+            assertNotNull(input); return new String(input.readAllBytes(),StandardCharsets.UTF_8);
+        }
+    }
     @Test void blueCoastDefinesTheRequiredMissionContent() {
         MissionConfig m=MissionConfig.BLUE_COAST;
         assertEquals("BLUE_COAST",m.id); assertEquals(300,m.durationSeconds);
@@ -50,6 +55,21 @@ class MissionConfigTest {
             assertTrue(CampaignConfig.isAvailable(mission==city?4:5));
         }
     }
+    @Test void sectorsSixAndSevenRequireValidatedReusableResourceSystems() throws IOException {
+        MissionConfig reef=MissionConfig.SILENT_REEF,frozen=MissionConfig.FROZEN_DEPTHS;
+        assertSame(reef,MissionConfig.forLevel(6)); assertSame(frozen,MissionConfig.forLevel(7));
+        assertEquals(MissionConfig.BossKind.RESONANCE_ENGINE,reef.boss.kind());
+        assertEquals(MissionConfig.BossKind.BOREALIS_DRILL,frozen.boss.kind());
+        assertNotNull(reef.sonar); assertNull(reef.thermal); assertNotNull(frozen.thermal); assertNull(frozen.sonar);
+        assertEquals(Set.of("ECHO_HUNTER","SOUND_MINE","SILENT_STALKER","RESONANCE_DRONE"),
+            new HashSet<>(reef.enemies().stream().map(MissionConfig.Enemy::id).toList()));
+        assertEquals(Set.of("ICE_DRILLER","CRYO_DRONE","THERMAL_MINE","HEAT_VENT_GUARD"),
+            new HashSet<>(frozen.enemies().stream().map(MissionConfig.Enemy::id).toList()));
+        assertThrows(IllegalArgumentException.class,() -> MissionConfig.parse(
+            source("/config/silent-reef.json").replace("\"maxEnergy\": 100","\"maxEnergy\": 20")));
+        assertThrows(IllegalArgumentException.class,() -> MissionConfig.parse(
+            source("/config/frozen-depths.json").replace("\"damageThreshold\": 72","\"damageThreshold\": 100")));
+    }
     @Test void duplicateIdsNegativeCountsAndInvalidFormationFailClearly() throws IOException {
         String json=source();
         IllegalArgumentException duplicate=assertThrows(IllegalArgumentException.class,
@@ -80,7 +100,7 @@ class MissionConfigTest {
     }
     @Test void authoredTimelinesScaleEnemyDensityWithoutDuplicatingEnvironmentProps() {
         for (MissionConfig mission : List.of(MissionConfig.CORAL_GARDENS,MissionConfig.GHOST_NETS,
-            MissionConfig.SUNKEN_CITY,MissionConfig.BLACK_TIDE)) {
+            MissionConfig.SUNKEN_CITY,MissionConfig.BLACK_TIDE,MissionConfig.SILENT_REEF,MissionConfig.FROZEN_DEPTHS)) {
             SpawnTimeline normal=new SpawnTimeline(mission,1), abyss=new SpawnTimeline(mission,2);
             assertTrue(abyss.size()>normal.size());
             int props=mission.props().size();

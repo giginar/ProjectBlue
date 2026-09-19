@@ -104,4 +104,41 @@ class AuthoredMissionWorldTest {
         assertTrue(tide.recovering()); advance(tide,tide.elapsed()+tide.mission().recoverySeconds+.1f);
         assertTrue(tide.result().completed);
     }
+    @Test void silentReefConcealedTargetsNeedSonarAndPulseConsumesEnergy() {
+        GameWorld reef=world(6);
+        Entity stalker=reef.drones.obtain(); stalker.enemy=reef.mission().enemy("SILENT_STALKER");
+        stalker.x=reef.player.x; stalker.y=reef.player.y+250; stalker.radius=24;
+        stalker.health=stalker.maxHealth=100; stalker.concealed=true;
+        assertNull(reef.nearestEnemy(reef.player.x,reef.player.y));
+        float full=reef.sonarEnergy(); assertTrue(reef.activateSonar());
+        assertTrue(reef.sonarRevealing()); assertTrue(reef.sonarEnergy()<full);
+        assertSame(stalker,reef.nearestEnemy(reef.player.x,reef.player.y));
+    }
+    @Test void frozenDepthsThermalVentBuildsHeatWhileColdZoneRecoversIt() {
+        GameWorld frozen=world(7);
+        Entity vent=frozen.environments.obtain(); vent.environment=MissionConfig.EnvironmentKind.THERMAL_VENT;
+        vent.x=frozen.player.x; vent.y=frozen.player.y; vent.radius=80;
+        for (int i=0;i<360;i++) { frozen.player.health=frozen.player.maxHealth; frozen.update(STEP,false,0,0); }
+        assertTrue(frozen.thermalHeat()>=frozen.thermalThreshold());
+        vent.active=false;
+        Entity cold=frozen.environments.obtain(); cold.environment=MissionConfig.EnvironmentKind.COLD_ZONE;
+        cold.x=frozen.player.x; cold.y=frozen.player.y; cold.radius=80;
+        float hot=frozen.thermalHeat();
+        for (int i=0;i<120;i++) frozen.update(STEP,false,0,0);
+        assertTrue(frozen.thermalHeat()<hot);
+    }
+    @Test void frozenDepthsMarksFallingIceAndDisablesDrillPointsByProximity() {
+        GameWorld frozen=world(7); advance(frozen,13.1f);
+        Entity ice=null;
+        for (int i=0;i<frozen.environments.capacity();i++) {
+            Entity candidate=frozen.environments.at(i);
+            if (candidate.active && candidate.environment==MissionConfig.EnvironmentKind.ICE_FALL) ice=candidate;
+        }
+        assertNotNull(ice); assertTrue(ice.warned); assertFalse(ice.friendly); assertEquals(780,ice.y,.01f);
+        Entity drill=frozen.environments.obtain(); assertNotNull(drill);
+        drill.environment=MissionConfig.EnvironmentKind.DRILL_POINT; drill.x=frozen.player.x; drill.y=frozen.player.y;
+        drill.radius=36; drill.health=drill.maxHealth=90;
+        for (int i=0;i<150 && drill.active;i++) frozen.update(STEP,false,0,0);
+        assertFalse(drill.active); assertEquals(1,frozen.drillPointsDisabled());
+    }
 }

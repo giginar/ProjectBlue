@@ -37,7 +37,7 @@ public final class GameConfig {
     public static final int ITEM_CAPACITY = 48, TURTLE_CAPACITY = 6, PARTICLE_CAPACITY = 192;
     public static final int PARTICLES_PER_BURST = 12;
     public static final float PARTICLE_LIFE = .7f, PARTICLE_SPEED = 105f;
-    public static final int PROFILE_VERSION = 4;
+    public static final int PROFILE_VERSION = 5;
     public static final int MAX_PROFILE_LENGTH = 16384;
     public static final float DEFAULT_SOUND_VOLUME = .45f, DEFAULT_MUSIC_VOLUME = .25f;
     public static final String SAVE_FILE = "profile.properties";

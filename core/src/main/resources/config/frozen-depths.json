@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "id": "FROZEN_DEPTHS",
+  "missionType": "FROZEN_DEPTHS",
+  "displayName": "Frozen Depths",
+  "briefing": "A NEREID drilling complex is venting thermal waste beneath the ice. Read the falling-ice warnings, cool down in safe pockets, and disable every drill point before confronting the Borealis Drill.",
+  "introMessage": "WATCH THE ICE / USE BLUE COOLING ZONES",
+  "midpointMessage": "THERMAL SURGE / ICE WALLS ARE SHIFTING",
+  "midpointStart": 154,
+  "midpointDuration": 14,
+  "durationSeconds": 355,
+  "deadlineSeconds": 425,
+  "recoverySeconds": 8,
+  "cleaningSpeedMultiplier": 0.68,
+  "netSeconds": 2.3,
+  "netSpeedMultiplier": 0.5,
+  "currentStrength": 12,
+  "hostileBulletLimit": 82,
+  "thermal": {
+    "maxHeat": 100,
+    "damageThreshold": 72,
+    "hotGainPerSecond": 22,
+    "coldRecoveryPerSecond": 34,
+    "passiveRecoveryPerSecond": 7,
+    "damageInterval": 0.9
+  },
+  "boss": {
+    "kind": "BOREALIS_DRILL", "name": "Borealis Drill", "start": 310,
+    "coreHealth": 1120, "pipeHealth": 145, "droneBudget": 6,
+    "arrivalSeconds": 2.6, "telegraphSeconds": 1.7, "attackInterval": 3,
+    "pressInset": 115, "salvage": 115
+  },
+  "enemies": [
+    {
+      "id":"ICE_DRILLER","displayName":"IceDriller","movement":"HOLD","weapon":"SINGLE","ability":"ICE_DRILLER",
+      "stats":{"health":76,"speed":38,"radius":32,"shotInterval":4.3,"bulletSpeed":165,"damage":9,"lifetime":40,"frontArmor":true,"repairAmount":0},
+      "reward":{"score":255,"salvage":13}
+    },
+    {
+      "id":"CRYO_DRONE","displayName":"CryoDrone","movement":"HUNTER","weapon":"NET","ability":"CRYO_DRONE",
+      "stats":{"health":48,"speed":78,"radius":24,"shotInterval":3.5,"bulletSpeed":185,"damage":8,"lifetime":31,"frontArmor":false,"repairAmount":0},
+      "reward":{"score":215,"salvage":9}
+    },
+    {
+      "id":"THERMAL_MINE","displayName":"ThermalMine","movement":"HOLD","weapon":"NONE","ability":"THERMAL_MINE",
+      "stats":{"health":44,"speed":29,"radius":25,"shotInterval":4.8,"bulletSpeed":150,"damage":10,"lifetime":38,"frontArmor":false,"repairAmount":0},
+      "reward":{"score":205,"salvage":9}
+    },
+    {
+      "id":"HEAT_VENT_GUARD","displayName":"HeatVentGuard","movement":"SWEEP","weapon":"TRIPLE","ability":"HEAT_VENT_GUARD",
+      "stats":{"health":82,"speed":48,"radius":33,"shotInterval":4.1,"bulletSpeed":175,"damage":9,"lifetime":40,"frontArmor":true,"repairAmount":0},
+      "reward":{"score":275,"salvage":14}
+    }
+  ],
+  "wasteDefinitions": [
+    {"kind":"BOTTLE","radius":12,"cleanMultiplier":1,"drift":40,"salvage":1,"plastic":true},
+    {"kind":"BAG","radius":16,"cleanMultiplier":1.2,"drift":36,"salvage":1,"plastic":true},
+    {"kind":"METAL","radius":18,"cleanMultiplier":1.8,"drift":33,"salvage":4,"plastic":false},
+    {"kind":"NET","radius":31,"cleanMultiplier":2.4,"drift":28,"salvage":2,"plastic":false},
+    {"kind":"DIRTY_WATER","radius":62,"cleanMultiplier":4.4,"drift":23,"salvage":3,"plastic":false}
+  ],
+  "creatureDefinitions": [
+    {"kind":"SEAL","radius":31,"rescueMultiplier":1.15,"drift":19,"timeoutSeconds":0},
+    {"kind":"FISH_SCHOOL","radius":27,"rescueMultiplier":0.9,"drift":23,"timeoutSeconds":26}
+  ],
+  "waves": [
+    {"time":14,"enemy":"CRYO_DRONE","count":3,"interval":5,"x":95,"spacing":175},
+    {"time":43,"enemy":"ICE_DRILLER","count":2,"interval":7,"x":155,"spacing":230},
+    {"time":75,"enemy":"THERMAL_MINE","count":3,"interval":5,"x":95,"spacing":175},
+    {"time":108,"enemy":"HEAT_VENT_GUARD","count":2,"interval":7,"x":150,"spacing":240},
+    {"time":140,"enemy":"CRYO_DRONE","count":4,"interval":3,"x":75,"spacing":130},
+    {"time":174,"enemy":"ICE_DRILLER","count":3,"interval":5,"x":90,"spacing":180},
+    {"time":208,"enemy":"THERMAL_MINE","count":4,"interval":3,"x":75,"spacing":130},
+    {"time":242,"enemy":"HEAT_VENT_GUARD","count":3,"interval":5,"x":90,"spacing":180},
+    {"time":276,"enemy":"CRYO_DRONE","count":4,"interval":3,"x":75,"spacing":130}
+  ],
+  "props": [
+    {"time":5,"kind":"MECHANIC","environment":"COLD_ZONE","x":390},
+    {"time":13,"kind":"MECHANIC","environment":"ICE_FALL","x":145},
+    {"time":24,"kind":"MECHANIC","environment":"DRILL_POINT","x":310},
+    {"time":36,"kind":"CREATURE","creature":"SEAL","x":420},
+    {"time":49,"kind":"MECHANIC","environment":"THERMAL_VENT","x":115},
+    {"time":62,"kind":"MECHANIC","environment":"ICE_WALL","x":270},
+    {"time":76,"kind":"WASTE","waste":"METAL","x":400},
+    {"time":90,"kind":"MECHANIC","environment":"COLD_ZONE","x":150},
+    {"time":105,"kind":"MECHANIC","environment":"DRILL_POINT","x":390},
+    {"time":120,"kind":"MECHANIC","environment":"ICE_FALL","x":225},
+    {"time":135,"kind":"CREATURE","creature":"FISH_SCHOOL","x":110},
+    {"time":150,"kind":"MECHANIC","environment":"THERMAL_VENT","x":410},
+    {"time":166,"kind":"MECHANIC","environment":"ICE_WALL","x":270},
+    {"time":182,"kind":"MECHANIC","environment":"DRILL_POINT","x":135},
+    {"time":198,"kind":"WASTE","waste":"DIRTY_WATER","x":330},
+    {"time":214,"kind":"MECHANIC","environment":"COLD_ZONE","x":430},
+    {"time":231,"kind":"CREATURE","creature":"SEAL","x":220},
+    {"time":248,"kind":"MECHANIC","environment":"ICE_FALL","x":390},
+    {"time":265,"kind":"MECHANIC","environment":"THERMAL_VENT","x":155},
+    {"time":282,"kind":"MECHANIC","environment":"DRILL_POINT","x":300}
+  ]
+}

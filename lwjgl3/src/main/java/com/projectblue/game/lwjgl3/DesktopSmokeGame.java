@@ -16,6 +16,8 @@ import com.projectblue.game.screens.*;
 import com.projectblue.game.logic.GameWorld;
 import com.projectblue.game.logic.ShorelineCompactor;
 import com.projectblue.game.logic.ReefBreaker;
+import com.projectblue.game.logic.Entity;
+import com.projectblue.game.logic.LevelResult;
 import static com.projectblue.game.config.GameConfig.*;
 
 /** Real OpenGL integration checks. Only the isolated build/smoke/profile directory is written. */
@@ -232,7 +234,45 @@ final class DesktopSmokeGame extends ProjectBlueGame {
                 require(getScreen() instanceof GameScreen,"Ghost Nets entry");
                 require(router().activeRun().world().mission()==MissionConfig.GHOST_NETS,"Ghost Nets config selected");
                 capture("19-ghost-nets");
-                Gdx.app.log("SMOKE", "PASS: menus, equipment locks, Blue Coast, Coral Gardens, Ghost Nets entry, campaign, disk save, replay, equipment, upgrades, audio, aspect ratios, bosses and lifecycle");
+                for (int id=3;id<=5;id++) {
+                    RunSpec spec=RunSpec.create(id,Difficulty.NORMAL,Loadout.from(saves().profile()));
+                    require(saves().profile().record(new LevelResult(spec,true,spec.combatTargets(),36,5,50,100)),"smoke progression sector "+id);
+                }
+                require(saves().profile().canPlay(6,Difficulty.NORMAL),"Silent Reef unlocked");
+                require(router().requestDive(6,Difficulty.NORMAL),"Silent Reef launchable"); next();
+            }
+            case 45 -> {
+                require(getScreen() instanceof GameScreen,"Silent Reef entry");
+                GameWorld world=router().activeRun().world();
+                require(world.mission()==MissionConfig.SILENT_REEF && world.hasSonar(),"Silent Reef sonar system");
+                float energy=world.sonarEnergy(); click(462,678);
+                require(world.sonarRevealing() && world.sonarEnergy()<energy,"touch sonar pulse");
+                next();
+            }
+            case 46 -> {
+                GameWorld world=router().activeRun().world();
+                require(world.sonarRevealing(),"sonar reveal persists into rendered frame");
+                capture("20-silent-reef-sonar");
+                RunSpec spec=world.spec();
+                require(saves().profile().record(new LevelResult(spec,true,spec.combatTargets(),20,3,50,100)),"Silent Reef smoke completion");
+                require(saves().profile().canPlay(7,Difficulty.NORMAL),"Frozen Depths unlocked");
+                require(router().requestDive(7,Difficulty.NORMAL),"Frozen Depths launchable"); next();
+            }
+            case 47 -> {
+                require(getScreen() instanceof GameScreen,"Frozen Depths entry");
+                GameWorld world=router().activeRun().world();
+                require(world.mission()==MissionConfig.FROZEN_DEPTHS && world.hasThermal(),"Frozen Depths thermal system");
+                Entity vent=world.environments.obtain(); require(vent!=null,"thermal vent pool capacity");
+                vent.environment=MissionConfig.EnvironmentKind.THERMAL_VENT;
+                vent.x=world.player.x; vent.y=world.player.y; vent.radius=80;
+                for (int i=0;i<30;i++) world.update(STEP,false,0,0);
+                require(world.thermalHeat()>0,"thermal HUD receives live exposure");
+                require(world.route().right()-world.route().left()<WIDTH,"ice walls narrow the route");
+                next();
+            }
+            case 48 -> {
+                capture("21-frozen-depths-thermal");
+                Gdx.app.log("SMOKE", "PASS: menus, equipment locks, sectors 1-7 rendering, sonar touch, thermal exposure, campaign, disk save, replay, equipment, upgrades, audio, aspect ratios, bosses and lifecycle");
                 Gdx.app.exit(); next();
             }
             default -> { }

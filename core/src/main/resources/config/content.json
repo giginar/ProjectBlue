@@ -535,6 +535,24 @@
       "metric": "LEVEL_COMPLETED",
       "target": 1,
       "threshold": 5
+    },
+    {
+      "id": "SILENT_REEF_RESTORED",
+      "displayName": "Return the Reef Song",
+      "description": "Complete Silent Reef.",
+      "incremental": false,
+      "metric": "LEVEL_COMPLETED",
+      "target": 1,
+      "threshold": 6
+    },
+    {
+      "id": "FROZEN_DEPTHS_CLEARED",
+      "displayName": "Cool the Borealis",
+      "description": "Complete Frozen Depths.",
+      "incremental": false,
+      "metric": "LEVEL_COMPLETED",
+      "target": 1,
+      "threshold": 7
     }
   ]
 }

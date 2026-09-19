@@ -37,7 +37,7 @@ public final class EnemySystems {
     private EnemySystems() {}
     public static void update(GameWorld world,Entity e,float dt) {
         e.age+=dt; e.effectTime=Math.max(0,e.effectTime-dt); e.shieldTime=Math.max(0,e.shieldTime-dt);
-        e.hiddenTime=Math.max(0,e.hiddenTime-dt);
+        e.hiddenTime=Math.max(0,e.hiddenTime-dt); e.revealTime=Math.max(0,e.revealTime-dt);
         if (e.enemy.movement()==Movement.HUNTER) e.aimX=world.player.x;
         MOVEMENT.get(e.enemy.movement()).update(e,dt);
         if (e.y< -DESPAWN_MARGIN || e.x< -DESPAWN_MARGIN || e.x>WIDTH+DESPAWN_MARGIN || e.age>=e.enemy.stats().lifetime()) {

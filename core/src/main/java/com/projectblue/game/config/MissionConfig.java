@@ -9,19 +9,27 @@ import static com.projectblue.game.config.GameConfig.*;
 
 /** Immutable authored mission. All parsing and expansion occur before simulation begins. */
 public final class MissionConfig {
-    public enum MissionType { BLUE_COAST, CORAL_GARDENS, GHOST_NETS, SUNKEN_CITY, BLACK_TIDE }
+    public enum MissionType { BLUE_COAST, CORAL_GARDENS, GHOST_NETS, SUNKEN_CITY, BLACK_TIDE, SILENT_REEF, FROZEN_DEPTHS }
     public enum Movement { DESCEND, SWEEP, HOLD, HUNTER, BURROW }
     public enum WeaponPattern { SINGLE, TRIPLE, NET, AIMED, NONE }
     public enum EnemyAbility {
         NONE, CORAL_CUTTER, SHIELD_CARRIER, NET_RECYCLER,
         CHEMICAL_BOMBER, RUIN_TURRET, SALVAGE_MECH, AMBUSH_DRONE,
-        OIL_SPREADER, IGNITION_DRONE, PRESSURE_TANKER, PIPELINE_GUARD
+        OIL_SPREADER, IGNITION_DRONE, PRESSURE_TANKER, PIPELINE_GUARD,
+        ECHO_HUNTER, SOUND_MINE, SILENT_STALKER, RESONANCE_DRONE,
+        ICE_DRILLER, CRYO_DRONE, THERMAL_MINE, HEAT_VENT_GUARD
     }
     public enum WasteKind { BOTTLE, BAG, METAL, NET, DIRTY_WATER }
     public enum CreatureKind { TURTLE, SEAHORSE, MANTA, REEF_FISH, SEAL, FISH_SCHOOL, RESEARCH_DIVER, RESCUE_DIVER }
-    public enum EnvironmentKind { CHEMICAL_BARREL, RUIN, COLLAPSIBLE, TOXIC_FIELD, OIL_FIELD, CLEANUP_CAPSULE, VALVE }
+    public enum EnvironmentKind {
+        CHEMICAL_BARREL, RUIN, COLLAPSIBLE, TOXIC_FIELD, OIL_FIELD, CLEANUP_CAPSULE, VALVE,
+        REEF_OBSTACLE, SONAR_CELL, ICE_FALL, THERMAL_VENT, COLD_ZONE, DRILL_POINT, ICE_WALL
+    }
     public enum SpawnKind { ENEMY, WASTE, TURTLE, CREATURE, CORAL, MECHANIC }
-    public enum BossKind { SHORELINE_COMPACTOR, REEF_BREAKER, GHOST_NET_HARVESTER, URBAN_SALVAGER, OIL_KRAKEN }
+    public enum BossKind {
+        SHORELINE_COMPACTOR, REEF_BREAKER, GHOST_NET_HARVESTER, URBAN_SALVAGER, OIL_KRAKEN,
+        RESONANCE_ENGINE, BOREALIS_DRILL
+    }
     public record Stats(int health, float speed, float radius, float shotInterval, float bulletSpeed,
                         int damage, float lifetime, boolean frontArmor, int repairAmount) {}
     public record Reward(int score, int salvage) {}
@@ -34,12 +42,17 @@ public final class MissionConfig {
                        EnvironmentKind environment, float x) {}
     public record Boss(BossKind kind, String name, float start, int coreHealth, int pipeHealth, int droneBudget,
                        float arrivalSeconds, float telegraphSeconds, float attackInterval, float pressInset, int salvage) {}
+    public record Sonar(float maxEnergy, float pulseCost, float regenPerSecond, float revealSeconds, float pickupEnergy) {}
+    public record Thermal(float maxHeat, float damageThreshold, float hotGainPerSecond,
+                          float coldRecoveryPerSecond, float passiveRecoveryPerSecond, float damageInterval) {}
     public final String id, displayName, briefing, introMessage, midpointMessage;
     public final MissionType type;
     public final float durationSeconds, deadlineSeconds, recoverySeconds, cleaningSpeedMultiplier, netSeconds, netSpeedMultiplier;
     public final float midpointStart, midpointDuration, currentStrength;
     public final int hostileBulletLimit;
     public final Boss boss;
+    public final Sonar sonar;
+    public final Thermal thermal;
     private final Map<String,Enemy> enemies;
     private final EnumMap<WasteKind,Waste> wastes;
     private final EnumMap<CreatureKind,Creature> creatures;
@@ -71,6 +84,8 @@ public final class MissionConfig {
     public static final MissionConfig GHOST_NETS = loadRequired("/config/ghost-nets.json");
     public static final MissionConfig SUNKEN_CITY = loadRequired("/config/sunken-city.json");
     public static final MissionConfig BLACK_TIDE = loadRequired("/config/black-tide.json");
+    public static final MissionConfig SILENT_REEF = loadRequired("/config/silent-reef.json");
+    public static final MissionConfig FROZEN_DEPTHS = loadRequired("/config/frozen-depths.json");
 
     private MissionConfig(JsonValue root) {
         uniqueKeys(root,0);
@@ -94,6 +109,20 @@ public final class MissionConfig {
             number(b,"start",180,durationSeconds-20),integer(b,"coreHealth",300,3000),
             integer(b,"pipeHealth",30,300),integer(b,"droneBudget",0,12),number(b,"arrivalSeconds",1,5),
             number(b,"telegraphSeconds",.6f,3),number(b,"attackInterval",2,6),number(b,"pressInset",60,140),integer(b,"salvage",0,500));
+        JsonValue sonarNode=root.get("sonar");
+        if (type==MissionType.SILENT_REEF) check(sonarNode!=null,"Silent Reef requires sonar tuning");
+        sonar=sonarNode==null?null:new Sonar(number(sonarNode,"maxEnergy",20,200),
+            number(sonarNode,"pulseCost",5,100),number(sonarNode,"regenPerSecond",.1f,20),
+            number(sonarNode,"revealSeconds",.5f,8),number(sonarNode,"pickupEnergy",1,100));
+        if (sonar!=null) check(sonar.pulseCost()<=sonar.maxEnergy() && sonar.pickupEnergy()<=sonar.maxEnergy(),
+            "Sonar energy values exceed capacity");
+        JsonValue thermalNode=root.get("thermal");
+        if (type==MissionType.FROZEN_DEPTHS) check(thermalNode!=null,"Frozen Depths requires thermal tuning");
+        thermal=thermalNode==null?null:new Thermal(number(thermalNode,"maxHeat",20,200),
+            number(thermalNode,"damageThreshold",1,200),number(thermalNode,"hotGainPerSecond",1,100),
+            number(thermalNode,"coldRecoveryPerSecond",1,100),number(thermalNode,"passiveRecoveryPerSecond",0,30),
+            number(thermalNode,"damageInterval",.2f,3));
+        if (thermal!=null) check(thermal.damageThreshold()<thermal.maxHeat(),"Thermal threshold must be below capacity");
         Map<String,Enemy> definitions = new LinkedHashMap<>();
         for (JsonValue e : array(root,"enemies")) {
             String key = string(e,"id"); check(!definitions.containsKey(key),"Duplicate enemy id: " + key);
@@ -163,7 +192,7 @@ public final class MissionConfig {
             if (kind == SpawnKind.TURTLE) turtles++;
             if (creature != null) creatureTotal++;
             if (kind == SpawnKind.CORAL) corals++;
-            if (kind == SpawnKind.MECHANIC) mechanics++;
+            if (kind == SpawnKind.MECHANIC && cleanupMechanic(environment)) mechanics++;
         }
         boolean coralMission=type==MissionType.BLUE_COAST || type==MissionType.CORAL_GARDENS || type==MissionType.GHOST_NETS;
         check(creatureTotal > 0 && creatureTotal <= 8 && wasteTotal <= 100 && corals <= 8
@@ -206,6 +235,8 @@ public final class MissionConfig {
             case 3 -> GHOST_NETS;
             case 4 -> SUNKEN_CITY;
             case 5 -> BLACK_TIDE;
+            case 6 -> SILENT_REEF;
+            case 7 -> FROZEN_DEPTHS;
             default -> null;
         };
     }
@@ -252,6 +283,9 @@ public final class MissionConfig {
     }
     private static int integer(JsonValue n,String key,int min,int max) {
         float value=number(n,key,min,max); check(value==(int)value,"Expected integer: "+key); return (int)value;
+    }
+    private static boolean cleanupMechanic(EnvironmentKind kind) {
+        return kind!=EnvironmentKind.ICE_FALL && kind!=EnvironmentKind.THERMAL_VENT && kind!=EnvironmentKind.COLD_ZONE;
     }
     private static void check(boolean valid,String message) { if (!valid) throw new IllegalArgumentException(message); }
 }

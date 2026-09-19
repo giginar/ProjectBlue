@@ -90,6 +90,10 @@ public final class ContentCatalog {
                 "Complete Sunken City.",false,AchievementMetric.LEVEL_COMPLETED,1,4));
             complete.put("BLACK_TIDE_CLEARED",new AchievementDef("BLACK_TIDE_CLEARED","Break the Black Tide",
                 "Complete Black Tide.",false,AchievementMetric.LEVEL_COMPLETED,1,5));
+            complete.put("SILENT_REEF_RESTORED",new AchievementDef("SILENT_REEF_RESTORED","Return the Reef Song",
+                "Complete Silent Reef.",false,AchievementMetric.LEVEL_COMPLETED,1,6));
+            complete.put("FROZEN_DEPTHS_CLEARED",new AchievementDef("FROZEN_DEPTHS_CLEARED","Cool the Borealis",
+                "Complete Frozen Depths.",false,AchievementMetric.LEVEL_COMPLETED,1,7));
             achievements=Collections.unmodifiableMap(complete);
         } else achievements=parsedAchievements;
         requireIds(submarines,Loadout.Submarine.values()); requireIds(pilots,Loadout.Pilot.values());

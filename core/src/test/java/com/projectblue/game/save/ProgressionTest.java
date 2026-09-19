@@ -28,7 +28,7 @@ class ProgressionTest {
         assertTrue(p.canPlay(2, Difficulty.NORMAL)); assertTrue(p.canPlay(1, Difficulty.HARD));
         assertFalse(p.canPlay(2, Difficulty.HARD)); assertFalse(p.canPlay(3, Difficulty.NORMAL));
     }
-    @Test void authoredSectorCompletionsOpenSunkenCityBlackTideAndFutureSectorSixRecord() {
+    @Test void authoredSectorCompletionsOpenSilentReefFrozenDepthsAndFutureSectorEightRecord() {
         Profile p=new Profile();
         assertTrue(p.record(clear(1,Difficulty.NORMAL))); assertTrue(p.canPlay(2,Difficulty.NORMAL));
         assertTrue(p.record(clear(2,Difficulty.NORMAL))); assertTrue(p.canPlay(3,Difficulty.NORMAL));
@@ -39,7 +39,13 @@ class ProgressionTest {
         assertTrue(CampaignConfig.isAvailable(5));
         assertTrue(p.record(clear(5,Difficulty.NORMAL))); assertTrue(p.canPlay(6,Difficulty.NORMAL));
         assertTrue(p.achievementUnlocked(Achievement.BLACK_TIDE_CLEARED));
-        assertFalse(CampaignConfig.isAvailable(6));
+        assertTrue(CampaignConfig.isAvailable(6));
+        assertTrue(p.record(clear(6,Difficulty.NORMAL))); assertTrue(p.canPlay(7,Difficulty.NORMAL));
+        assertTrue(p.achievementUnlocked(Achievement.SILENT_REEF_RESTORED));
+        assertTrue(CampaignConfig.isAvailable(7));
+        assertTrue(p.record(clear(7,Difficulty.NORMAL))); assertTrue(p.canPlay(8,Difficulty.NORMAL));
+        assertTrue(p.achievementUnlocked(Achievement.FROZEN_DEPTHS_CLEARED));
+        assertFalse(CampaignConfig.isAvailable(8));
     }
     @Test void difficultyUnlocksAreSequentialAndLocalToEachLevel() {
         Profile p = new Profile();

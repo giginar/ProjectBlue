@@ -2,7 +2,7 @@ package com.projectblue.game.events;
 
 /** Synchronous, game-thread-only bus. Payloads and subscriptions do not allocate per event. */
 public final class GameEvents {
-    public enum Type { SHOT, DRONE_DESTROYED, PLASTIC_COLLECTED, TURTLE_RESCUED, PLAYER_HIT, SALVAGE_COLLECTED, FINISHED }
+    public enum Type { SHOT, SONAR_PULSE, DRONE_DESTROYED, PLASTIC_COLLECTED, TURTLE_RESCUED, PLAYER_HIT, SALVAGE_COLLECTED, FINISHED }
     @FunctionalInterface
     public interface Listener { void onEvent(Type type, float x, float y, int value); }
     private final Listener[] listeners = new Listener[8];
@@ -25,4 +25,3 @@ public final class GameEvents {
         for (int i = 0; i < count; i++) listeners[i].onEvent(type, x, y, value);
     }
 }
-

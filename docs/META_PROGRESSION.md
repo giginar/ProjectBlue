@@ -41,7 +41,7 @@ Back/Esc follows the parent screen; within Level Select it returns from briefing
 `core/src/main/resources/config/campaign.properties` is a Java resource packaged in both
 desktop jars and Android APKs. It is configuration rather than a downloaded game asset.
 Each sector keeps its stable name, region, seed and record ID. Blue Coast, Coral Gardens, Ghost Nets,
-Sunken City, and Black Tide are authored and playable. Sectors 6-10 preserve save compatibility and appear as coming later.
+Sunken City, Black Tide, Silent Reef, and Frozen Depths are authored and playable. Sectors 8-10 preserve save compatibility and appear as coming later.
 
 | Difficulty | Health | Shot speed | Spawn density | Fire rate | Boss cadence | Fan shots | Movement | Phases |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -57,17 +57,17 @@ a living boss at the deadline fails the mission.
 Combat uses enemies actually encountered. Cleanup uses authored waste and coral damage, Rescue
 uses configured wildlife, and Integrity uses the loadout's maximum hull plus coral protection.
 Loadout is captured at run creation. See [Blue Coast](BLUE_COAST.md) and
-[Sectors 2-3](SECTORS_2_3.md) and [Sectors 4-5](SECTORS_4_5.md) for mission details.
+[Sectors 2-3](SECTORS_2_3.md), [Sectors 4-5](SECTORS_4_5.md), and [Sectors 6-7](SECTORS_6_7.md) for mission details.
 
 Three vessels, four pilots and five weapons use permanent unlock conditions from JSON.
 Six upgrades have up to five configured levels, increasing prices and atomic purchases.
-Fourteen local achievements track run conditions, campaign facts and cumulative progress;
+Sixteen local achievements track run conditions, campaign facts and cumulative progress;
 unlocks queue persistent in-game notifications. Definitions, formulas, migration mappings
 and provisional balance are documented in [equipment systems](EQUIPMENT_SYSTEMS.md).
 
 ## Persistence, migration and development builds
 
-Profile v3 stores per-sector unlocks/records/completed difficulties, salvage, completed
+Profile v5 stores per-sector unlocks/records/completed difficulties, salvage, completed
 runs, crew/vessel/weapon selection, earned equipment access, upgrade levels, achievement
 progress/unlocks/pending notices, cumulative counters, audio settings and reduced motion.
 No advertising preferences or SDK state are introduced.
@@ -78,6 +78,8 @@ salvage and audio settings; historical cleanup/rescue percentages remain zero be
 the old schema did not contain them. Higher difficulty completions are never invented.
 v2 migration preserves all sector records, selections through explicit ID mappings, paid
 Hull/Pulse levels and legacy Magnet reach; a frozen checksummed fixture verifies this.
+The v4-to-v5 migration adds Silent Reef and Frozen Depths achievements while preserving
+all existing achievement progress and the ten already-stable sector records.
 
 Writes use a temporary file and a verified backup. Corrupt/truncated/oversized input tries
 the backup, then starts a fresh profile if neither copy is usable. Menus explain recovery
@@ -118,7 +120,7 @@ Commands executed on Windows:
 .\gradlew.bat :android:assembleDebug :android:lintDebug :android:generateReleaseBuildConfig :lwjgl3:installDist
 ```
 
-- 130 JUnit invocations pass, including the original regression checks.
+- 160 JUnit invocations pass, including the original regression checks.
 - Real LWJGL/OpenGL smoke covers menus including Weapon Select, a full Blue Coast dive, drag,
   pause/resume, lifecycle, locked routes, automatic unlocks, disk persistence, replay,
   selections, exactly-once purchases/toggles, narrow/wide layouts, and boss rendering.
@@ -150,8 +152,8 @@ Screenshots: `build/smoke/01-menu.png` through the numbered scenario captures, i
 4. Result should show stars and records, plus sector 2 and sector 1 / Hard unlock messages.
     Return to Level Select. Sector 2 / Normal should be playable; its Hard should remain locked.
 5. Clear Coral Gardens and confirm Ghost Nets opens. Clear Ghost Nets and confirm the Sector 4
-    mission opens. Clear Sunken City and Black Tide; confirm Sector 6 unlocks while its card remains
-    `COMING LATER` and cannot launch.
+    mission opens. Clear Sunken City and Black Tide; confirm Silent Reef opens. Clear Silent Reef,
+    then Frozen Depths, and confirm the saved Sector 8 record unlocks while its card remains `COMING LATER`.
 6. Replay sector 1 / Normal. A worse result must not lower any existing best record.
    A failed run must not unlock the next difficulty. Pause > End Dive must not add rewards.
 7. Complete sector 1 / Hard, then Expert, defeating the Shoreline Compactor before the deadline.

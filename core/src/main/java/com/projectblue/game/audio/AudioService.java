@@ -33,9 +33,9 @@ public final class AudioService implements GameEvents.Listener {
         if (assets == null || suspended || !profile.soundEnabled) return;
         switch (type) {
             case SHOT -> assets.pulse().play(profile.soundVolume * .3f);
+            case SONAR_PULSE -> assets.pulse().play(profile.soundVolume * .75f);
             case PLASTIC_COLLECTED, TURTLE_RESCUED, SALVAGE_COLLECTED -> assets.collect().play(profile.soundVolume);
             default -> { }
         }
     }
 }
-

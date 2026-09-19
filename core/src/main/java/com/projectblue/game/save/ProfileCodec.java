@@ -91,7 +91,7 @@ public final class ProfileCodec {
                     for (Weapon weapon : Weapon.values()) if (bool(fields, "weaponUnlocked." + weapon)) p.restoreUnlocked(weapon);
                     for (Upgrade u : Upgrade.values()) p.restoreUpgrade(u, integer(fields, "upgrade." + u));
                     for (Achievement a : Achievement.values()) {
-                        if (version < 4 && !fields.containsKey("achievement." + a)) continue;
+                        if (version < PROFILE_VERSION && !fields.containsKey("achievement." + a)) continue;
                         p.restoreAchievement(a, integer(fields, "achievement." + a));
                         p.restoreAchievementState(a, bool(fields, "achievementUnlocked." + a), bool(fields, "notificationPending." + a));
                     }

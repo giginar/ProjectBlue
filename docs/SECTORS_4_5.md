@@ -33,7 +33,7 @@ Normal, Hard, Expert, and Abyss retain the campaign health, density, projectile,
 and boss-cadence multipliers. The environment system additionally shortens collapse warnings,
 increases hazard frequency, extends oil concealment, narrows Sunken City's route, and increases
 cleanup/valve interaction time. Clearing Sunken City opens Black Tide and awards `City of Light`.
-Clearing Black Tide opens the stable Sector 6 record and awards `Break the Black Tide`. Boss and enemy
+Clearing Black Tide opens Silent Reef and awards `Break the Black Tide`. Boss and enemy
 salvage values come from each mission config.
 
 ## Manual validation

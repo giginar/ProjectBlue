@@ -9,6 +9,7 @@ public final class Hud implements GameEvents.Listener {
     private final UiPainter ui;
     private final StringBuilder score = new StringBuilder(32), stats = new StringBuilder(64), time = new StringBuilder(24);
     private final StringBuilder health = new StringBuilder(24), ecology = new StringBuilder(32);
+    private final StringBuilder resource = new StringBuilder(32);
     private float refresh, noticeTime;
     private String notice = "DRAG TO MOVE / AUTO FIRE";
     private String mission;
@@ -30,6 +31,9 @@ public final class Hud implements GameEvents.Listener {
         if (seconds % 60 < 10) time.append('0');
         time.append(seconds % 60);
         ecology.setLength(0); ecology.append("REEF +").append(Math.round(w.restoration() * 100)).append("%   SALVAGE ").append(w.salvageCount());
+        resource.setLength(0);
+        if (w.hasSonar()) resource.append("SONAR ").append(Math.round(w.sonarEnergy()));
+        else if (w.hasThermal()) resource.append("THERMAL ").append(Math.round(w.thermalHeat())).append('/').append(Math.round(w.thermalCapacity()));
     }
     public void draw(GameWorld w) {
         ui.beginShapes();
@@ -39,6 +43,14 @@ public final class Hud implements GameEvents.Listener {
         ui.button(450, 874, 64, 58, false);
         ui.rect(474, 892, 5, 22, Palette.TEXT); ui.rect(485, 892, 5, 22, Palette.TEXT);
         ui.rect(0, 0, WIDTH, 44, Palette.INK);
+        if (w.hasSonar()) {
+            ui.button(408,650,108,56,w.sonarEnergy()<w.sonarCost());
+            ui.bar(416,658,92,5,w.sonarEnergy()/w.sonarCapacity(),Palette.AQUA);
+        } else if (w.hasThermal()) {
+            float heat=w.thermalHeat()/w.thermalCapacity();
+            ui.rect(330,650,186,46,Palette.PANEL);
+            ui.bar(340,660,166,7,heat,heat>=w.thermalThreshold()/w.thermalCapacity()?Palette.RED:Palette.GOLD);
+        }
         ui.endShapes();
         ui.beginText();
         ui.text(mission, 24, 939, .65f, Palette.MUTED);
@@ -47,6 +59,8 @@ public final class Hud implements GameEvents.Listener {
         ui.text(time, 349, 939, .66f, Palette.AQUA);
         ui.text(stats, 24, 862, .64f, Palette.TEXT);
         ui.centered(ecology, 29, .65f, Palette.AQUA);
+        if (w.hasSonar()) { ui.text(resource,424,690,.62f,Palette.TEXT); ui.text("PULSE",438,673,.55f,Palette.AQUA); }
+        else if (w.hasThermal()) ui.text(resource,344,688,.57f,w.thermalHeat()>=w.thermalThreshold()?Palette.RED:Palette.TEXT);
         if (w.elapsed()<8 && w.mission()!=null) ui.centered(w.mission().introMessage,793,.62f,Palette.TEXT);
         else if (noticeTime > 0) ui.centered(notice, 793, .62f, Palette.TEXT);
         else if (w.midpointActive()) ui.centered(w.mission().midpointMessage,812,.58f,Palette.GOLD);
@@ -104,6 +118,21 @@ public final class Hud implements GameEvents.Listener {
                 case CORE_EXPOSED -> "CORE VISIBLE / ATTACKS ACCELERATING";
                 default -> "OIL KRAKEN / TRACK THE PIPE ARMS";
             };
+            case RESONANCE_ENGINE -> switch (w.resonanceEngine().state()) {
+                case SONAR_WAVES -> "RESONANCE ENGINE / EVADE SONAR WAVES";
+                case DECOY_FIELD -> "FALSE TARGETS / TRACK THE TRUE CORE";
+                case WEAK_POINTS -> "PULSE TO REVEAL MOVING WEAK POINTS";
+                case CORE_EXPOSED -> "RESONANCE CORE EXPOSED / SHUT IT DOWN";
+                default -> "RESONANCE ENGINE / CONSERVE SONAR ENERGY";
+            };
+            case BOREALIS_DRILL -> switch (w.borealisDrill().state()) {
+                case DRILL_ARMS -> "BOREALIS DRILL / WATCH THE FALLING ICE";
+                case VENT_WARNING -> "THERMAL VENTS OPENING / FIND BLUE ZONES";
+                case THERMAL_VENTS -> "HEAT RISING / HOLD THE COOLING ZONES";
+                case COOLING_UNITS -> "DESTROY BOTH COOLING UNITS";
+                case CORE_EXPOSED -> "MAIN ENGINE EXPOSED / END THE DRILL";
+                default -> "BOREALIS DRILL / WATCH THE ICE";
+            };
         };
     }
     public void onEvent(GameEvents.Type type, float x, float y, int value) {
@@ -111,6 +140,7 @@ public final class Hud implements GameEvents.Listener {
             case PLASTIC_COLLECTED -> { notice = "PLASTIC RECOVERED / WATER RESTORED"; noticeTime = 2; }
             case TURTLE_RESCUED -> { notice = "WILDLIFE FREE / LIFE RETURNS"; noticeTime = 3; }
             case PLAYER_HIT -> { notice = "HULL HIT / KEEP MOVING"; noticeTime = 1.5f; }
+            case SONAR_PULSE -> { notice = "SONAR PULSE / CONTACTS REVEALED"; noticeTime = 1.2f; }
             default -> { }
         }
     }

@@ -5,7 +5,7 @@
 All five content groups live in
 [`core/src/main/resources/config/content.json`](../core/src/main/resources/config/content.json).
 This UTF-8 Java resource ships inside the desktop core jar and Android APK. It contains
-three submarines, four pilots, six upgrades, five weapons and fourteen achievements.
+three submarines, four pilots, six upgrades, five weapons and sixteen achievements.
 `ContentCatalog` parses it once at startup into immutable records. `Loadout.from(profile)`
 composes the selected equipment and upgrades once for each dive. Gameplay never reads JSON.
 
@@ -139,6 +139,8 @@ acknowledgment and rendering can lose that visual notice, but never the achievem
 | Guardian of the Blue | Complete sector 10 |
 | Nightmare Below | Complete any sector on Abyss |
 | Fully Equipped | Reach an upgrade's configured maximum level |
+| Return the Reef Song | Complete sector 6 |
+| Cool the Borealis | Complete sector 7 |
 
 Run statistics commit once on the existing result transition. Failed dives count collected
 plastic, destroyed enemies, cleanup and rescue; completion achievements require success.
@@ -153,7 +155,7 @@ sign-in, network permission or automatic remote synchronization has been added.
 
 ## Verification and manual scenarios
 
-Verified on Windows: **130 JUnit invocations**, root asset license/hash checks, desktop
+Verified on Windows: **160 JUnit invocations**, root asset license/hash checks, desktop
 distribution, real OpenGL smoke and a separate application reload, Android debug APK,
 and Android lint (0 errors, 5 existing warnings). The new tests cover malformed configs,
 fallbacks, config effect changes, concurrent purchases, storage failure rollback, all

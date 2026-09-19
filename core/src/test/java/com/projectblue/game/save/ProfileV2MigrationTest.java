@@ -17,7 +17,7 @@ class ProfileV2MigrationTest {
     @Test void v2MigrationPreservesEverySectorRecordEconomyAndPaidBenefit() throws IOException {
         ProfileCodec codec = new ProfileCodec();
         Profile migrated = codec.decode(fixture());
-        assertEquals(4,migrated.version); assertEquals(444,migrated.totalSalvage); assertEquals(8,migrated.completedRuns);
+        assertEquals(GameConfig.PROFILE_VERSION,migrated.version); assertEquals(444,migrated.totalSalvage); assertEquals(8,migrated.completedRuns);
         assertEquals(9000,migrated.bestScore); assertEquals(3,migrated.bestStars);
         assertFalse(migrated.soundEnabled); assertTrue(migrated.reducedMotion);
         assertEquals(Pilot.NERI,migrated.selectedPilot); assertEquals(Submarine.LEVIATHAN,migrated.selectedSubmarine);
@@ -76,8 +76,26 @@ class ProfileV2MigrationTest {
             if (!key.equals("version")&&!key.equals("checksum")) body.append(key).append('=').append(fields.getProperty(key)).append('\n');
         CRC32 crc=new CRC32(); crc.update(body.toString().getBytes(StandardCharsets.UTF_8));
         Profile migrated=codec.decode(body+"checksum="+crc.getValue()+"\n");
-        assertEquals(4,migrated.version); assertEquals(321,migrated.totalSalvage);
+        assertEquals(GameConfig.PROFILE_VERSION,migrated.version); assertEquals(321,migrated.totalSalvage);
         assertFalse(migrated.achievementUnlocked(Achievement.SUNKEN_CITY_RESTORED));
         assertFalse(migrated.achievementUnlocked(Achievement.BLACK_TIDE_CLEARED));
+    }
+    @Test void v4ProfileAddsDeepSectorAchievementsWithoutLosingExistingProgress() throws IOException {
+        ProfileCodec codec=new ProfileCodec(); Profile source=new Profile(); source.totalSalvage=654;
+        String encoded=codec.encode(source);
+        Properties fields=new Properties(); fields.load(new StringReader(encoded)); fields.setProperty("version","4");
+        for (Achievement achievement:new Achievement[]{Achievement.SILENT_REEF_RESTORED,Achievement.FROZEN_DEPTHS_CLEARED}) {
+            fields.remove("achievement."+achievement); fields.remove("achievementUnlocked."+achievement);
+            fields.remove("notificationPending."+achievement);
+        }
+        StringBuilder body=new StringBuilder("version=4\n");
+        for (String key:new TreeSet<>(fields.stringPropertyNames()))
+            if (!key.equals("version")&&!key.equals("checksum")) body.append(key).append('=').append(fields.getProperty(key)).append('\n');
+        CRC32 crc=new CRC32(); crc.update(body.toString().getBytes(StandardCharsets.UTF_8));
+        Profile migrated=codec.decode(body+"checksum="+crc.getValue()+"\n");
+        assertEquals(GameConfig.PROFILE_VERSION,migrated.version); assertEquals(654,migrated.totalSalvage);
+        assertFalse(migrated.achievementUnlocked(Achievement.SILENT_REEF_RESTORED));
+        assertFalse(migrated.achievementUnlocked(Achievement.FROZEN_DEPTHS_CLEARED));
+        assertTrue(codec.encode(migrated).contains("achievement.SILENT_REEF_RESTORED=0"));
     }
 }

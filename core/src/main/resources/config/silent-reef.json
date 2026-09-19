@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "id": "SILENT_REEF",
+  "missionType": "SILENT_REEF",
+  "displayName": "Silent Reef",
+  "briefing": "NEREID sonar pollution has silenced this reef. Use measured sonar pulses to reveal concealed hunters, reef obstacles, and stranded wildlife before disabling the Resonance Engine.",
+  "introMessage": "TAP SONAR / REVEAL THE SILENT REEF",
+  "midpointMessage": "FALSE ECHOES RISING / CONSERVE SONAR ENERGY",
+  "midpointStart": 150,
+  "midpointDuration": 14,
+  "durationSeconds": 350,
+  "deadlineSeconds": 420,
+  "recoverySeconds": 8,
+  "cleaningSpeedMultiplier": 0.7,
+  "netSeconds": 2.2,
+  "netSpeedMultiplier": 0.52,
+  "currentStrength": 18,
+  "hostileBulletLimit": 78,
+  "sonar": {
+    "maxEnergy": 100,
+    "pulseCost": 28,
+    "regenPerSecond": 4.5,
+    "revealSeconds": 3.2,
+    "pickupEnergy": 45
+  },
+  "boss": {
+    "kind": "RESONANCE_ENGINE", "name": "Resonance Engine", "start": 305,
+    "coreHealth": 1040, "pipeHealth": 125, "droneBudget": 6,
+    "arrivalSeconds": 2.5, "telegraphSeconds": 1.6, "attackInterval": 3.1,
+    "pressInset": 105, "salvage": 105
+  },
+  "enemies": [
+    {
+      "id":"ECHO_HUNTER","displayName":"EchoHunter","movement":"HUNTER","weapon":"AIMED","ability":"ECHO_HUNTER",
+      "stats":{"health":54,"speed":82,"radius":25,"shotInterval":3.2,"bulletSpeed":185,"damage":9,"lifetime":31,"frontArmor":false,"repairAmount":0},
+      "reward":{"score":205,"salvage":9}
+    },
+    {
+      "id":"SOUND_MINE","displayName":"SoundMine","movement":"HOLD","weapon":"NONE","ability":"SOUND_MINE",
+      "stats":{"health":42,"speed":30,"radius":24,"shotInterval":4.5,"bulletSpeed":155,"damage":8,"lifetime":38,"frontArmor":false,"repairAmount":0},
+      "reward":{"score":190,"salvage":8}
+    },
+    {
+      "id":"SILENT_STALKER","displayName":"SilentStalker","movement":"SWEEP","weapon":"AIMED","ability":"SILENT_STALKER",
+      "stats":{"health":46,"speed":63,"radius":23,"shotInterval":3.8,"bulletSpeed":200,"damage":10,"lifetime":33,"frontArmor":false,"repairAmount":0},
+      "reward":{"score":230,"salvage":10}
+    },
+    {
+      "id":"RESONANCE_DRONE","displayName":"ResonanceDrone","movement":"HOLD","weapon":"TRIPLE","ability":"RESONANCE_DRONE",
+      "stats":{"health":72,"speed":39,"radius":31,"shotInterval":4,"bulletSpeed":170,"damage":8,"lifetime":40,"frontArmor":true,"repairAmount":0},
+      "reward":{"score":255,"salvage":13}
+    }
+  ],
+  "wasteDefinitions": [
+    {"kind":"BOTTLE","radius":12,"cleanMultiplier":1,"drift":41,"salvage":1,"plastic":true},
+    {"kind":"BAG","radius":16,"cleanMultiplier":1.2,"drift":37,"salvage":1,"plastic":true},
+    {"kind":"METAL","radius":18,"cleanMultiplier":1.8,"drift":34,"salvage":4,"plastic":false},
+    {"kind":"NET","radius":31,"cleanMultiplier":2.4,"drift":29,"salvage":2,"plastic":false},
+    {"kind":"DIRTY_WATER","radius":62,"cleanMultiplier":4.4,"drift":24,"salvage":3,"plastic":false}
+  ],
+  "creatureDefinitions": [
+    {"kind":"REEF_FISH","radius":23,"rescueMultiplier":0.9,"drift":22,"timeoutSeconds":24},
+    {"kind":"MANTA","radius":34,"rescueMultiplier":1.25,"drift":18,"timeoutSeconds":28}
+  ],
+  "waves": [
+    {"time":14,"enemy":"ECHO_HUNTER","count":2,"interval":6,"x":150,"spacing":240},
+    {"time":42,"enemy":"SOUND_MINE","count":3,"interval":5,"x":95,"spacing":175},
+    {"time":72,"enemy":"SILENT_STALKER","count":3,"interval":4,"x":100,"spacing":170},
+    {"time":105,"enemy":"RESONANCE_DRONE","count":2,"interval":7,"x":155,"spacing":230},
+    {"time":137,"enemy":"ECHO_HUNTER","count":4,"interval":3,"x":75,"spacing":130},
+    {"time":171,"enemy":"SOUND_MINE","count":3,"interval":4,"x":95,"spacing":175},
+    {"time":204,"enemy":"SILENT_STALKER","count":4,"interval":3,"x":75,"spacing":130},
+    {"time":238,"enemy":"RESONANCE_DRONE","count":3,"interval":5,"x":90,"spacing":180},
+    {"time":272,"enemy":"ECHO_HUNTER","count":4,"interval":3,"x":75,"spacing":130}
+  ],
+  "props": [
+    {"time":5,"kind":"MECHANIC","environment":"SONAR_CELL","x":390},
+    {"time":12,"kind":"MECHANIC","environment":"REEF_OBSTACLE","x":150},
+    {"time":24,"kind":"CREATURE","creature":"REEF_FISH","x":380},
+    {"time":37,"kind":"WASTE","waste":"METAL","x":250},
+    {"time":50,"kind":"MECHANIC","environment":"REEF_OBSTACLE","x":405},
+    {"time":63,"kind":"MECHANIC","environment":"SONAR_CELL","x":120},
+    {"time":77,"kind":"CREATURE","creature":"MANTA","x":270},
+    {"time":91,"kind":"MECHANIC","environment":"REEF_OBSTACLE","x":115},
+    {"time":106,"kind":"WASTE","waste":"DIRTY_WATER","x":410},
+    {"time":121,"kind":"MECHANIC","environment":"SONAR_CELL","x":300},
+    {"time":136,"kind":"CREATURE","creature":"REEF_FISH","x":170},
+    {"time":151,"kind":"MECHANIC","environment":"REEF_OBSTACLE","x":390},
+    {"time":168,"kind":"WASTE","waste":"BAG","x":250},
+    {"time":185,"kind":"MECHANIC","environment":"SONAR_CELL","x":430},
+    {"time":202,"kind":"CREATURE","creature":"MANTA","x":115},
+    {"time":219,"kind":"MECHANIC","environment":"REEF_OBSTACLE","x":290},
+    {"time":237,"kind":"WASTE","waste":"METAL","x":410},
+    {"time":255,"kind":"MECHANIC","environment":"SONAR_CELL","x":145},
+    {"time":273,"kind":"CREATURE","creature":"REEF_FISH","x":350}
+  ]
+}

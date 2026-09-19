@@ -33,13 +33,17 @@ public final class GameWorld {
     private final GhostNetHarvester harvester;
     private final UrbanSalvager urbanSalvager;
     private final OilKraken oilKraken;
+    private final ResonanceEngine resonanceEngine;
+    private final BorealisDrill borealisDrill;
+    private final SonarSystem sonar;
+    private final ThermalSystem thermal;
     // Separate stream: changing a visual effect must never change gameplay spawns.
     private final RandomProvider effects = RandomProvider.seeded(7);
     private float elapsed, invulnerability, slowTimer, recoveryTimer, visibilityExposure, hazardDamageTimer;
     private final WeaponController weapons;
     private int shield, damageTaken, cleanedCount, coralDamage, combatScore, enemiesEncountered;
     private int spawnedDrones, spawnedPlastic, spawnedTurtles, kills, plasticCount, rescueCount, salvageCount;
-    private int oilSpawned, oilCleaned, valvesClosed, bossOilTotal;
+    private int oilSpawned, oilCleaned, valvesClosed, bossOilTotal, drillPointsDisabled;
     private boolean finished, bossSpawned, cleaning, recovering;
     private LevelResult result;
 
@@ -61,6 +65,12 @@ public final class GameWorld {
             ? new UrbanSalvager(mission.boss,spec.tuning().health(),spec.tuning().bossCadence()) : null;
         oilKraken = mission != null && mission.boss.kind()==MissionConfig.BossKind.OIL_KRAKEN
             ? new OilKraken(mission.boss,spec.tuning().health(),spec.tuning().bossCadence()) : null;
+        resonanceEngine = mission != null && mission.boss.kind()==MissionConfig.BossKind.RESONANCE_ENGINE
+            ? new ResonanceEngine(mission.boss,spec.tuning().health(),spec.tuning().bossCadence()) : null;
+        borealisDrill = mission != null && mission.boss.kind()==MissionConfig.BossKind.BOREALIS_DRILL
+            ? new BorealisDrill(mission.boss,spec.tuning().health(),spec.tuning().bossCadence()) : null;
+        sonar=mission!=null && mission.sonar!=null?new SonarSystem(mission.sonar,spec.difficulty()):null;
+        thermal=mission!=null && mission.thermal!=null?new ThermalSystem(mission.thermal,spec.difficulty()):null;
         weapons = new WeaponController(spec.loadout());
         shield = spec.loadout().shieldCapacity();
         player.reset();
@@ -76,7 +86,9 @@ public final class GameWorld {
         invulnerability = Math.max(0, invulnerability - dt);
         slowTimer = Math.max(0, slowTimer - dt);
         hazardDamageTimer=Math.max(0,hazardDamageTimer-dt);
-        visibilityExposure=mission!=null && mission.type==MissionConfig.MissionType.BLACK_TIDE ? .18f : 0;
+        if (sonar!=null) sonar.update(dt);
+        visibilityExposure=mission!=null && mission.type==MissionConfig.MissionType.BLACK_TIDE ? .18f
+            : mission!=null && mission.type==MissionConfig.MissionType.SILENT_REEF ? .82f : 0;
         cleaning = mission != null && cleaningInRange();
         EnvironmentSystems.Route activeRoute=route();
         if (moving) {
@@ -103,6 +115,7 @@ public final class GameWorld {
         updateTurtles(dt);
         if (mission != null) updateCorals(dt);
         if (mission != null) { updateEnvironments(dt); updateHazards(dt); }
+        if (thermal!=null) updateThermal(dt);
         updateSalvage(dt);
         updateParticles(dt);
         if (mission != null) updateMissionEnd(dt);
@@ -146,14 +159,15 @@ public final class GameWorld {
                 if (e!=null) {
                     MissionConfig.Creature creature=event.creature()==null?mission.creature(MissionConfig.CreatureKind.TURTLE):event.creature();
                     e.x=event.x(); e.y=SPAWN_Y; e.radius=creature.radius(); e.vy=-creature.drift(); e.creature=creature;
-                    e.lifetime=creature.timeoutSeconds(); spawnedTurtles++;
+                    e.lifetime=creature.timeoutSeconds(); e.concealed=mission.type==MissionConfig.MissionType.SILENT_REEF; spawnedTurtles++;
                 }
             }
             case CORAL -> {
                 Entity e=corals.obtain();
                 if (e!=null) { e.x=event.x(); e.y=SPAWN_Y; e.radius=42; e.health=e.maxHealth=30; e.vy=-27; }
             }
-            case MECHANIC -> spawnEnvironment(event.environment(),event.x(),SPAWN_Y);
+            case MECHANIC -> spawnEnvironment(event.environment(),event.x(),
+                event.environment()==MissionConfig.EnvironmentKind.ICE_FALL?780:SPAWN_Y);
         }
     }
     private void spawnEnemy(MissionConfig.Enemy definition,float x,float y) {
@@ -169,6 +183,8 @@ public final class GameWorld {
         if (definition.ability()==MissionConfig.EnemyAbility.AMBUSH_DRONE
             || mission.type==MissionConfig.MissionType.BLACK_TIDE)
             e.hiddenTime=EnvironmentSystems.hiddenSeconds(spec.difficulty());
+        e.concealed=definition.ability()==MissionConfig.EnemyAbility.SILENT_STALKER
+            || definition.ability()==MissionConfig.EnemyAbility.SOUND_MINE;
     }
 
     private void spawnEnvironment(MissionConfig.EnvironmentKind kind,float x,float y) {
@@ -184,6 +200,13 @@ public final class GameWorld {
             case COLLAPSIBLE -> { e.radius=48; e.health=e.maxHealth=55; e.vy=-25; }
             case CLEANUP_CAPSULE -> { e.radius=19; e.vy=-34; }
             case VALVE -> { e.radius=31; e.health=e.maxHealth=1; e.vy=-27; }
+            case REEF_OBSTACLE -> { e.radius=46; e.health=e.maxHealth=65; e.vy=-25; e.concealed=true; }
+            case SONAR_CELL -> { e.radius=20; e.vy=-34; e.concealed=true; }
+            case ICE_FALL -> { e.radius=42; e.health=e.maxHealth=58; e.vy=-18; e.timer=EnvironmentSystems.iceWarning(spec.difficulty()); }
+            case THERMAL_VENT -> { e.radius=76; e.vy=-16; }
+            case COLD_ZONE -> { e.radius=74; e.vy=-18; }
+            case DRILL_POINT -> { e.radius=36; e.health=e.maxHealth=90; e.vy=-22; }
+            case ICE_WALL -> { e.radius=52; e.health=e.maxHealth=70; e.vy=-20; }
             default -> { e.radius=25; e.vy=-28; }
         }
     }
@@ -292,7 +315,59 @@ public final class GameWorld {
                     enemy.repairTimer=2.5f;
                 }
             }
+            case SOUND_MINE -> {
+                if (enemy.y>PLAY_MAX_Y) { enemy.repairTimer=1.2f; return; }
+                enemy.repairTimer-=dt;
+                if (enemy.repairTimer<=.75f) enemy.warned=true;
+                if (enemy.repairTimer<=0) {
+                    fireRadial(enemy.x,enemy.y,4+spec.difficulty().ordinal()*2,
+                        enemy.enemy.stats().bulletSpeed()*spec.tuning().bulletSpeed(),enemy.enemy.stats().damage());
+                    enemy.active=false;
+                }
+            }
+            case RESONANCE_DRONE -> {
+                if (enemy.y>PLAY_MAX_Y) return;
+                enemy.repairTimer-=dt;
+                if (enemy.repairTimer<=0) {
+                    fireRadial(enemy.x,enemy.y,3+spec.difficulty().ordinal(),
+                        enemy.enemy.stats().bulletSpeed()*spec.tuning().bulletSpeed(),enemy.enemy.stats().damage());
+                    enemy.repairTimer=4.8f/spec.tuning().fireRate(); enemy.effectTime=.45f;
+                }
+            }
+            case ICE_DRILLER -> {
+                if (enemy.y>PLAY_MAX_Y) return;
+                enemy.repairTimer-=dt;
+                if (enemy.repairTimer<=0 && enemy.y<PLAY_MAX_Y) {
+                    spawnEnvironment(MissionConfig.EnvironmentKind.ICE_FALL,player.x,Math.min(790,player.y+360));
+                    enemy.repairTimer=5.2f/spec.tuning().fireRate(); enemy.effectTime=.45f;
+                }
+            }
+            case THERMAL_MINE -> {
+                if (enemy.y>PLAY_MAX_Y) { enemy.repairTimer=1.2f; return; }
+                enemy.repairTimer-=dt;
+                if (enemy.repairTimer<=.8f) enemy.warned=true;
+                if (enemy.repairTimer<=0) {
+                    spawnEnvironment(MissionConfig.EnvironmentKind.THERMAL_VENT,enemy.x,enemy.y);
+                    fireRadial(enemy.x,enemy.y,4+spec.difficulty().ordinal(),145,enemy.enemy.stats().damage());
+                    enemy.active=false;
+                }
+            }
+            case HEAT_VENT_GUARD -> {
+                if (enemy.y>PLAY_MAX_Y) return;
+                enemy.repairTimer-=dt;
+                if (enemy.repairTimer<=0 && enemy.y<PLAY_MAX_Y) {
+                    spawnEnvironment(MissionConfig.EnvironmentKind.THERMAL_VENT,enemy.x,enemy.y-35);
+                    enemy.repairTimer=6f/spec.tuning().fireRate(); enemy.effectTime=.4f;
+                }
+            }
             default -> { }
+        }
+    }
+
+    private void fireRadial(float x,float y,int count,float speed,int damage) {
+        for (int i=0;i<count;i++) {
+            double angle=Math.PI*2*i/count;
+            hostileProjectile(x,y,(float)Math.cos(angle)*speed,(float)Math.sin(angle)*speed,damage,0);
         }
     }
 
@@ -343,6 +418,8 @@ public final class GameWorld {
                 case GHOST_NET_HARVESTER -> updateHarvester(dt);
                 case URBAN_SALVAGER -> updateUrbanSalvager(dt);
                 case OIL_KRAKEN -> updateOilKraken(dt);
+                case RESONANCE_ENGINE -> updateResonanceEngine(dt);
+                case BOREALIS_DRILL -> updateBorealisDrill(dt);
             }
             return;
         }
@@ -472,6 +549,65 @@ public final class GameWorld {
             spawnHazard(MissionConfig.EnvironmentKind.OIL_FIELD,80+random.nextFloat()*(WIDTH-160),430+random.nextFloat()*220,true);
         if (oilKraken.defeated()) beginRecovery();
     }
+    private void updateResonanceEngine(float dt) {
+        if (!bossSpawned && elapsed>=mission.boss.start()) {
+            bossSpawned=true; timeline.stop(); resonanceEngine.start(); boss.reset();
+            boss.x=WIDTH/2f; boss.y=830; boss.radius=74;
+            boss.health=boss.maxHealth=resonanceEngine.maxHealth(); enemiesEncountered++;
+        }
+        if (!bossSpawned || recovering) return;
+        resonanceEngine.update(dt);
+        boss.x=WIDTH/2f+(float)Math.sin(resonanceEngine.stateTime()*.5f*spec.tuning().bossMovement())*54;
+        boss.y=Math.max(744,830-resonanceEngine.stateTime()*29); boss.health=resonanceEngine.health();
+        boolean weak=resonanceEngine.weakPointsActive();
+        float swing=(float)Math.sin(elapsed*1.35f)*62;
+        configureBossPart(bossLeftPipe,145+swing,boss.y-25,resonanceEngine.weakPointHealth(true),resonanceEngine.maxWeakPointHealth(),weak);
+        configureBossPart(bossRightPipe,395-swing,boss.y-25,resonanceEngine.weakPointHealth(false),resonanceEngine.maxWeakPointHealth(),weak);
+        bossLeftPipe.concealed=bossRightPipe.concealed=true;
+        if (resonanceEngine.consumeWave()) fireResonanceWave();
+        if (resonanceEngine.consumeMine()) {
+            spawnEnemy(mission.enemy("SOUND_MINE"),100+random.nextFloat()*(WIDTH-200),boss.y-45);
+        }
+        if (resonanceEngine.consumeDecoyShift()) boss.value++;
+        if (resonanceEngine.defeated()) beginRecovery();
+    }
+    private void updateBorealisDrill(float dt) {
+        if (!bossSpawned && elapsed>=mission.boss.start()) {
+            bossSpawned=true; timeline.stop(); borealisDrill.start(); boss.reset();
+            boss.x=WIDTH/2f; boss.y=830; boss.radius=78;
+            boss.health=boss.maxHealth=borealisDrill.maxHealth(); enemiesEncountered++;
+            spawnEnvironment(MissionConfig.EnvironmentKind.COLD_ZONE,WIDTH/2f,330);
+        }
+        if (!bossSpawned || recovering) return;
+        BorealisDrill.State before=borealisDrill.state();
+        borealisDrill.update(dt);
+        boss.x=WIDTH/2f+(float)Math.sin(borealisDrill.stateTime()*.38f*spec.tuning().bossMovement())*42;
+        boss.y=Math.max(742,830-borealisDrill.stateTime()*28); boss.health=borealisDrill.health();
+        boolean units=borealisDrill.state()==BorealisDrill.State.COOLING_UNITS;
+        configureBossPart(bossLeftPipe,145,boss.y-10,borealisDrill.unitHealth(true),borealisDrill.maxUnitHealth(),units);
+        configureBossPart(bossRightPipe,395,boss.y-10,borealisDrill.unitHealth(false),borealisDrill.maxUnitHealth(),units);
+        if (before!=BorealisDrill.State.THERMAL_VENTS && borealisDrill.state()==BorealisDrill.State.THERMAL_VENTS) {
+            spawnEnvironment(MissionConfig.EnvironmentKind.COLD_ZONE,120,260);
+            spawnEnvironment(MissionConfig.EnvironmentKind.COLD_ZONE,420,470);
+        }
+        if (borealisDrill.consumeDrillVolley()) fireBossVolley();
+        if (borealisDrill.consumeIceFall()) {
+            int count=1+spec.difficulty().ordinal()/2;
+            for (int i=0;i<count;i++) spawnEnvironment(MissionConfig.EnvironmentKind.ICE_FALL,
+                80+random.nextFloat()*(WIDTH-160),Math.min(790,player.y+340+i*45));
+        }
+        if (borealisDrill.consumeThermalVent()) spawnEnvironment(MissionConfig.EnvironmentKind.THERMAL_VENT,
+            75+random.nextFloat()*(WIDTH-150),430+random.nextFloat()*210);
+        if (borealisDrill.defeated()) beginRecovery();
+    }
+    private void fireResonanceWave() {
+        int count=Math.max(6,spec.tuning().bossProjectiles()+3);
+        float speed=spec.tuning().shotSpeed()*.82f;
+        for (int i=0;i<count;i++) {
+            double angle=Math.PI*2*i/count+elapsed*.3f;
+            hostileProjectile(boss.x,boss.y-35,(float)Math.cos(angle)*speed,(float)Math.sin(angle)*speed,8,0);
+        }
+    }
     private void serviceBossValve(Entity valve,boolean left,float dt) {
         if (!valve.active) return;
         if (near(valve,spec.loadout().cleanupRadius())) {
@@ -538,6 +674,8 @@ public final class GameWorld {
         if (harvester!=null) return harvester.phase();
         if (urbanSalvager!=null) return urbanSalvager.phase();
         if (oilKraken!=null) return oilKraken.phase();
+        if (resonanceEngine!=null) return resonanceEngine.phase();
+        if (borealisDrill!=null) return borealisDrill.phase();
         if (!boss.active) return 0;
         float remaining = (float) boss.health / boss.maxHealth;
         return Math.min(spec.tuning().bossPhases(), remaining > .66f ? 1 : remaining > .33f ? 2 : 3);
@@ -619,6 +757,10 @@ public final class GameWorld {
             Entity e=environments.at(i);
             if (!e.active || e.environment==MissionConfig.EnvironmentKind.VALVE
                 || e.environment==MissionConfig.EnvironmentKind.CLEANUP_CAPSULE
+                || e.environment==MissionConfig.EnvironmentKind.SONAR_CELL
+                || e.environment==MissionConfig.EnvironmentKind.THERMAL_VENT
+                || e.environment==MissionConfig.EnvironmentKind.COLD_ZONE
+                || e.environment==MissionConfig.EnvironmentKind.DRILL_POINT
                 || !Rules.overlaps(bullet.x,bullet.y,bullet.radius,e.x,e.y,e.radius)) continue;
             bullet.active=false; damageEnvironment(e,bullet.damage); return true;
         }
@@ -632,6 +774,7 @@ public final class GameWorld {
         e.health=Rules.damage(e.health,damage);
         if (e.health>0) return;
         e.active=false; cleanedCount++; salvageCount+=e.environment==MissionConfig.EnvironmentKind.RUIN?5:3;
+        if (e.environment==MissionConfig.EnvironmentKind.DRILL_POINT) drillPointsDisabled++;
         burst(e.x,e.y,0);
     }
     private boolean hitCoral(Entity bullet) {
@@ -662,6 +805,11 @@ public final class GameWorld {
         else if (reefBreaker!=null) { reefBreaker.hitGenerator(left,damage); (left?bossLeftPipe:bossRightPipe).health=reefBreaker.generatorHealth(left); }
         else if (harvester!=null) { harvester.hitGenerator(left,damage); (left?bossLeftPipe:bossRightPipe).health=harvester.generatorHealth(left); }
         else if (urbanSalvager!=null) { urbanSalvager.hitPlate(left,damage); (left?bossLeftPipe:bossRightPipe).health=urbanSalvager.plateHealth(left); }
+        else if (resonanceEngine!=null) {
+            resonanceEngine.hitWeakPoint(left,damage,sonar!=null&&sonar.revealing());
+            (left?bossLeftPipe:bossRightPipe).health=resonanceEngine.weakPointHealth(left);
+        }
+        else if (borealisDrill!=null) { borealisDrill.hitUnit(left,damage); (left?bossLeftPipe:bossRightPipe).health=borealisDrill.unitHealth(left); }
     }
     private void hitBossCore(int damage) {
         if (compactor!=null) { compactor.hitCore(damage); boss.health=compactor.health(); }
@@ -669,6 +817,8 @@ public final class GameWorld {
         else if (harvester!=null) { harvester.hitCore(damage); boss.health=harvester.health(); }
         else if (urbanSalvager!=null) { urbanSalvager.hitCore(damage); boss.health=urbanSalvager.health(); }
         else if (oilKraken!=null) { oilKraken.hitCore(damage); boss.health=oilKraken.health(); }
+        else if (resonanceEngine!=null) { resonanceEngine.hitCore(damage); boss.health=resonanceEngine.health(); }
+        else if (borealisDrill!=null) { borealisDrill.hitCore(damage); boss.health=borealisDrill.health(); }
     }
     private void hitPlayer(int damage) {
         if (invulnerability > 0) return;
@@ -691,7 +841,8 @@ public final class GameWorld {
         for (int i=0;i<environments.capacity();i++) {
             Entity e=environments.at(i);
             if (e.active && (e.environment==MissionConfig.EnvironmentKind.VALVE
-                || e.environment==MissionConfig.EnvironmentKind.CLEANUP_CAPSULE)
+                || e.environment==MissionConfig.EnvironmentKind.CLEANUP_CAPSULE
+                || e.environment==MissionConfig.EnvironmentKind.DRILL_POINT)
                 && near(e,spec.loadout().cleanupRadius())) return true;
         }
         if (oilKraken!=null && oilKraken.state()==OilKraken.State.VALVES
@@ -743,7 +894,8 @@ public final class GameWorld {
     private void updateEnvironments(float dt) {
         for (int i=0;i<environments.capacity();i++) {
             Entity e=environments.at(i); if (!e.active) continue;
-            e.age+=dt; e.y+=e.vy*dt; e.effectTime=Math.max(0,e.effectTime-dt);
+            e.age+=dt; e.effectTime=Math.max(0,e.effectTime-dt); e.revealTime=Math.max(0,e.revealTime-dt);
+            if (e.environment!=MissionConfig.EnvironmentKind.ICE_FALL || e.friendly) e.y+=e.vy*dt;
             if (e.environment==MissionConfig.EnvironmentKind.COLLAPSIBLE && e.y<720) {
                 if (!e.warned) { e.warned=true; e.timer=EnvironmentSystems.collapseWarning(spec.difficulty()); }
                 if (!e.friendly) {
@@ -755,17 +907,42 @@ public final class GameWorld {
                 && near(e,PICKUP_RADIUS+e.radius)) {
                 e.active=false; cleanedCount++; salvageCount+=2; absorbNearestOil(); burst(e.x,e.y,1); continue;
             }
-            if (e.environment==MissionConfig.EnvironmentKind.VALVE) {
+            if (e.environment==MissionConfig.EnvironmentKind.SONAR_CELL && near(e,PICKUP_RADIUS+e.radius)) {
+                e.active=false; cleanedCount++; salvageCount+=2; sonar.recharge(mission.sonar.pickupEnergy()); burst(e.x,e.y,1); continue;
+            }
+            if (e.environment==MissionConfig.EnvironmentKind.ICE_FALL && !e.friendly) {
+                e.warned=true; e.timer-=dt;
+                if (e.timer<=0) { e.friendly=true; e.vy=-150; }
+            }
+            if (e.environment==MissionConfig.EnvironmentKind.VALVE || e.environment==MissionConfig.EnvironmentKind.DRILL_POINT) {
                 if (near(e,spec.loadout().cleanupRadius())) {
                     e.progress+=dt;
                     if (e.progress>=EnvironmentSystems.interactionSeconds(e.environment,spec.difficulty())) {
-                        e.active=false; valvesClosed++; cleanedCount++; salvageCount+=4; burst(e.x,e.y,1); continue;
+                        e.active=false;
+                        if (e.environment==MissionConfig.EnvironmentKind.VALVE) valvesClosed++; else drillPointsDisabled++;
+                        cleanedCount++; salvageCount+=4; burst(e.x,e.y,1); continue;
                     }
                 } else e.progress=0;
             } else if (e.environment!=MissionConfig.EnvironmentKind.CLEANUP_CAPSULE
+                && e.environment!=MissionConfig.EnvironmentKind.SONAR_CELL
+                && e.environment!=MissionConfig.EnvironmentKind.THERMAL_VENT
+                && e.environment!=MissionConfig.EnvironmentKind.COLD_ZONE
+                && (e.environment!=MissionConfig.EnvironmentKind.ICE_FALL || e.friendly)
                 && Rules.overlaps(e.x,e.y,e.radius,player.x,player.y,player.radius)) hitPlayer(CONTACT_DAMAGE);
             if (e.y<-e.radius) e.active=false;
         }
+    }
+    private void updateThermal(float dt) {
+        float exposure=0; boolean cold=false;
+        for (int i=0;i<environments.capacity();i++) {
+            Entity e=environments.at(i);
+            if (!e.active || !Rules.overlaps(e.x,e.y,e.radius,player.x,player.y,player.radius)) continue;
+            if (e.environment==MissionConfig.EnvironmentKind.THERMAL_VENT) exposure+=1;
+            else if (e.environment==MissionConfig.EnvironmentKind.COLD_ZONE) cold=true;
+        }
+        thermal.update(dt,exposure,cold);
+        int damage=thermal.consumeDamage();
+        if (damage>0) hitPlayer(damage);
     }
     private void updateHazards(float dt) {
         if (mission.type==MissionConfig.MissionType.SUNKEN_CITY && midpointActive()) visibilityExposure=Math.max(visibilityExposure,.5f);
@@ -867,7 +1044,9 @@ public final class GameWorld {
         b.damage = damage; b.tracking = tracking;
     }
     public Entity nearestEnemy(float x, float y) {
-        Entity closest = bossLeftPipe.active ? bossLeftPipe : bossRightPipe.active ? bossRightPipe
+        boolean reveal=sonar!=null&&sonar.revealing();
+        Entity closest = bossLeftPipe.active && (!bossLeftPipe.concealed||reveal) ? bossLeftPipe
+            : bossRightPipe.active && (!bossRightPipe.concealed||reveal) ? bossRightPipe
             : boss.active && (mission==null || bossCoreVulnerable()) ? boss : null;
         float distance = closest == null ? Float.MAX_VALUE : distanceSquared(closest, x, y);
         for (int i = 0; i < drones.capacity(); i++) {
@@ -892,13 +1071,19 @@ public final class GameWorld {
                 Entity e=environments.at(i);
                 if (e.active && e.environment!=MissionConfig.EnvironmentKind.VALVE
                     && e.environment!=MissionConfig.EnvironmentKind.CLEANUP_CAPSULE
+                    && e.environment!=MissionConfig.EnvironmentKind.SONAR_CELL
+                    && e.environment!=MissionConfig.EnvironmentKind.THERMAL_VENT
+                    && e.environment!=MissionConfig.EnvironmentKind.COLD_ZONE
+                    && e.environment!=MissionConfig.EnvironmentKind.DRILL_POINT
+                    && (!e.concealed || sonar!=null&&sonar.revealing())
                     && e.y>player.y && e.y<y && Math.abs(e.x-player.x)<=e.radius+3) { target=e; y=e.y; }
             }
         }
         for (int i = 0; i <= drones.capacity() + 2; i++) {
             Entity e = i < drones.capacity() ? drones.at(i) : i == drones.capacity() ? boss
                 : i == drones.capacity() + 1 ? bossLeftPipe : bossRightPipe;
-            if (e.active && (e.enemy==null || enemyTargetable(e)) && e.y > player.y && e.y < y
+            boolean targetable=e.enemy!=null?enemyTargetable(e):!e.concealed||sonar!=null&&sonar.revealing();
+            if (e.active && targetable && e.y > player.y && e.y < y
                 && Math.abs(e.x-player.x) <= e.radius + 3) { target = e; y = e.y; }
         }
         laser.x = player.x; laser.y = player.y + SHOT_OFFSET_Y; laser.vy = y; laser.timer = .09f;
@@ -939,6 +1124,8 @@ public final class GameWorld {
     public GhostNetHarvester harvester() { return harvester; }
     public UrbanSalvager urbanSalvager() { return urbanSalvager; }
     public OilKraken oilKraken() { return oilKraken; }
+    public ResonanceEngine resonanceEngine() { return resonanceEngine; }
+    public BorealisDrill borealisDrill() { return borealisDrill; }
     public int spawnedDrones() { return spawnedDrones; }
     public float progress() { return elapsed / (mission==null?LEVEL_SECONDS:mission.durationSeconds); }
     public float restoration() {
@@ -959,6 +1146,7 @@ public final class GameWorld {
     public int turtleTotal() { return mission==null?TURTLE_COUNT:mission.turtleCount; }
     public int valvesClosed() { return valvesClosed; }
     public int oilCleaned() { return oilCleaned; }
+    public int drillPointsDisabled() { return drillPointsDisabled; }
     public EnvironmentSystems.Route route() {
         MissionConfig.MissionType type=mission==null?MissionConfig.MissionType.BLUE_COAST:mission.type;
         return EnvironmentSystems.route(type,elapsed,spec.difficulty());
@@ -967,8 +1155,28 @@ public final class GameWorld {
         MissionConfig.MissionType type=mission==null?MissionConfig.MissionType.BLUE_COAST:mission.type;
         return EnvironmentSystems.visibilityRadius(type,spec.difficulty(),visibilityExposure);
     }
-    public boolean enemyVisible(Entity enemy) { return enemy!=null && enemy.hiddenTime<=0; }
-    private boolean enemyTargetable(Entity enemy) { return enemy!=null && enemy.active && enemy.hiddenTime<=0; }
+    public boolean enemyVisible(Entity enemy) { return enemy!=null && enemy.hiddenTime<=0
+        && (!enemy.concealed || sonar!=null&&sonar.revealing()); }
+    public boolean environmentVisible(Entity environment) { return environment!=null
+        && (!environment.concealed || sonar!=null&&sonar.revealing()); }
+    public boolean creatureVisible(Entity creature) { return creature!=null
+        && (!creature.concealed || sonar!=null&&sonar.revealing() || creature.friendly); }
+    private boolean enemyTargetable(Entity enemy) { return enemy!=null && enemy.active && enemy.hiddenTime<=0
+        && (!enemy.concealed || sonar!=null&&sonar.revealing()); }
+    public boolean activateSonar() {
+        if (sonar==null || !sonar.activate()) return false;
+        events.emit(SONAR_PULSE,player.x,player.y,0); return true;
+    }
+    public boolean hasSonar() { return sonar!=null; }
+    public float sonarEnergy() { return sonar==null?0:sonar.energy(); }
+    public float sonarCapacity() { return sonar==null?0:sonar.capacity(); }
+    public float sonarCost() { return sonar==null?0:sonar.cost(); }
+    public boolean sonarRevealing() { return sonar!=null&&sonar.revealing(); }
+    public float sonarPulseProgress() { return sonar==null?0:sonar.pulseProgress(); }
+    public boolean hasThermal() { return thermal!=null; }
+    public float thermalHeat() { return thermal==null?0:thermal.heat(); }
+    public float thermalCapacity() { return thermal==null?0:thermal.capacity(); }
+    public float thermalThreshold() { return thermal==null?0:thermal.threshold(); }
     public int coralDamage() { return coralDamage; }
     public boolean midpointActive() { return mission!=null && elapsed>=mission.midpointStart && elapsed<mission.midpointStart+mission.midpointDuration; }
     public boolean bossCoreVulnerable() {
@@ -977,7 +1185,9 @@ public final class GameWorld {
         if (reefBreaker!=null) return reefBreaker.coreVulnerable();
         if (harvester!=null) return harvester.coreVulnerable();
         if (urbanSalvager!=null) return urbanSalvager.coreVulnerable();
-        return oilKraken!=null && oilKraken.coreVulnerable();
+        if (oilKraken!=null) return oilKraken.coreVulnerable();
+        if (resonanceEngine!=null) return resonanceEngine.coreVulnerable();
+        return borealisDrill!=null && borealisDrill.coreVulnerable();
     }
     public boolean cleaning() { return cleaning; }
     public boolean slowed() { return slowTimer>0; }
