@@ -1,24 +1,24 @@
 package com.projectblue.game.ui;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
+import com.badlogic.gdx.graphics.glutils.PixmapTextureData;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
-import com.projectblue.game.assets.GameAssets;
+import com.badlogic.gdx.utils.Array;
 
 /** Original sonar-console panels, built from pixels and the existing original font. */
 public final class MenuTheme implements Disposable {
     public final Skin skin = new Skin();
     public final Drawable panel, star;
-    public MenuTheme() {
-        BitmapFont font = new BitmapFont(Gdx.files.internal(GameAssets.FONT));
+    private final Array<Pixmap> sourcePixels = new Array<>(5);
+    public MenuTheme(BitmapFont font) {
         skin.add("default-font", font);
         star = star();
         panel = panel("panel", Palette.PANEL, Palette.EDGE);
@@ -47,7 +47,7 @@ public final class MenuTheme implements Disposable {
             pixels.fillTriangle(16, 16, 16 + (int) (Math.cos(a) * radius), 16 + (int) (Math.sin(a) * radius),
                 16 + (int) (Math.cos(b) * next), 16 + (int) (Math.sin(b) * next));
         }
-        Texture texture = new Texture(pixels); pixels.dispose();
+        Texture texture = managedTexture(pixels);
         skin.add("star", texture);
         return new TextureRegionDrawable(texture);
     }
@@ -55,11 +55,22 @@ public final class MenuTheme implements Disposable {
         Pixmap pixmap = new Pixmap(6, 6, Pixmap.Format.RGBA8888);
         pixmap.setColor(border); pixmap.fill();
         pixmap.setColor(fill); pixmap.fillRectangle(1, 1, 4, 4);
-        Texture texture = new Texture(pixmap); pixmap.dispose();
+        Texture texture = managedTexture(pixmap);
         skin.add(name, texture);
         NinePatchDrawable drawable = new NinePatchDrawable(new NinePatch(texture, 1, 1, 1, 1));
         drawable.setMinSize(4, 4);
         return drawable;
     }
-    public void dispose() { skin.dispose(); }
+    private Texture managedTexture(Pixmap pixels) {
+        // Retain the small CPU source until shutdown so Android can restore a lost GL context.
+        sourcePixels.add(pixels);
+        return new Texture(new PixmapTextureData(pixels, pixels.getFormat(), false, false, true));
+    }
+    public void dispose() {
+        // AssetManager owns the shared font; Skin owns only its generated textures.
+        skin.remove("default-font", BitmapFont.class);
+        skin.dispose();
+        for (Pixmap pixels : sourcePixels) pixels.dispose();
+        sourcePixels.clear();
+    }
 }

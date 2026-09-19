@@ -1,0 +1,87 @@
+# Google Play release checklist
+
+Official documentation checked on **2026-09-19**. New mobile apps and updates must target
+**Android 16 / API 36** from **2026-08-31**, according to the
+[Play target API policy](https://support.google.com/googleplay/android-developer/answer/11926878).
+The existing project uses `targetSdk 36`, `compileSdk 36`, `minSdk 26`, AGP 8.13.2 and libGDX
+1.14.2. Play's policy is a target requirement, not a separately mandated compile SDK number;
+compile 36 also exceeds the Mobile Ads guide's compile-35 minimum. No speculative SDK bump was made.
+
+## Build and package
+
+- [x] Existing Java/core/Android/desktop module structure retained; no Kotlin source/plugin added.
+- [x] Android-only AdMob/UMP; desktop No-Op services preserved.
+- [x] Central versionCode/versionName retained. Check highest Play code before each upload.
+- [x] Debug uses demo ad IDs; release has explicit opt-in configuration and separate signing.
+- [x] Release is non-debuggable with R8 and resource shrinking; SDK consumer rules retained.
+- [x] App JNI entry-point names preserved; no blanket keep rule for all game/Google classes.
+- [x] Release app logging disabled; integration does not log identifiers or SDK error payloads.
+- [x] Local properties, keystores, ad/secret configuration excluded from Git.
+- [ ] Supply real upload signing via the environment, then verify the signed artifact.
+- [ ] Supply approved production ad/consent/audience settings, or deliberately ship with ads disabled.
+
+Commands (JDK and SDK paths already configured):
+
+```powershell
+.\gradlew.bat :core:test :lwjgl3:build :android:lintDebug :android:verifyDebugAdConfiguration :android:assembleDebug :android:bundleRelease
+.\gradlew.bat :android:verifyReleaseBundle
+powershell -File tools/verify-release-inputs.ps1
+powershell -File tools/verify-android-artifacts.ps1
+.\gradlew.bat :lwjgl3:run --args=--smoke
+.\gradlew.bat :lwjgl3:run --args=--smoke-reload
+```
+
+Artifacts: `android/build/outputs/apk/debug/android-debug.apk`,
+`android/build/outputs/bundle/release/android-release.aab`, and `lwjgl3/build/distributions/`.
+The AAB produced without owner signing credentials is unsigned and is not upload-ready.
+See [signing](RELEASE_SIGNING.md). A bundle build alone does not verify Play's generated APKs.
+
+Google requires [16 KB page compatibility](https://developer.android.com/guide/practices/page-sizes)
+for applicable Android 15+ Play submissions from 2025-11-01. Check both APK ZIP alignment
+(`zipalign -c -P 16 4`) and 64-bit ELF LOAD-segment alignment, and test a 16 KB device/emulator.
+The app packages libGDX natives for arm64-v8a, armeabi-v7a and x86_64 with non-legacy JNI packaging.
+Use Play/internal testing or bundletool to inspect APKs generated from the final signed AAB.
+The [libGDX deployment guide](https://libgdx.com/wiki/deployment/deploying-your-application)
+documents Android packaging considerations.
+
+## Required device and console checks
+
+- [ ] Fresh offline launch and already-consented offline launch both reach gameplay.
+- [ ] Complete, skip, fail, background and process-kill rewarded ads; no duplicate payment.
+- [ ] Continue once, fail again, replay normally; no duplicate base salvage or progression.
+- [ ] First session, insufficient completions, cooldown, failure and active gameplay show no interstitial.
+- [ ] No-fill/show failure transitions normally; Privacy Options updates cached ads correctly.
+- [ ] Test UMP regions/choices using the [privacy matrix](PRIVACY_CHECKLIST.md).
+- [ ] Install a minified release generated from AAB; verify assets/UI/JNI, lifecycle and 16 KB support.
+- [ ] Play internal track/pre-launch report: crashes, ANRs, devices, permissions, accessibility.
+- [ ] Public privacy policy, Data Safety, ads, target audience, app access and content-rating forms.
+- [ ] Confirm developer/account verification and testing requirements shown for this Play account.
+- [ ] Confirm original/licensed assets and store artwork against `assets/licenses/ASSET_LICENSES.md`.
+
+Google Play Games remains an optional adapter extension; local achievements work offline.
+Do not make sign-in mandatory for this release. See [integration notes](ADS_INTEGRATION.md).
+
+## Verification record
+
+Validation on 2026-09-19 (Git-derived version `0.1.16-g07f65ef45ace-dirty`, versionCode 16):
+
+| Check | Result |
+| --- | --- |
+| Core unit suite | 198 tests, zero failures/errors; includes 9 advertising integration tests |
+| Desktop distribution build | Passed |
+| Desktop OpenGL smoke | Passed: menus, all ten sectors, saves, replay, equipment, lifecycle |
+| Separate desktop process reload | Passed: progression, records, equipment, achievements, settings |
+| Android debug APK | Built; official demo configuration, signature and ZIP alignment verified |
+| Android lint | Zero errors; four existing compatibility/orientation/tool-version warnings |
+| Release AAB | Built with R8/resource shrinking; bundletool structural validation passed |
+| 64-bit native libraries in APK/AAB | arm64-v8a and x86_64 ELF LOAD segments support 16 KB alignment |
+| Signing | Zero AAB signature blocks: intentionally unsigned; no release key supplied |
+| Source/index identifiers and ignored files | Verification script passed; only official demo ad IDs |
+| Runtime SDK/device matrix | Pending: no connected Android device or installed emulator |
+
+The AGP-supplied bundletool emits an SDK XML-version compatibility warning on this installed
+command-line SDK; validation still completes successfully. Gradle reports existing deprecated
+features ahead of Gradle 9. Neither is evidence of a Play acceptance test.
+Offline pure-logic/desktop startup is covered; **actual Android airplane-mode startup, UMP
+regional forms, SDK callbacks, minified release launch and a 16 KB runtime are not verified**.
+No production identifiers, release keys or commits were created.

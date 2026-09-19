@@ -20,14 +20,14 @@ public final class PointerInput extends InputAdapter implements PlayerInput {
     }
     private void project(int x, int y) { viewport.unproject(point.set(x, y)); }
     public boolean touchDown(int x, int y, int id, int button) {
-        if (button != Input.Buttons.LEFT || pointer != -1) return false;
+        if (button != Input.Buttons.LEFT) return false;
         project(x, y);
         if (point.x < 0 || point.x > WIDTH || point.y < 0 || point.y > HEIGHT) return false;
         if (point.x >= 444 && point.y >= 864) { pause.run(); return true; }
         if (world.hasSonar() && point.x>=408 && point.x<=516 && point.y>=650 && point.y<=706) {
             world.activateSonar(); return true;
         }
-        if (point.y >= 838) return false;
+        if (point.y >= 838 || pointer != -1) return false;
         pointer = id; originX = point.x; originY = point.y;
         startX = targetX = world.player.x; startY = targetY = world.player.y;
         return true;

@@ -26,6 +26,28 @@ public abstract class StageMenuScreen extends ScreenAdapter {
     private final Label status;
     private final ScrollPane scroll;
     private float time;
+    private TextButton doubleReward, continueReward;
+    protected void rewardActions(boolean failed) {
+        if (!game.platform().ads().isSupported()) return;
+        if (failed) {
+            continueReward = button("reward-continue", "Watch ad / Continue once", () -> game.router().reward(com.projectblue.game.platform.RunRewards.Reward.CONTINUE));
+            body.add(continueReward).height(84).row();
+            note("Optional: restore hull and add 60 seconds. One continue per dive.");
+        } else {
+            doubleReward = button("reward-double", "Watch ad / Double this dive's salvage", () -> game.router().reward(com.projectblue.game.platform.RunRewards.Reward.DOUBLE_SALVAGE));
+            body.add(doubleReward).height(84).row();
+        }
+        note("Rewards require a completed ad. You can always keep playing without ads.");
+    }
+    private void updateRewardButton(TextButton button, com.projectblue.game.platform.RunRewards.Reward reward, String title) {
+        if (button == null) return;
+        var rewards = game.router().rewards();
+        boolean eligible = rewards != null && rewards.eligible(reward);
+        boolean ready = eligible && rewards.available(reward);
+        button.setDisabled(!ready);
+        button.setText(ready ? title : rewards != null && rewards.busy() ? "AD IN PROGRESS"
+            : eligible ? "AD NOT READY / KEEP PLAYING" : "REWARD UNAVAILABLE OR ALREADY USED");
+    }
 
     protected StageMenuScreen(ProjectBlueGame game, String title, String subtitle) {
         this.game = game; profile = game.saves().profile(); skin = game.menuTheme().skin;
@@ -33,9 +55,9 @@ public abstract class StageMenuScreen extends ScreenAdapter {
         root.add(frame).width(492).growY();
         frame.padTop(22).padBottom(18);
         Label division = label("OCEAN RECOVERY DIVISION", .78f, Palette.AQUA);
-        frame.add(division).growX().padBottom(14).row();
-        frame.add(label(title, 1.55f, Palette.TEXT)).growX().padBottom(12).row();
-        frame.add(label(subtitle, .88f, Palette.MUTED)).growX().padBottom(18).row();
+        frame.add(division).growX().minHeight(28).padBottom(14).row();
+        frame.add(label(title, 1.55f, Palette.TEXT)).growX().minHeight(52).padBottom(12).row();
+        frame.add(label(subtitle, .88f, Palette.MUTED)).growX().minHeight(48).padBottom(18).row();
         body.top(); body.defaults().growX().spaceBottom(12);
         scroll = new ScrollPane(body, skin);
         scroll.setFadeScrollBars(false); scroll.setScrollingDisabled(true, false);
@@ -54,7 +76,7 @@ public abstract class StageMenuScreen extends ScreenAdapter {
     }
     protected Label label(String text, float scale, Color color) {
         Label label = new Label(text.toUpperCase(Locale.ROOT), new Label.LabelStyle(skin.getFont("default-font"), color));
-        label.setFontScale(scale); label.setWrap(true); label.setAlignment(Align.left);
+        label.setFontScale(scale * (profile.largeUi ? 1.12f : 1)); label.setWrap(true); label.setAlignment(Align.left);
         return label;
     }
     protected void note(String text) { body.add(label(text, .92f, Palette.MUTED)).growX().padBottom(16).row(); }
@@ -76,7 +98,7 @@ public abstract class StageMenuScreen extends ScreenAdapter {
     }
     protected TextButton button(String id, String text, Runnable action) {
         TextButton button = new TextButton(text.toUpperCase(Locale.ROOT), skin);
-        button.setName(id); button.getLabel().setFontScale(.95f); button.getLabel().setWrap(true);
+        button.setName(id); button.getLabel().setFontScale(profile.largeUi ? 1.05f : .95f); button.getLabel().setWrap(true);
         button.setProgrammaticChangeEvents(false);
         button.pad(14);
         button.addListener(new ChangeListener() {
@@ -99,9 +121,16 @@ public abstract class StageMenuScreen extends ScreenAdapter {
         stage.cancelTouchFocus();
         game.ui().resize(width, height);
         stage.getViewport().update(width, height, true);
-        root.getCell(frame).width(Math.min(640, stage.getViewport().getWorldWidth() - 48));
+        float scaleX=stage.getViewport().getWorldWidth()/Math.max(1,Gdx.graphics.getWidth());
+        float scaleY=stage.getViewport().getWorldHeight()/Math.max(1,Gdx.graphics.getHeight());
+        float safeLeft=Gdx.graphics.getSafeInsetLeft()*scaleX, safeRight=Gdx.graphics.getSafeInsetRight()*scaleX;
+        float safeTop=Gdx.graphics.getSafeInsetTop()*scaleY, safeBottom=Gdx.graphics.getSafeInsetBottom()*scaleY;
+        root.pad(safeTop,safeRight,safeBottom,safeLeft);
+        root.getCell(frame).width(Math.min(640, stage.getViewport().getWorldWidth() - 48 - safeLeft - safeRight));
     }
     public void render(float delta) {
+        updateRewardButton(doubleReward, com.projectblue.game.platform.RunRewards.Reward.DOUBLE_SALVAGE, "WATCH AD / DOUBLE SALVAGE");
+        updateRewardButton(continueReward, com.projectblue.game.platform.RunRewards.Reward.CONTINUE, "WATCH AD / CONTINUE ONCE");
         if (!profile.reducedMotion) time += Math.min(Math.max(delta, 0), .1f);
         game.ocean().backdrop(time, backdropRestoration(), backdropType(), profile.reducedMotion);
         if (game.saves().writeFailed()) status.setText("SAVE FAILED / RETRY IN SETTINGS");

@@ -35,8 +35,8 @@ Combat uses enemies actually encountered. Cleanup includes authored waste and ha
 Rescue uses configured creature signals; Integrity combines remaining hull with protected habitat
 health. Both missions award configured salvage, update the existing achievements, and use the
 shared 0-3 star calculation. Clearing Coral Gardens opens Ghost Nets. Clearing Ghost Nets opens the
-playable Sunken City mission. Profile schema
-v3 is unchanged.
+playable Sunken City mission. Current profile schema v5 preserves these sector records
+and the equipment format introduced in v3.
 
 ## Manual checks
 
@@ -53,7 +53,7 @@ v3 is unchanged.
 6. Compare standard fire with the proximity cutter on nets. Let a timed rescue signal expire and
    confirm Rescue falls without a death animation.
 7. At the Ghost Net Harvester, confirm large net attacks, the moving safe channel, generator-gated
-   core, and all warning states. Complete the mission and confirm Sector 4 is unlocked but cannot
-   launch.
+   core, and all warning states. Complete the mission and confirm Sector 4 is unlocked and
+   launches Sunken City through the shared GameScreen.
 8. Repeat representative runs on Hard, Expert, and Abyss. Confirm wave density, health, shot speed,
    firing rate, boss cadence, projectile count, and movement increase.

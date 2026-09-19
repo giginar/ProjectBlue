@@ -6,18 +6,48 @@ import com.projectblue.game.ProjectBlueGame;
 import com.projectblue.game.config.*;
 import com.projectblue.game.logic.LevelResult;
 import com.projectblue.game.save.Profile;
+import com.projectblue.game.platform.RunRewards;
+import com.projectblue.game.platform.InterstitialPolicy;
 
 /** Transitions commit after render, so a screen can never dispose itself mid-frame. */
 public final class ScreenRouter {
-    public enum Route { MENU, LEVEL_SELECT, HANGAR, SUBMARINE_SELECT, PILOT_SELECT, WEAPON_SELECT, UPGRADES, ACHIEVEMENTS, SETTINGS, CREDITS, FINALE, PLAY, PAUSE, RESUME, RESULT, EXIT }
+    public enum Route { MENU, LEVEL_SELECT, HANGAR, SUBMARINE_SELECT, PILOT_SELECT, WEAPON_SELECT, UPGRADES, ACHIEVEMENTS, SETTINGS, CREDITS, PRIVACY, FINALE, PLAY, PAUSE, RESUME, CONTINUE, RESULT, EXIT }
     private final ProjectBlueGame game;
     private GameScreen run;
     private Route pending;
     private boolean lifecyclePaused;
+    private final InterstitialPolicy interstitials;
+    private RunRewards rewards;
+    private boolean transitionAd, rewardedOnResult;
     private int selectedLevel = 1;
     private Difficulty selectedDifficulty = Difficulty.NORMAL;
-    public ScreenRouter(ProjectBlueGame game) { this.game = game; }
-    public void request(Route route) { if (pending == null) pending = route; }
+    public ScreenRouter(ProjectBlueGame game) {
+        this.game = game;
+        interstitials = new InterstitialPolicy(game.saves(), System::currentTimeMillis);
+    }
+    public RunRewards rewards() { return rewards; }
+    public boolean canContinueRun() { return run != null && run.world().canContinue(); }
+    public void reward(RunRewards.Reward reward) {
+        if (rewards == null || pending != null || transitionAd || lifecyclePaused) return;
+        if (!(game.getScreen() instanceof ResultScreen) && !(game.getScreen() instanceof FinaleScreen)) return;
+        if (reward == RunRewards.Reward.CONTINUE && !canContinueRun()) return;
+        if (rewards.available(reward)) rewardedOnResult = true;
+        rewards.request(reward, applied -> {
+            if (applied && reward == RunRewards.Reward.CONTINUE) request(Route.CONTINUE);
+        });
+    }
+    public void request(Route route) {
+        if (pending != null || transitionAd || rewards != null && rewards.busy()) return;
+        boolean resultBoundary = game.getScreen() instanceof ResultScreen || game.getScreen() instanceof FinaleScreen;
+        boolean menuDestination = route == Route.MENU || route == Route.LEVEL_SELECT || route == Route.HANGAR;
+        if (resultBoundary && menuDestination && !rewardedOnResult && !lifecyclePaused && rewards != null
+            && interstitials.reserve(game.saves().profile().runCompleted, game.platform().ads().isInterstitialAvailable())) {
+            transitionAd = true;
+            java.util.concurrent.atomic.AtomicBoolean once = new java.util.concurrent.atomic.AtomicBoolean();
+            Runnable complete = () -> { if (once.compareAndSet(false, true)) { transitionAd = false; pending = route; } };
+            try { game.platform().ads().showInterstitial(complete); } catch (RuntimeException error) { complete.run(); }
+        } else pending = route;
+    }
     public int selectedLevel() { return selectedLevel; }
     public Difficulty selectedDifficulty() { return selectedDifficulty; }
     public boolean selectLevel(int id) {
@@ -29,7 +59,7 @@ public final class ScreenRouter {
         selectedDifficulty = difficulty; return true;
     }
     public boolean requestDive(int id, Difficulty difficulty) {
-        if (pending != null || lifecyclePaused || !CampaignConfig.isAvailable(id) || !game.saves().profile().canPlay(id, difficulty)) return false;
+        if (pending != null || transitionAd || rewards != null && rewards.busy() || lifecyclePaused || !CampaignConfig.isAvailable(id) || !game.saves().profile().canPlay(id, difficulty)) return false;
         selectedLevel = id; selectedDifficulty = difficulty; request(Route.PLAY); return true;
     }
     public void flush() {
@@ -37,7 +67,7 @@ public final class ScreenRouter {
         Route route = pending; pending = null;
         if (lifecyclePaused && (route == Route.PLAY || route == Route.RESUME)) return;
         switch (route) {
-            case MENU, LEVEL_SELECT, HANGAR, SUBMARINE_SELECT, PILOT_SELECT, WEAPON_SELECT, UPGRADES, ACHIEVEMENTS, SETTINGS, CREDITS, FINALE -> {
+            case MENU, LEVEL_SELECT, HANGAR, SUBMARINE_SELECT, PILOT_SELECT, WEAPON_SELECT, UPGRADES, ACHIEVEMENTS, SETTINGS, CREDITS, PRIVACY, FINALE -> {
                 game.audio().resume(); switchTo(menu(route)); disposeRun();
             }
             case PLAY -> {
@@ -45,6 +75,7 @@ public final class ScreenRouter {
                     switchTo(new LevelSelectScreen(game)); disposeRun(); break;
                 }
                 disposeRun();
+                rewards = new RunRewards(game.saves(), game.platform().ads());
                 run = new GameScreen(game, RunSpec.create(selectedLevel, selectedDifficulty, Loadout.from(game.saves().profile())));
                 game.audio().resume();
                 switchTo(run);
@@ -59,6 +90,12 @@ public final class ScreenRouter {
                     run.resetInput(); game.audio().resume(); switchTo(run);
                 }
             }
+            case CONTINUE -> {
+                if (run != null && run.world().continueAfterFailure()) {
+                    // Commit after rendering; the player explicitly resumes combat from Pause.
+                    run.resetInput(); game.audio().suspend(); switchTo(new PauseScreen(game));
+                }
+            }
             case RESULT -> {
                 if (run != null && run.world().finished()) {
                     LevelResult result = run.world().result();
@@ -67,7 +104,9 @@ public final class ScreenRouter {
                     boolean levelWasOpen = profile.canPlay(nextLevel, Difficulty.NORMAL);
                     Difficulty nextDifficulty = result.difficulty == Difficulty.ABYSS ? null : Difficulty.values()[result.difficulty.ordinal() + 1];
                     boolean difficultyWasOpen = profile.canPlay(result.levelId, nextDifficulty);
-                    var recordResult = game.saves().record(result);
+                    var recordResult = game.saves().recordRun(rewards.runId(), result);
+                    rewardedOnResult = false;
+                    game.platform().ads().preload();
                     String unlocked = "";
                     if (recordResult == com.projectblue.game.save.SaveService.RecordResult.SAVE_FAILED)
                         unlocked += "Progress is retained in memory. Retry Save in Settings before exiting. ";
@@ -77,7 +116,7 @@ public final class ScreenRouter {
                     if (!difficultyWasOpen && nextDifficulty != null && profile.canPlay(result.levelId, nextDifficulty)) unlocked += nextDifficulty + " unlocked for this sector.";
                     if (result.completed && result.levelId==CampaignConfig.LEVEL_COUNT) switchTo(new FinaleScreen(game));
                     else switchTo(new ResultScreen(game, result, unlocked));
-                    disposeRun();
+                    // Keep the frozen world until leaving the result, for one optional continue.
                 }
             }
             case EXIT -> Gdx.app.exit();
@@ -95,6 +134,7 @@ public final class ScreenRouter {
             case ACHIEVEMENTS -> new AchievementsScreen(game);
             case SETTINGS -> new SettingsScreen(game);
             case CREDITS -> new CreditsScreen(game);
+            case PRIVACY -> new PrivacyScreen(game);
             case FINALE -> game.saves().profile().campaignCompleted() ? new FinaleScreen(game) : new LevelSelectScreen(game);
             default -> throw new IllegalArgumentException("Not a menu route");
         };
@@ -105,6 +145,7 @@ public final class ScreenRouter {
         if (old != null && old != run) old.dispose();
     }
     private void disposeRun() {
+        if (rewards != null) { rewards.close(); rewards = null; }
         if (run != null) { run.dispose(); run = null; }
     }
     public void pauseForLifecycle() {

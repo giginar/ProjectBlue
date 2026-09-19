@@ -49,6 +49,7 @@ public final class FinaleScreen extends StageMenuScreen {
         totals.add(label(profile.achievementUnlocked(Achievement.GUARDIAN_OF_THE_BLUE)
             ? "Achievement unlocked / Guardian of the Blue" : "Guardian of the Blue awaits",.94f,Palette.GOLD)).row();
 
+        if (game.router().rewards() != null) rewardActions(false);
         action("replay","Replay NEREID Core / Normal",() -> game.router().requestDive(10,Difficulty.NORMAL));
         route("levels","Replay any sector",ScreenRouter.Route.LEVEL_SELECT);
         route("credits","Continue to credits",ScreenRouter.Route.CREDITS);

@@ -20,11 +20,21 @@ public final class ProfileCodec {
         p.normalize();
         Properties fields = new Properties();
         put(fields, "version", PROFILE_VERSION);
+        put(fields, "rewardRun", p.rewardRun);
+        put(fields, "runResultRecorded", p.runResultRecorded); put(fields, "runCompleted", p.runCompleted);
+        put(fields, "continueUsed", p.continueUsed); put(fields, "salvageDoubled", p.salvageDoubled);
+        put(fields, "runSalvage", p.runSalvage); put(fields, "runPlastic", p.runPlastic); put(fields, "runEnemies", p.runEnemies);
+        put(fields, "adSessions", p.adSessions); put(fields, "adCompletions", p.adCompletions);
+        put(fields, "lastInterstitialAt", p.lastInterstitialAt);
         put(fields, "soundEnabled", p.soundEnabled); put(fields, "musicEnabled", p.musicEnabled);
+        put(fields, "muted", p.muted);
         put(fields, "soundVolume", p.soundVolume); put(fields, "musicVolume", p.musicVolume);
         put(fields, "bestScore", p.bestScore); put(fields, "bestStars", p.bestStars);
         put(fields, "totalSalvage", p.totalSalvage); put(fields, "completedRuns", p.completedRuns);
         put(fields, "reducedMotion", p.reducedMotion);
+        put(fields, "hapticEnabled", p.hapticEnabled); put(fields, "screenShakeEnabled", p.screenShakeEnabled);
+        put(fields, "highContrastTelegraphs", p.highContrastTelegraphs); put(fields, "largeUi", p.largeUi);
+        put(fields, "reducedFlashes", p.reducedFlashes);
         put(fields, "selectedPilot", p.selectedPilot); put(fields, "selectedSubmarine", p.selectedSubmarine);
         put(fields, "selectedWeapon", p.selectedWeapon);
         put(fields, "totalPlastic", p.totalPlastic); put(fields, "totalEnemies", p.totalEnemies);
@@ -70,6 +80,22 @@ public final class ProfileCodec {
                 ProfileMigrations.fromV1(p);
             } else {
                 p.reducedMotion = bool(fields, "reducedMotion");
+                p.rewardRun = fields.getProperty("rewardRun", "");
+                p.runResultRecorded = optionalBool(fields, "runResultRecorded", false);
+                p.runCompleted = optionalBool(fields, "runCompleted", false);
+                p.continueUsed = optionalBool(fields, "continueUsed", false);
+                p.salvageDoubled = optionalBool(fields, "salvageDoubled", false);
+                p.runSalvage = optionalInt(fields, "runSalvage"); p.runPlastic = optionalInt(fields, "runPlastic");
+                p.runEnemies = optionalInt(fields, "runEnemies"); p.adSessions = optionalInt(fields, "adSessions");
+                p.adCompletions = optionalInt(fields, "adCompletions");
+                p.lastInterstitialAt = Math.max(0, Long.parseLong(fields.getProperty("lastInterstitialAt", "0")));
+                // These comfort fields were added as optional current-schema extensions so old v5 saves remain valid.
+                p.muted = optionalBool(fields, "muted", false);
+                p.hapticEnabled = optionalBool(fields, "hapticEnabled", true);
+                p.screenShakeEnabled = optionalBool(fields, "screenShakeEnabled", true);
+                p.highContrastTelegraphs = optionalBool(fields, "highContrastTelegraphs", false);
+                p.largeUi = optionalBool(fields, "largeUi", false);
+                p.reducedFlashes = optionalBool(fields, "reducedFlashes", false);
                 for (int id = 1; id <= CampaignConfig.LEVEL_COUNT; id++) {
                     LevelRecord r = p.level(id);
                     String key = "level." + id + ".";
@@ -103,6 +129,7 @@ public final class ProfileCodec {
         } catch (IllegalArgumentException e) { throw new IOException("Malformed profile", e); }
     }
     private static void put(Properties p, String key, Object value) { p.setProperty(key, value.toString()); }
+    private static int optionalInt(Properties p, String key) { return Math.max(0, Integer.parseInt(p.getProperty(key, "0"))); }
     private static int integer(Properties p, String key) throws IOException { return Integer.parseInt(required(p, key)); }
     private static float decimal(Properties p, String key) throws IOException {
         float value = Float.parseFloat(required(p, key));
@@ -113,6 +140,9 @@ public final class ProfileCodec {
         String value = required(p, key);
         if (!value.equals("true") && !value.equals("false")) throw new IOException("Invalid boolean");
         return Boolean.parseBoolean(value);
+    }
+    private static boolean optionalBool(Properties p, String key, boolean fallback) throws IOException {
+        return p.containsKey(key) ? bool(p, key) : fallback;
     }
     private static String required(Properties p, String key) throws IOException {
         String value = p.getProperty(key);

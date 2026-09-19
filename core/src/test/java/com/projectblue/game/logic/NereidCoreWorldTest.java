@@ -4,7 +4,8 @@ import com.projectblue.game.config.Difficulty;
 import com.projectblue.game.config.Loadout;
 import com.projectblue.game.config.MissionConfig;
 import com.projectblue.game.config.RunSpec;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import static com.projectblue.game.config.GameConfig.STEP;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,8 +34,8 @@ class NereidCoreWorldTest {
         return null;
     }
 
-    @Test void baseLoadoutCanDisablePowerCompleteRecoverySystemsAndEscape() {
-        GameWorld world=new GameWorld(RandomProvider.seeded(19),RunSpec.create(10,Difficulty.NORMAL,Loadout.standard()));
+    private static GameWorld reachEscape(Difficulty difficulty) {
+        GameWorld world=new GameWorld(RandomProvider.seeded(19),RunSpec.create(10,difficulty,Loadout.standard()));
         while (world.elapsed()<world.mission().boss.start()) update(world);
         int guard=5000;
         while (!world.boss.active && guard-->0) {
@@ -59,14 +60,43 @@ class NereidCoreWorldTest {
             Entity target=rescue(world.turtles);
             assertNotNull(target); world.player.x=target.x; world.player.y=target.y; update(world);
         }
-        while (world.leviathanCore().sonarProgress()<world.leviathanCore().sonarRequired()) assertTrue(world.activateSonar());
+        while (world.leviathanCore().sonarProgress()<world.leviathanCore().sonarRequired() && guard-->0) {
+            world.activateSonar();
+            update(world);
+        }
         advance(world,LeviathanCore.State.CORE_EXPOSED);
         world.leviathanCore().hitCore(Integer.MAX_VALUE);
         advance(world,LeviathanCore.State.ESCAPE);
+        return world;
+    }
+
+    @ParameterizedTest @EnumSource(Difficulty.class)
+    void baseLoadoutCanDisablePowerCompleteRecoverySystemsAndEscape(Difficulty difficulty) {
+        GameWorld world = reachEscape(difficulty);
+        int guard = 5000;
         world.player.y=720;
         while (!world.recovering() && !world.finished() && guard-->0) update(world);
         assertTrue(world.recovering()); assertFalse(world.leviathanCore().escapeFailed());
         while (!world.finished() && guard-->0) update(world);
         assertTrue(world.finished()); assertTrue(world.result().completed); assertTrue(world.result().stars>=1);
+    }
+
+    @ParameterizedTest @EnumSource(Difficulty.class)
+    void continueAfterEscapeTimeoutRestartsEscapeAndCanCompleteOnlyOnce(Difficulty difficulty) {
+        GameWorld world = reachEscape(difficulty);
+        world.player.y = 120;
+        int guard = 5000;
+        while (!world.finished() && guard-- > 0) update(world);
+        assertTrue(world.leviathanCore().escapeFailed());
+        assertFalse(world.result().completed);
+        assertTrue(world.continueAfterFailure());
+        update(world);
+        assertFalse(world.finished(), "Continue must not return to an already failed escape");
+        assertTrue(world.leviathanCore().escaping());
+        world.player.y = 720;
+        while (!world.finished() && guard-- > 0) update(world);
+        assertTrue(world.finished());
+        assertTrue(world.result().completed);
+        assertFalse(world.canContinue());
     }
 }

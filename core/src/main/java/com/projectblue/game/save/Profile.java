@@ -10,12 +10,17 @@ import java.util.*;
 public final class Profile {
     private final ContentCatalog content;
     public int version = PROFILE_VERSION;
-    public boolean soundEnabled = true, musicEnabled = true;
+    public boolean soundEnabled = true, musicEnabled = true, muted;
     public float soundVolume = DEFAULT_SOUND_VOLUME, musicVolume = DEFAULT_MUSIC_VOLUME;
     public int bestScore, bestStars, totalSalvage, completedRuns, totalPlastic, totalEnemies;
+    public String rewardRun = "";
+    public boolean runResultRecorded, runCompleted, continueUsed, salvageDoubled;
+    public int runSalvage, runPlastic, runEnemies, adSessions, adCompletions;
+    public long lastInterstitialAt;
     // Preserve the paid v2 magnet benefit without adding a seventh purchasable upgrade.
     public int legacyMagnetLevel, legacyRescuerProgress, legacyExplorerProgress;
-    public boolean reducedMotion;
+    public boolean reducedMotion, hapticEnabled = true, screenShakeEnabled = true;
+    public boolean highContrastTelegraphs, largeUi, reducedFlashes;
     public Pilot selectedPilot = Pilot.KAIA;
     public Submarine selectedSubmarine = Submarine.TIDE;
     public Weapon selectedWeapon = Weapon.PULSE_CANNON;
@@ -121,20 +126,29 @@ public final class Profile {
         if (!unlocked(selectedWeapon)) selectedWeapon = Weapon.PULSE_CANNON;
     }
     public boolean record(LevelResult result) {
+        return record(result, 0, 0, 0);
+    }
+    boolean record(LevelResult result, int creditedSalvage, int creditedPlastic, int creditedEnemies) {
         if (result == null || !canPlay(result.levelId,result.difficulty)) return false;
         level(result.levelId).record(result);
         bestScore = Math.max(bestScore,result.score); bestStars = Math.max(bestStars,result.stars);
-        totalSalvage = add(totalSalvage,Math.max(0,result.salvage));
-        totalPlastic = add(totalPlastic,result.plasticCollected);
-        totalEnemies = add(totalEnemies,result.enemiesDestroyed);
+        totalSalvage = add(totalSalvage,Math.max(0,result.salvage - creditedSalvage));
+        totalPlastic = add(totalPlastic,Math.max(0,result.plasticCollected - creditedPlastic));
+        totalEnemies = add(totalEnemies,Math.max(0,result.enemiesDestroyed - creditedEnemies));
         if (result.completed && result.stars > 0) completedRuns = add(completedRuns,1);
         normalize(); evaluateAchievements(result);
         return true;
     }
     /** Keep the instance because audio and screens retain a reference to it. */
     void copyFrom(Profile p) {
-        version = p.version; soundEnabled = p.soundEnabled; musicEnabled = p.musicEnabled;
+        rewardRun = p.rewardRun; runResultRecorded = p.runResultRecorded; runCompleted = p.runCompleted;
+        continueUsed = p.continueUsed; salvageDoubled = p.salvageDoubled;
+        runSalvage = p.runSalvage; runPlastic = p.runPlastic; runEnemies = p.runEnemies;
+        adSessions = p.adSessions; adCompletions = p.adCompletions; lastInterstitialAt = p.lastInterstitialAt;
+        version = p.version; soundEnabled = p.soundEnabled; musicEnabled = p.musicEnabled; muted = p.muted;
         soundVolume = p.soundVolume; musicVolume = p.musicVolume; reducedMotion = p.reducedMotion;
+        hapticEnabled = p.hapticEnabled; screenShakeEnabled = p.screenShakeEnabled;
+        highContrastTelegraphs = p.highContrastTelegraphs; largeUi = p.largeUi; reducedFlashes = p.reducedFlashes;
         bestScore = p.bestScore; bestStars = p.bestStars; totalSalvage = p.totalSalvage; completedRuns = p.completedRuns;
         totalPlastic = p.totalPlastic; totalEnemies = p.totalEnemies;
         legacyMagnetLevel = p.legacyMagnetLevel; legacyRescuerProgress = p.legacyRescuerProgress; legacyExplorerProgress = p.legacyExplorerProgress;

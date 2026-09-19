@@ -1,4 +1,25 @@
 plugins { id 'com.android.application' version '8.13.2' }
+// Runtime identifiers are injected by the release environment, never stored in source files.
+def envValue = { String name -> providers.environmentVariable(name).getOrElse('') }
+def releaseAds = envValue('PB_ADS_ENABLED') == 'true'
+def sampleAppId = 'ca-app-pub-3940256099942544~3347511713'
+def sampleRewardId = 'ca-app-pub-3940256099942544/5224354917'
+def sampleInterstitialId = 'ca-app-pub-3940256099942544/1033173712'
+def ageTreatment = envValue('PB_AD_AGE_TREATMENT')
+def umpUnderAge = envValue('PB_UMP_UNDER_AGE')
+if (ageTreatment && !(ageTreatment in ['UNSPECIFIED', 'CHILD', 'TEEN'])) throw new GradleException('Invalid PB_AD_AGE_TREATMENT')
+if (umpUnderAge && !(umpUnderAge in ['true', 'false'])) throw new GradleException('Invalid PB_UMP_UNDER_AGE')
+if (releaseAds) {
+    ['PB_ADMOB_APP_ID', 'PB_REWARDED_AD_ID', 'PB_INTERSTITIAL_AD_ID'].each { key ->
+        def separator = key == 'PB_ADMOB_APP_ID' ? '~' : '/'
+        if (!(envValue(key) ==~ /ca-app-pub-[0-9]{16}${separator}[0-9]{10}/) || envValue(key).contains('3940256099942544'))
+            throw new GradleException("Missing or invalid production identifier: $key")
+    }
+    if (!ageTreatment || !umpUnderAge) throw new GradleException('Release ads require explicit audience settings: PB_AD_AGE_TREATMENT and PB_UMP_UNDER_AGE')
+}
+def signingNames = ['PB_UPLOAD_KEYSTORE', 'PB_UPLOAD_KEY_ALIAS', 'PB_UPLOAD_STORE_PASSWORD', 'PB_UPLOAD_KEY_PASSWORD']
+def hasSigning = signingNames.every { envValue(it) }
+if (signingNames.any { envValue(it) } && !hasSigning) throw new GradleException('Incomplete upload signing environment')
 android {
     buildFeatures { buildConfig = true }
     namespace = 'com.projectblue.game'
@@ -10,6 +31,39 @@ android {
         versionCode = rootProject.buildVersion.versionCode
         versionName = rootProject.buildVersion.versionName
         ndk { abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64' }
+        buildConfigField 'String', 'AD_AGE_TREATMENT', '"' + (ageTreatment ?: 'UNSPECIFIED') + '"'
+        buildConfigField 'int', 'UMP_UNDER_AGE', umpUnderAge ? (umpUnderAge == 'true' ? '1' : '0') : '-1'
+    }
+    signingConfigs {
+        if (hasSigning) {
+            upload {
+                storeFile = file(envValue('PB_UPLOAD_KEYSTORE'))
+                keyAlias = envValue('PB_UPLOAD_KEY_ALIAS')
+                storePassword = envValue('PB_UPLOAD_STORE_PASSWORD')
+                keyPassword = envValue('PB_UPLOAD_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        debug {
+            manifestPlaceholders = [admobAppId: sampleAppId]
+            buildConfigField 'boolean', 'ADS_ENABLED', 'true'
+            buildConfigField 'String', 'REWARDED_AD_ID', '"' + sampleRewardId + '"'
+            buildConfigField 'String', 'INTERSTITIAL_AD_ID', '"' + sampleInterstitialId + '"'
+            minifyEnabled false
+            shrinkResources = false
+        }
+        release {
+            debuggable false
+            minifyEnabled true
+            shrinkResources = true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            manifestPlaceholders = [admobAppId: releaseAds ? envValue('PB_ADMOB_APP_ID') : sampleAppId]
+            buildConfigField 'boolean', 'ADS_ENABLED', releaseAds.toString()
+            buildConfigField 'String', 'REWARDED_AD_ID', '"' + (releaseAds ? envValue('PB_REWARDED_AD_ID') : '') + '"'
+            buildConfigField 'String', 'INTERSTITIAL_AD_ID', '"' + (releaseAds ? envValue('PB_INTERSTITIAL_AD_ID') : '') + '"'
+            if (hasSigning) signingConfig signingConfigs.upload
+        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -24,6 +78,8 @@ android {
 configurations { natives }
 dependencies {
     implementation project(':core')
+    implementation 'com.google.android.gms:play-services-ads:25.5.0'
+    implementation 'com.google.android.ump:user-messaging-platform:4.0.0'
     implementation "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
     natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-arm64-v8a"
     natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
@@ -48,6 +104,30 @@ tasks.register('extractNatives') {
     }
 }
 tasks.named('preBuild') { dependsOn 'extractNatives', rootProject.tasks.named('verifyAssetLicenses') }
+
+tasks.register('verifyDebugAdConfiguration') {
+    group = 'verification'
+    dependsOn 'generateDebugBuildConfig', 'processDebugManifest'
+    doLast {
+        def generated = layout.buildDirectory.file('generated/source/buildConfig/debug/com/projectblue/game/BuildConfig.java').get().asFile.text
+        if (!generated.contains('ADS_ENABLED = true') || !generated.contains(sampleRewardId) || !generated.contains(sampleInterstitialId))
+            throw new GradleException('Debug must use official Google demo ad units')
+        def manifest = layout.buildDirectory.file('intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml').get().asFile
+        if (!manifest.exists()) manifest = layout.buildDirectory.file('intermediates/merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml').get().asFile
+        if (!manifest.text.contains(sampleAppId)) throw new GradleException('Debug must use the official sample App ID')
+        logger.lifecycle('Debug ad configuration verified against the official sample IDs.')
+    }
+}
+tasks.named('check') { dependsOn 'verifyDebugAdConfiguration' }
+
+tasks.register('verifyReleaseBundle', JavaExec) {
+    group = 'verification'
+    description = 'Validate the release AAB with the bundletool version supplied by AGP.'
+    dependsOn 'bundleRelease'
+    classpath = buildscript.configurations.classpath
+    mainClass = 'com.android.tools.build.bundletool.BundleToolMain'
+    args 'validate', '--bundle=' + layout.buildDirectory.file('outputs/bundle/release/android-release.aab').get().asFile.absolutePath
+}
 
 // Keep the AGP output unchanged; export a versioned, self-describing test package.
 def versionInfo = rootProject.buildVersion

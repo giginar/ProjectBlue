@@ -263,13 +263,7 @@ public final class MissionConfig {
     public static MissionConfig parse(String text) { return new MissionConfig(new JsonReader().parse(text)); }
     public static MissionConfig readOrFallback(InputStream input, PrintStream log) {
         try {
-            if (input == null) throw new IOException("missing resource");
-            ByteArrayOutputStream out = new ByteArrayOutputStream(); byte[] buffer = new byte[4096]; int count;
-            while ((count = input.read(buffer)) != -1) {
-                if (out.size()+count > 131072) throw new IOException("file exceeds 128 KiB");
-                out.write(buffer,0,count);
-            }
-            return parse(new String(out.toByteArray(),StandardCharsets.UTF_8));
+            return readRequired(input);
         } catch (IOException | RuntimeException error) {
             if (log != null) log.println("Project Blue: invalid Blue Coast mission config; using safe fallback: " + error.getMessage());
             return parse(FALLBACK_JSON);
@@ -298,10 +292,22 @@ public final class MissionConfig {
     private static MissionConfig loadRequired(String path) {
         try (InputStream input=MissionConfig.class.getResourceAsStream(path)) {
             if (input==null) throw new IOException("Missing mission resource: "+path);
-            return parse(new String(input.readAllBytes(),StandardCharsets.UTF_8));
+            return readRequired(input);
         } catch (IOException | RuntimeException error) {
             throw new IllegalStateException("Cannot load mission "+path,error);
         }
+    }
+    static MissionConfig readRequired(InputStream input) throws IOException {
+        if (input == null) throw new IOException("Missing mission resource");
+        // InputStream.readAllBytes requires Android API 33; the game supports API 26.
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] buffer = new byte[4096];
+        int count;
+        while ((count = input.read(buffer)) != -1) {
+            if (out.size() + count > 131072) throw new IOException("Mission file exceeds 128 KiB");
+            out.write(buffer, 0, count);
+        }
+        return parse(new String(out.toByteArray(), StandardCharsets.UTF_8));
     }
     private static void uniqueKeys(JsonValue node,int depth) {
         check(node != null && depth < 24,"Invalid or excessively nested mission JSON");

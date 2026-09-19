@@ -54,6 +54,19 @@ public final class GameWorld {
     private boolean finished, bossSpawned, cleaning, recovering, finalObjectivesSpawned;
     private boolean reducedEffects;
     private LevelResult result;
+    private boolean continued;
+    private float continuationTime;
+    public boolean canContinue() { return finished && result != null && !result.completed && !continued; }
+    public boolean continueAfterFailure() {
+        if (!canContinue()) return false;
+        continued = true; finished = false; result = null;
+        continuationTime = 60;
+        player.health = player.maxHealth;
+        invulnerability = 3;
+        slowTimer = 0;
+        if (leviathanCore != null) leviathanCore.retryEscape();
+        return true;
+    }
 
     public GameWorld(RandomProvider random) {
         this(random, RunSpec.original());
@@ -143,10 +156,10 @@ public final class GameWorld {
         updateSalvage(dt);
         updateParticles(dt);
         if (mission != null) updateMissionEnd(dt);
-        else if (player.health <= 0 || elapsed >= LEVEL_SECONDS)
+        else if (player.health <= 0 || elapsed >= levelDeadline())
             finishLegacy(player.health > 0 && !boss.active);
     }
-    private float levelDeadline() { return mission == null ? LEVEL_SECONDS : mission.deadlineSeconds; }
+    private float levelDeadline() { return (mission == null ? LEVEL_SECONDS : mission.deadlineSeconds) + continuationTime; }
     private void finishLegacy(boolean completed) {
         if (finished) return;
         finished = true;
@@ -158,7 +171,7 @@ public final class GameWorld {
             if (vortex!=null && player.health<=0) { finishMission(false); return; }
             recoveryTimer += dt;
             if (recoveryTimer >= mission.recoverySeconds) finishMission(true);
-        } else if (player.health <= 0 || elapsed >= mission.deadlineSeconds) finishMission(false);
+        } else if (player.health <= 0 || elapsed >= levelDeadline()) finishMission(false);
     }
     private void finishMission(boolean completed) {
         if (finished) return;
@@ -1327,7 +1340,7 @@ public final class GameWorld {
             if (e.friendly) {
                 e.x += FREED_TURTLE_SPEED_X * dt; e.y += FREED_TURTLE_SPEED_Y * dt;
                 applyVortex(e,dt,.45f);
-                if (e.x > WIDTH + DESPAWN_MARGIN) e.active = false;
+                if (e.x >= WIDTH + DESPAWN_MARGIN || e.y > SPAWN_Y + DESPAWN_MARGIN) e.active = false;
                 continue;
             }
             e.age+=dt; e.y += e.vy * dt;
@@ -1415,6 +1428,7 @@ public final class GameWorld {
     private float distanceSquared(Entity e, float x, float y) { return (e.x-x)*(e.x-x) + (e.y-y)*(e.y-y); }
     public void fireLaser(int damage) {
         Entity target = null;
+        Entity coralTarget = null;
         float y = SPAWN_Y;
         if (mission!=null && mission.type==MissionConfig.MissionType.GHOST_NETS) {
             for (int i=0;i<plastics.capacity();i++) {
@@ -1442,6 +1456,13 @@ public final class GameWorld {
                     && e.y>player.y && e.y<y && Math.abs(e.x-player.x)<=e.radius+3) { target=e; y=e.y; }
             }
         }
+        for (int i = 0; i < corals.capacity(); i++) {
+            Entity coral = corals.at(i);
+            if (coral.active && coral.y > player.y && coral.y < y
+                && Math.abs(coral.x - player.x) <= coral.radius + 3) {
+                target = coralTarget = coral; y = coral.y;
+            }
+        }
         for (int i = 0; i <= drones.capacity() + 2; i++) {
             Entity e = i < drones.capacity() ? drones.at(i) : i == drones.capacity() ? boss
                 : i == drones.capacity() + 1 ? bossLeftPipe : bossRightPipe;
@@ -1451,7 +1472,8 @@ public final class GameWorld {
         }
         laser.x = player.x; laser.y = player.y + SHOT_OFFSET_Y; laser.vy = y; laser.timer = .09f;
         if (target != null) {
-            if (target.environment!=null) damageEnvironment(target,damage);
+            if (target == coralTarget) damageCoral(target, damage);
+            else if (target.environment!=null) damageEnvironment(target,damage);
             else if (target.waste!=null && target.waste.kind()==MissionConfig.WasteKind.NET) {
                 target.progress=NetCuttingSystem.standardShot(target.progress);
                 if (NetCuttingSystem.opened(target.progress)) collectWaste(target);

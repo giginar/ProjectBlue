@@ -178,7 +178,7 @@ core/       com.projectblue.game
   save/                      Versioned profile, per-level records, migrations, backup recovery
   platform/                  Service interfaces and shared no-op behavior
 lwjgl3/                      Desktop launcher, platform adapter, GL smoke check
-android/                     Android launcher, safe window insets, no-op adapter
+android/                     Android launcher, safe window insets, AdMob/UMP adapters
 assets/                      Original font/audio and license inventory
 core/src/main/resources/     Campaign, mission, equipment, and achievement configuration
 tools/GenerateAssets.java     Offline asset regeneration
@@ -192,8 +192,8 @@ tools/GenerateAssets.java     Offline asset regeneration
 - The HUD updates 10 times per second using reusable StringBuilders.
   Screens do not dispose shared GPU resources; their owners dispose them at shutdown.
 - ScreenRouter applies transitions at the end of a frame. The pause screen retains the
-  current GameScreen without advancing its simulation. Results/menu transitions release
-  subscriptions from the previous run.
+  current GameScreen without advancing its simulation. Results retain the frozen run for an
+  optional rewarded continue; leaving results releases its subscriptions.
 - Android `onPause/onResume` is handled through libGDX. Backgrounding resets input,
   pauses gameplay/audio, and saves the profile. Returning requires selecting **Resume Dive**.
 - Android system bar and cutout insets are applied to the game View. FitViewport preserves
@@ -202,7 +202,11 @@ tools/GenerateAssets.java     Offline asset regeneration
   targets, and a persistent Back control. They do not change the gameplay viewport.
 - `AdsService`, `ConsentService`, `AchievementService`, `AnalyticsService`, and `PlatformService`
   define the platform boundary. The no-op ads service reports unavailable and never grants
-  rewards. No network permission, ad SDK, or account connection is included.
+  rewards. Android alone includes AdMob and UMP; debug uses official demo IDs and release
+  ads are disabled until explicitly configured. No account connection is enabled.
+  See [ads integration](docs/ADS_INTEGRATION.md), [privacy](docs/PRIVACY_CHECKLIST.md),
+  [data safety](docs/DATA_SAFETY_NOTES.md), [signing](docs/RELEASE_SIGNING.md), and
+  [Play release checks](docs/PLAY_RELEASE_CHECKLIST.md).
 - Profile schema **v5** includes explicit v0/v1/v2 migrations, additive v3/v4 handling, and CRC32 corruption detection.
   Equipment selections, upgrade purchases and achievement notifications persist locally.
   Purchases commit to disk before updating the live profile; write failures spend no salvage.
@@ -251,7 +255,7 @@ The first-clear economy assumptions, upgrade curves, and equipment tradeoffs are
 
 Verified in the Windows x64 development session on 2026-09-19:
 
-- **188 JUnit 5 tests passed:** the original rule groups, plus collisions, pooling,
+- **252 JUnit 5 tests passed:** the original rule groups, plus collisions, pooling,
   uninterrupted rescue, salvage, seeded reproducibility, Blue Coast completion,
   save round trips, corruption, schema migration, and write failures. Added coverage includes
   all difficulty multipliers, live spawn/shot/boss behavior, independent locks, replay records,
@@ -261,15 +265,20 @@ Verified in the Windows x64 development session on 2026-09-19:
   all ten authored timelines, reusable net cutting, sonar, thermal, pressure, deterministic current,
   cleanup combo, and environment systems,
   v3-to-v4 and v4-to-v5 profile migration, every authored boss state machine, the final escape,
-  base-loadout completion, final unlock/achievement, and post-finale save reload.
+  assisted base-loadout boss-gate completion, final unlock/achievement, and post-finale save reload.
+  Final QA adds all 40 mission/difficulty timelines, four-difficulty final-escape continue,
+  second-finger actions, laser/coral damage, freed-wildlife cleanup and minSdk-safe config loading.
+  These tests do not establish human clearability or balance across all 40 combinations.
 - A real LWJGL3/OpenGL window passed boot, menu, drag, pause/resume, lifecycle pause/resume,
   wide viewport, Blue Coast and Coral Gardens completion, Ghost Nets entry, results, saving, and replay checks. All requested
   screens, purchases, settings, narrow/wide menu layouts, and Shoreline Compactor rendering were exercised.
-  Weapon selection and locks were also exercised. A separate application launch verified
+  Weapon selection, locks and managed GPU texture deletion/reload were also exercised.
+  A separate application launch verified
   profile persistence, including vessel, pilot and weapon choices.
 - Desktop distributions were built. Test report: `core/build/reports/tests/test/index.html`;
   screenshots: `build/smoke/`. See [local packaging](docs/LOCAL_PACKAGING.md) for installer validation status.
-- Android SDK 36 was installed and a **debug APK was built**. Application ID, minimum/target
+- Android SDK 36 was installed; a **debug APK and unsigned R8 release AAB were built**.
+  Bundletool validation passed. Application ID, minimum/target
   SDK, three ABIs, APK signature, and **16 KB ZIP alignment** were verified.
   The arm64-v8a/x86_64 ELF LOAD segments are also aligned to **16384 bytes**.
   Android lint completed without errors; warnings about portrait orientation, version
@@ -279,9 +288,13 @@ Verified in the Windows x64 development session on 2026-09-19:
   or establish readiness for Play Store publication.
 - Visuals/audio are original placeholders. Professional artwork, music production,
   localization, cross-device performance profiling, and comprehensive balancing are pending.
-- Sector 10 retains a stable record but does not have authored playable content. Professional art,
-  comprehensive balance passes, real ads, a consent SDK, Google Play Games, and online analytics
-  remain outside this phase.
+- NEREID Core is authored and playable. Signed publication, real Android acceptance tests,
+  public privacy/store inputs and approved store exports remain outstanding.
+
+**NOT READY FOR RELEASE.** See the [final test report](docs/FINAL_TEST_REPORT.md),
+[known issues](docs/KNOWN_ISSUES.md), [release steps](docs/RELEASE_STEPS.md),
+[asset audit](docs/ASSET_AUDIT.md), [manual matrix](docs/MANUAL_TEST_MATRIX.md) and
+[store listing draft](docs/STORE_LISTING_DATA.md) for the current release decision.
 
 Asset policy and source inventory: [ASSET_LICENSES.md](assets/licenses/ASSET_LICENSES.md).
 Unverified sources/licenses or changes to verified asset hashes stop packaging.

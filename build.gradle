@@ -15,7 +15,10 @@ tasks.register('verifyAssetLicenses') {
             'fonts/blue.fnt', 'fonts/blue.png',
             'audio/pulse.wav', 'audio/collect.wav', 'audio/ocean.wav'
         ] as Set
-        def actual = fileTree('assets').matching { exclude 'licenses/**' }.files.collect {
+        // Only the two inventory documents are exempt; assets hidden in licenses still fail.
+        def actual = fileTree('assets').matching {
+            exclude 'licenses/ASSET_LICENSES.md', 'licenses/verified-assets.properties'
+        }.files.collect {
             file('assets').toPath().relativize(it.toPath()).toString().replace('\\', '/')
         } as Set
         if (actual != approved) throw new GradleException("Asset allowlist mismatch: ${actual - approved}; missing: ${approved - actual}")
@@ -24,7 +27,10 @@ tasks.register('verifyAssetLicenses') {
         }
         def verified = new Properties()
         file('assets/licenses/verified-assets.properties').withInputStream { verified.load(it) }
+        if (verified.stringPropertyNames() != approved) throw new GradleException('Asset hash inventory differs from allowlist')
+        def inventory = file('assets/licenses/ASSET_LICENSES.md').getText('UTF-8')
         approved.each { path ->
+            if (!inventory.contains('`' + path + '`')) throw new GradleException("Asset missing from license inventory: $path")
             def hash = java.security.MessageDigest.getInstance('SHA-256')
                 .digest(file("assets/$path").bytes).encodeHex().toString()
             if (hash != verified.getProperty(path)) {

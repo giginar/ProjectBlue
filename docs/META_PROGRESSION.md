@@ -162,7 +162,7 @@ Screenshots: `build/smoke/01-menu.png` through the numbered scenario captures, i
    Check that each completion opens only the next difficulty of that sector. Abyss opens
    after Expert; check faster fire, denser drones and faster boss attacks.
 8. After unlocking sector 2, select MANTA, Neri and Spread Cannon; buy one Hull upgrade
-   with at least 30 salvage. Confirm a single deduction and upgrade level. A new dive
+   with at least 45 salvage. Confirm a single deduction and upgrade level. A new dive
    should start with 95 hull, three-shot spread and faster rescues. Insufficient funds and maximum upgrades must disable buying.
 9. Toggle sound/music, cycle volumes, enable reduced menu motion, and inspect Achievements.
    Exit the application completely and launch it again. Verify progress, records, settings,

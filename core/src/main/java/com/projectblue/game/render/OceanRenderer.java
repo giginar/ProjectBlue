@@ -118,6 +118,9 @@ public final class OceanRenderer {
         }
     }
     public void world(GameWorld world) {
+        world(world,false,false);
+    }
+    public void world(GameWorld world,boolean highContrastTelegraphs,boolean reducedFlashes) {
         MissionConfig.MissionType type=world.mission()==null?MissionConfig.MissionType.BLUE_COAST:world.mission().type;
         backdrop(world.elapsed(), world.restoration(),type,world.reducedEffects());
         ui.beginShapes();
@@ -220,9 +223,12 @@ public final class OceanRenderer {
                 case RECYCLER_LEVIATHAN -> recyclerLeviathan(world);
                 case LEVIATHAN_CORE -> leviathanCore(world);
             }
+            if (highContrastTelegraphs && bossTelegraphing(world)) warningMarks(world.boss.x,world.boss.y);
         }
         if (world.sonarPulseProgress()>0) ring(world.player.x,world.player.y,45+world.sonarPulseProgress()*420,0,Palette.AQUA);
-        if (!world.invulnerable() || (int) (world.elapsed() * 14) % 2 == 0) submarine(world.player.x, world.player.y, 1, world.elapsed());
+        if (reducedFlashes || !world.invulnerable() || (int) (world.elapsed() * 14) % 2 == 0)
+            submarine(world.player.x, world.player.y, 1, world.elapsed());
+        if (world.invulnerable()) ring(world.player.x,world.player.y,55,0,highContrastTelegraphs?Palette.TEXT:Palette.RED);
         for (int i = 0; i < world.particles.capacity(); i++) {
             Entity e = world.particles.at(i);
             if (e.active) {
@@ -235,6 +241,9 @@ public final class OceanRenderer {
     }
     public void submarine(float x, float y, float scale, float time) {
         float k = scale;
+        s.setColor(Palette.AQUA);
+        s.circle(x-7*k,y-(49+Math.abs((time*34)%18))*k,3*k,8);
+        s.circle(x+8*k,y-(60+Math.abs((time*21)%25))*k,2*k,8);
         s.setColor(Palette.GLASS);
         s.triangle(x - 10*k, y - 33*k, x + 10*k, y - 33*k, x, y - (52 + 5*(float)Math.sin(time*25))*k);
         s.setColor(Palette.INK);
@@ -258,6 +267,28 @@ public final class OceanRenderer {
         s.setColor(Palette.AQUA);
         s.circle(x - 26*k, y + 11*k, 3*k, 10);
         s.circle(x + 26*k, y + 11*k, 3*k, 10);
+    }
+    private boolean bossTelegraphing(GameWorld world) {
+        return switch (world.mission().boss.kind()) {
+            case SHORELINE_COMPACTOR -> world.compactor().telegraphing();
+            case REEF_BREAKER -> world.reefBreaker().telegraphing();
+            case GHOST_NET_HARVESTER -> world.harvester().telegraphing();
+            case URBAN_SALVAGER -> world.urbanSalvager().telegraphing();
+            case OIL_KRAKEN -> world.oilKraken().telegraphing();
+            case RESONANCE_ENGINE -> false;
+            case BOREALIS_DRILL -> world.borealisDrill().telegraphing();
+            case THE_HARVESTER -> world.theHarvester().telegraphing();
+            case RECYCLER_LEVIATHAN -> false;
+            case LEVIATHAN_CORE -> world.leviathanCore().telegraphing();
+        };
+    }
+    private void warningMarks(float x,float y) {
+        s.setColor(Palette.TEXT);
+        for (int direction : new int[]{-1,1}) {
+            float markX=x+direction*118;
+            s.triangle(markX,y+18,markX-direction*18,y+48,markX-direction*18,y-12);
+            s.circle(markX-direction*5,y-27,4,8);
+        }
     }
     public void turtle(float x, float y, float k, boolean freed) {
         s.setColor(Palette.AQUA);

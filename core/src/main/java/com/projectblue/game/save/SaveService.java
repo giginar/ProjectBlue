@@ -10,6 +10,37 @@ public final class SaveService {
     private final ProfileCodec codec;
     private final Profile profile;
     private boolean recovered, recoveredBackup, writeFailed;
+    // Not restored: a process restart cannot replay an old result or reward callback.
+    private String activeRun = "";
+    public synchronized String beginRun() {
+        activeRun = java.util.UUID.randomUUID().toString();
+        profile.rewardRun = activeRun;
+        profile.runResultRecorded = profile.runCompleted = profile.continueUsed = profile.salvageDoubled = false;
+        profile.runSalvage = profile.runPlastic = profile.runEnemies = 0;
+        save();
+        return activeRun;
+    }
+    public synchronized void endRun() { activeRun = ""; }
+    private boolean active(String id) { return !activeRun.isEmpty() && activeRun.equals(id) && id.equals(profile.rewardRun); }
+    public synchronized boolean canDouble(String id) {
+        return active(id) && profile.runResultRecorded && profile.runCompleted && !profile.salvageDoubled && profile.runSalvage > 0;
+    }
+    public synchronized boolean canContinue(String id) {
+        return active(id) && profile.runResultRecorded && !profile.runCompleted && !profile.continueUsed;
+    }
+    public synchronized boolean doubleSalvage(String id) {
+        return canDouble(id) && commit(p -> {
+            p.salvageDoubled = true;
+            p.totalSalvage = (int)Math.min(Integer.MAX_VALUE, (long)p.totalSalvage + p.runSalvage);
+            return true;
+        });
+    }
+    public synchronized boolean useContinue(String id) {
+        return canContinue(id) && commit(p -> { p.continueUsed = true; p.runResultRecorded = false; return true; });
+    }
+    public synchronized boolean reserveInterstitial(long now) {
+        return commit(p -> { p.lastInterstitialAt = now; p.adCompletions = 0; return true; });
+    }
     public SaveService(SaveStore store) {
         this(store, ContentCatalog.DEFAULT);
     }
@@ -52,10 +83,24 @@ public final class SaveService {
      * lifecycle or Settings save can retry without making the player repeat a completed dive.
      */
     public synchronized RecordResult record(LevelResult result) {
+        return recordInternal(null, result);
+    }
+    public synchronized RecordResult recordRun(String id, LevelResult result) {
+        if (!active(id) || profile.runResultRecorded) return RecordResult.REJECTED;
+        return recordInternal(id, result);
+    }
+    private RecordResult recordInternal(String id, LevelResult result) {
         Profile candidate;
         try {
             candidate = codec.decode(codec.encode(profile));
-            if (!candidate.record(result)) return RecordResult.REJECTED;
+            if (!candidate.record(result, id == null ? 0 : candidate.runSalvage,
+                id == null ? 0 : candidate.runPlastic, id == null ? 0 : candidate.runEnemies)) return RecordResult.REJECTED;
+            if (id != null) {
+                candidate.runResultRecorded = true; candidate.runCompleted = result.completed;
+                candidate.runSalvage = result.salvage; candidate.runPlastic = result.plasticCollected;
+                candidate.runEnemies = result.enemiesDestroyed;
+                if (result.completed) candidate.adCompletions = Math.min(Integer.MAX_VALUE - 1, candidate.adCompletions) + 1;
+            }
             candidate.normalize();
         } catch (IOException | RuntimeException e) {
             return RecordResult.REJECTED;

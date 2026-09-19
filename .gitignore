@@ -11,3 +11,14 @@ dist/
 *.aab
 *.jks
 *.keystore
+*.p12
+*.pem
+*.key
+keystore.properties
+signing.properties
+ads.properties
+secrets.properties
+*.secret.properties
+.env
+.env.*
+secrets/

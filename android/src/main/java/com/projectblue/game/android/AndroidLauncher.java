@@ -11,6 +11,7 @@ import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.projectblue.game.ProjectBlueGame;
 
 public final class AndroidLauncher extends AndroidApplication {
+    private AndroidPlatformService platform;
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
@@ -20,8 +21,9 @@ public final class AndroidLauncher extends AndroidApplication {
         config.useImmersiveMode = true;
         config.numSamples = 2;
         config.a = 8;
-        View gameView = initializeForView(new ProjectBlueGame(
-            new AndroidPlatformService(getFilesDir().getAbsolutePath())), config);
+        platform = new AndroidPlatformService(this);
+        View gameView = initializeForView(new ProjectBlueGame(platform), config);
+        if (!com.projectblue.game.BuildConfig.DEBUG) setLogLevel(com.badlogic.gdx.Application.LOG_NONE);
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(0xff061827);
         root.addView(gameView);
@@ -47,5 +49,7 @@ public final class AndroidLauncher extends AndroidApplication {
         root.requestApplyInsets();
         // AndroidApplication forwards pause/resume/dispose to ProjectBlueGame on the GL thread.
     }
+    @Override protected void onResume() { super.onResume(); if (platform != null) platform.resume(); }
+    @Override protected void onPause() { if (platform != null) platform.pause(); super.onPause(); }
+    @Override protected void onDestroy() { if (platform != null) platform.destroy(); super.onDestroy(); }
 }
-

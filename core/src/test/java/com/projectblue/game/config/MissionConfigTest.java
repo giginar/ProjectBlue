@@ -8,6 +8,23 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MissionConfigTest {
+    @Test void requiredMissionsLoadWithoutAndroid33StreamMethods() throws IOException {
+        byte[] json = source("/config/nereid-core.json").getBytes(StandardCharsets.UTF_8);
+        InputStream legacy = new ByteArrayInputStream(json) {
+            @Override public byte[] readAllBytes() { throw new NoSuchMethodError("Not available before Android API 33"); }
+            @Override public synchronized int read(byte[] bytes, int offset, int length) {
+                return super.read(bytes, offset, Math.min(length, 7));
+            }
+        };
+        assertEquals("NEREID_CORE", MissionConfig.readRequired(legacy).id);
+    }
+
+    @Test void requiredMissionReaderRejectsOversizedInputBeforeParsing() {
+        IOException error = assertThrows(IOException.class,
+            () -> MissionConfig.readRequired(new ByteArrayInputStream(new byte[131073])));
+        assertTrue(error.getMessage().contains("128 KiB"));
+    }
+
     private String source() throws IOException {
         try (InputStream input=getClass().getResourceAsStream("/config/blue-coast.json")) {
             assertNotNull(input); return new String(input.readAllBytes(),StandardCharsets.UTF_8);

@@ -13,12 +13,13 @@ public final class ResultScreen extends StageMenuScreen {
         Table report = panel();
         report.add(label(result.completed ? "Sector restored" : "Dive ended", 1.2f, Palette.AQUA)).row();
         report.add(rating(result.stars)).height(40).row();
-        report.add(label("Score " + result.score + "\nSalvage recovered " + result.salvage, 1.05f, Palette.TEXT)).row();
-        report.add(label("Combat " + Math.round(result.combat) + "%\nCleanup " + Math.round(result.cleanup)
-            + "%\nRescue " + Math.round(result.rescue) + "%\nIntegrity " + Math.round(result.integrity) + "%", 1, Palette.TEXT)).row();
+        report.add(label("Mission score / " + result.score + "\nSalvage / +" + result.salvage, 1.05f, Palette.TEXT)).row();
+        report.add(label("Combat " + Math.round(result.combat) + "%   Cleanup " + Math.round(result.cleanup)
+            + "%\nRescue " + Math.round(result.rescue) + "%   Hull integrity " + Math.round(result.integrity) + "%", .9f, Palette.TEXT)).row();
         report.add(environmentComparison(result)).height(126).padTop(8).row();
         if (!unlocked.isEmpty()) note(unlocked);
         else note(result.completed ? "Records updated. Return whenever the ocean calls." : "Repair, regroup, return. Earn a star to advance.");
+        rewardActions(!result.completed);
         action("replay", "Dive again / " + result.difficulty, () -> game.router().requestDive(result.levelId, result.difficulty));
         route("levels", "Level Select", ScreenRouter.Route.LEVEL_SELECT);
         route("hangar", "Hangar", ScreenRouter.Route.HANGAR);
@@ -50,21 +51,21 @@ public final class ResultScreen extends StageMenuScreen {
     }
     private static String after(MissionConfig.MissionType type) {
         return switch (type) {
-            case BLUE_COAST -> "AFTER\nCLEAR COAST +";
-            case CORAL_GARDENS -> "AFTER\nCORAL COLOR +";
-            case GHOST_NETS -> "AFTER\nOPEN WATER +";
-            case SUNKEN_CITY -> "AFTER\nSAFE CITY +";
-            case BLACK_TIDE -> "AFTER\nCLEAN CURRENT +";
-            case SILENT_REEF -> "AFTER\nREEF SONG +";
-            case FROZEN_DEPTHS -> "AFTER\nCOOLED WATER +";
-            case ABYSS_MINE -> "AFTER\nSAFE DEPTH +";
-            case PLASTIC_VORTEX -> "AFTER\nOPEN CURRENT +";
-            case NEREID_CORE -> "AFTER\nLIVING OCEAN +";
+            case BLUE_COAST -> "AFTER\nCLEAR COAST\n+";
+            case CORAL_GARDENS -> "AFTER\nCORAL COLOR\n+";
+            case GHOST_NETS -> "AFTER\nOPEN WATER\n+";
+            case SUNKEN_CITY -> "AFTER\nSAFE CITY\n+";
+            case BLACK_TIDE -> "AFTER\nCLEAN CURRENT\n+";
+            case SILENT_REEF -> "AFTER\nREEF SONG\n+";
+            case FROZEN_DEPTHS -> "AFTER\nCOOLED WATER\n+";
+            case ABYSS_MINE -> "AFTER\nSAFE DEPTH\n+";
+            case PLASTIC_VORTEX -> "AFTER\nOPEN CURRENT\n+";
+            case NEREID_CORE -> "AFTER\nLIVING OCEAN\n+";
         };
     }
     private Stack environmentPanel(String text, Color tint) {
         Image water = new Image(game.menuTheme().panel); water.setColor(tint);
-        Stack stack = new Stack(); stack.add(water); stack.add(label(text,.72f,Palette.TEXT));
+        Stack stack = new Stack(); stack.add(water); stack.add(label(text,.62f,Palette.TEXT));
         return stack;
     }
 }

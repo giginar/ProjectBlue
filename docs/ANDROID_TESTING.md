@@ -2,6 +2,10 @@
 
 Build an APK with IntelliJ IDEA Community and JDK 17/21 without installing Android Studio.
 Use `android.bat` in the project root on Windows. The phone requires **Android 8.0 or newer**.
+Debug retains `com.projectblue.game` so existing development installs keep their profiles.
+Debug and production signing certificates differ; do not install debug over a production install.
+Debug ads use Google's demo IDs only. See [ads integration](ADS_INTEGRATION.md) and
+[Play release checks](PLAY_RELEASE_CHECKLIST.md) before distributing a production build.
 
 **To share with a friend:** double-click `package.bat` or run `package.bat Android`.
 The shareable APK is placed in `dist/<version>/`. The same script can build a Windows

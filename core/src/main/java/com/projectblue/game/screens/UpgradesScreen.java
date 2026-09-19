@@ -16,8 +16,10 @@ public final class UpgradesScreen extends StageMenuScreen {
             Table card = panel();
             card.add(label(def.displayName() + " / " + level + " of " + def.maxLevel(),1.05f,Palette.AQUA)).row();
             card.add(label(def.description(),.95f,Palette.TEXT)).row();
-            TextButton buy = button("upgrade-" + upgrade,level == def.maxLevel() ? "Fully upgraded"
-                : profile.totalSalvage < cost ? "Need " + cost + " salvage" : "Upgrade / " + cost + " salvage",() -> {
+            String state=level == def.maxLevel() ? "MAXIMUM" : profile.totalSalvage < cost ? "NEED SALVAGE" : "AVAILABLE TO BUY";
+            card.add(label(state,.82f,level == def.maxLevel()?Palette.AQUA:profile.totalSalvage < cost?Palette.MUTED:Palette.GOLD)).row();
+            TextButton buy = button("upgrade-" + upgrade,level == def.maxLevel() ? "Maximum level"
+                : profile.totalSalvage < cost ? "Need " + cost + " salvage" : "Buy upgrade / " + cost + " salvage",() -> {
                     message = switch (game.saves().purchase(upgrade)) {
                         case PURCHASED -> "Upgrade installed and saved.";
                         case MAX_LEVEL -> "Already fully upgraded.";

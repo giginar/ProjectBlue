@@ -45,6 +45,11 @@ public final class LeviathanCore {
 
     public void start() { if (state == State.DORMANT) enter(State.ARRIVAL); }
 
+    /** The world's one-use continue restarts the escape with its warning and full countdown. */
+    public void retryEscape() {
+        if (escapeFailed() || escaping()) enter(State.ESCAPE_WARNING);
+    }
+
     public void update(float dt, boolean inEscapeZone) {
         if (dt <= 0 || !Float.isFinite(dt) || state == State.DORMANT || finished()) return;
         stateTime += dt;

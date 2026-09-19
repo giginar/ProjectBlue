@@ -16,7 +16,10 @@ public final class MainMenuScreen extends StageMenuScreen {
         route("achievements", "Achievements", ScreenRouter.Route.ACHIEVEMENTS);
         route("settings", "Settings", ScreenRouter.Route.SETTINGS);
         if (profile.campaignCompleted()) route("finale", "Final Results", ScreenRouter.Route.FINALE);
-        route("credits", "Credits", ScreenRouter.Route.CREDITS);
+        Table information = new Table(); information.defaults().growX().height(84).space(10);
+        information.add(button("credits", "Credits", () -> game.router().request(ScreenRouter.Route.CREDITS))).uniformX();
+        information.add(button("privacy", "Privacy", () -> game.router().request(ScreenRouter.Route.PRIVACY))).uniformX();
+        body.add(information).growX().row();
         note("Build " + BuildInfo.VERSION_NAME);
         ((com.badlogic.gdx.scenes.scene2d.ui.TextButton) stage.getRoot().findActor("back")).setText("EXIT");
     }

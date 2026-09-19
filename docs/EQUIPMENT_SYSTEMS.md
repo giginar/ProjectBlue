@@ -177,7 +177,7 @@ lifecycle and rendering still need the manual checks below.
 2. Complete sector 1. Confirm sector 2 / Normal and sector 1 / Hard open as before.
    Select MANTA, Neri and Spread Cannon; fully exit/relaunch and verify all three choices.
    Start a dive: hull is 85, spread has three lanes, rescue takes about 1.25 seconds.
-3. Buy Hull with exactly 30 salvage: balance becomes zero, level becomes one and a new
+3. Buy Hull with exactly 45 salvage: balance becomes zero, level becomes one and a new
    MANTA dive starts with 95 hull. Try another purchase with insufficient funds.
    Raise one upgrade to level five: buying is disabled and Fully Equipped appears once.
 4. Repeat for Cleanup Beam, Shield, Rescue System and Support Drone. Verify faster cleanup,

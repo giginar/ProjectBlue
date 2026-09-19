@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.PixmapIO;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
@@ -53,8 +54,10 @@ final class DesktopSmokeGame extends ProjectBlueGame {
         switch (step) {
             case 0 -> {
                 if (!(getScreen() instanceof MainMenuScreen)) return;
+                verifyTextureRecovery();
                 require(!router().requestDive(2, Difficulty.NORMAL), "locked level rejected by router");
                 require(!router().requestDive(1, Difficulty.HARD), "locked difficulty rejected by router");
+                require(actor("privacy") != null, "privacy entry visible in menu hierarchy");
                 capture("01-menu"); clickActor("play"); next();
             }
             case 1 -> {
@@ -163,6 +166,9 @@ final class DesktopSmokeGame extends ProjectBlueGame {
             case 28 -> {
                 require(getScreen() instanceof SettingsScreen, "settings");
                 require(((StageMenuScreen) getScreen()).stage().getRoot().findActor("reset") == null, "release platform hides reset");
+                require(actor("mute") != null && actor("haptic") != null && actor("shake") != null
+                    && actor("contrast") != null && actor("flashes") != null && actor("ui-scale") != null,
+                    "audio and accessibility controls exist");
                 clickActor("sound"); next();
             }
             case 29 -> {
@@ -273,10 +279,47 @@ final class DesktopSmokeGame extends ProjectBlueGame {
             }
             case 48 -> {
                 capture("21-frozen-depths-thermal");
-                Gdx.app.log("SMOKE", "PASS: menus, equipment locks, sectors 1-7 rendering, sonar touch, thermal exposure, campaign, disk save, replay, equipment, upgrades, audio, aspect ratios, bosses and lifecycle");
+                RunSpec spec=router().activeRun().world().spec();
+                require(saves().profile().record(new LevelResult(spec,true,spec.combatTargets(),24,4,50,100)),"Frozen Depths smoke completion");
+                require(saves().profile().canPlay(8,Difficulty.NORMAL),"Abyss Mine unlocked");
+                require(router().requestDive(8,Difficulty.NORMAL),"Abyss Mine launchable"); next();
+            }
+            case 49 -> {
+                GameWorld world=router().activeRun().world();
+                require(world.mission()==MissionConfig.ABYSS_MINE,"Abyss Mine config selected"); capture("22-abyss-mine");
+                RunSpec spec=world.spec();
+                require(saves().profile().record(new LevelResult(spec,true,spec.combatTargets(),24,4,50,100)),"Abyss Mine smoke completion");
+                require(saves().profile().canPlay(9,Difficulty.NORMAL),"Plastic Vortex unlocked");
+                require(router().requestDive(9,Difficulty.NORMAL),"Plastic Vortex launchable"); next();
+            }
+            case 50 -> {
+                GameWorld world=router().activeRun().world();
+                require(world.mission()==MissionConfig.PLASTIC_VORTEX,"Plastic Vortex config selected"); capture("23-plastic-vortex");
+                RunSpec spec=world.spec();
+                require(saves().profile().record(new LevelResult(spec,true,spec.combatTargets(),24,4,50,100)),"Plastic Vortex smoke completion");
+                require(saves().profile().canPlay(10,Difficulty.NORMAL),"NEREID Core unlocked");
+                require(router().requestDive(10,Difficulty.NORMAL),"NEREID Core launchable"); next();
+            }
+            case 51 -> {
+                GameWorld world=router().activeRun().world();
+                require(world.mission()==MissionConfig.NEREID_CORE,"NEREID Core config selected"); capture("24-nereid-core");
+                Gdx.app.log("SMOKE", "PASS: menus, equipment locks, all ten sectors rendering, sonar touch, thermal exposure, campaign, disk save, replay, equipment, upgrades, audio, aspect ratios, bosses and lifecycle");
                 Gdx.app.exit(); next();
             }
             default -> { }
+        }
+    }
+    private void verifyTextureRecovery() {
+        int managed = Texture.getNumManagedTextures();
+        for (Texture texture : menuTheme().skin.getAll(Texture.class).values()) {
+            require(texture.isManaged(), "generated menu texture supports context recovery");
+            Gdx.gl.glDeleteTexture(texture.getTextureObjectHandle());
+        }
+        for (var region : assets().font().getRegions()) Gdx.gl.glDeleteTexture(region.getTexture().getTextureObjectHandle());
+        Texture.invalidateAllTextures(Gdx.app);
+        require(Texture.getNumManagedTextures() == managed, "texture recovery retains the managed resource count");
+        for (Texture texture : menuTheme().skin.getAll(Texture.class).values()) {
+            require(Gdx.gl.glIsTexture(texture.getTextureObjectHandle()), "menu texture restored after GPU invalidation");
         }
     }
     private void verifyPersisted(Profile p) {

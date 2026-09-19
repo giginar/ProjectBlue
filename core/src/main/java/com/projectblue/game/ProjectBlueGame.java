@@ -37,6 +37,8 @@ public class ProjectBlueGame extends Game {
         Gdx.input.setCatchKey(Input.Keys.BACK, true);
         assets.queue();
         setScreen(new BootScreen(this));
+        // Consent is asynchronous; asset loading and offline play never wait for it.
+        platform.consent().requestConsent(() -> {});
     }
     public void render() {
         Gdx.gl.glClearColor(.018f, .04f, .06f, 1);
@@ -65,7 +67,7 @@ public class ProjectBlueGame extends Game {
     public GameAssets assets() { return assets; }
     public UiPainter ui() { return ui; }
     public MenuTheme menuTheme() {
-        if (menuTheme == null) menuTheme = new MenuTheme();
+        if (menuTheme == null) menuTheme = new MenuTheme(assets.font());
         return menuTheme;
     }
     public OceanRenderer ocean() { return ocean; }

@@ -10,6 +10,9 @@ import java.nio.file.*;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.CRC32;
 import java.io.IOException;
+import java.io.StringReader;
+import java.util.Properties;
+import java.util.TreeSet;
 import static org.junit.jupiter.api.Assertions.*;
 import static com.projectblue.game.config.GameConfig.*;
 
@@ -25,7 +28,8 @@ class ProfilePersistenceTest {
         complete(p, 1, Difficulty.NORMAL); complete(p, 1, Difficulty.HARD); complete(p, 2, Difficulty.NORMAL);
         p.selectedPilot = Pilot.NERI; p.selectedSubmarine = Submarine.MANTA;
         p.soundEnabled = false; p.musicEnabled = false; p.soundVolume = .25f; p.musicVolume = .75f;
-        p.reducedMotion = true;
+        p.reducedMotion = true; p.muted = true; p.hapticEnabled = false; p.screenShakeEnabled = false;
+        p.highContrastTelegraphs = true; p.largeUi = true; p.reducedFlashes = true;
         assertTrue(p.purchase(Upgrade.HULL)); assertTrue(p.purchase(Upgrade.PRIMARY_WEAPON)); assertTrue(p.purchase(Upgrade.SHIELD));
         assertTrue(first.save());
         Profile restored = open().profile();
@@ -43,6 +47,8 @@ class ProfilePersistenceTest {
         assertEquals(108, restored.achievementProgress(Achievement.RECYCLER_II));
         assertTrue(restored.reducedMotion); assertFalse(restored.soundEnabled); assertFalse(restored.musicEnabled);
         assertEquals(.25f, restored.soundVolume); assertEquals(.75f, restored.musicVolume);
+        assertTrue(restored.muted); assertFalse(restored.hapticEnabled); assertFalse(restored.screenShakeEnabled);
+        assertTrue(restored.highContrastTelegraphs); assertTrue(restored.largeUi); assertTrue(restored.reducedFlashes);
     }
     @Test void corruptPrimaryRestoresVerifiedBackupAndSubsequentSaveKeepsGoodBackup() throws IOException {
         SaveService first = open(); complete(first.profile(), 1, Difficulty.NORMAL);
@@ -96,6 +102,18 @@ class ProfilePersistenceTest {
             assertTrue(encoded.contains(change[0]));
             assertThrows(IOException.class, () -> codec.decode(encoded.replace(change[0], change[1])));
         }
+    }
+    @Test void originalV5SaveWithoutComfortExtensionsKeepsSafeDefaults() throws IOException {
+        ProfileCodec codec = new ProfileCodec();
+        Properties fields = new Properties(); fields.load(new StringReader(codec.encode(new Profile())));
+        for (String key : new String[]{"muted","hapticEnabled","screenShakeEnabled","highContrastTelegraphs","largeUi","reducedFlashes"})
+            fields.remove(key);
+        StringBuilder body = new StringBuilder("version=" + PROFILE_VERSION + "\n");
+        for (String key : new TreeSet<>(fields.stringPropertyNames()))
+            if (!key.equals("version") && !key.equals("checksum")) body.append(key).append('=').append(fields.getProperty(key)).append('\n');
+        Profile restored = codec.decode(withChecksum(body.toString()));
+        assertFalse(restored.muted); assertTrue(restored.hapticEnabled); assertTrue(restored.screenShakeEnabled);
+        assertFalse(restored.highContrastTelegraphs); assertFalse(restored.largeUi); assertFalse(restored.reducedFlashes);
     }
     @Test void resetRequiresDevelopmentFlagKeepsReferencesAndSurvivesReopen() {
         SaveService service = open(); Profile original = service.profile(); complete(original, 1, Difficulty.NORMAL);

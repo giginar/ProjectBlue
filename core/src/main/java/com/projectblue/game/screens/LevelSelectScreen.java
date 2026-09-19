@@ -25,6 +25,9 @@ public final class LevelSelectScreen extends StageMenuScreen {
             });
             choose.setDisabled(!record.unlocked || !available);
             card.add(choose).height(84).row();
+            String status = !available ? "PLANNED" : !record.unlocked ? "LOCKED" : record.bestStars > 0 ? "RESTORED" : "OPEN";
+            card.add(label(status + "  DIFFICULTY / " + (record.bestDifficulty() == null ? "NORMAL READY" : record.bestDifficulty() + " CLEARED"),
+                .78f, record.unlocked && available ? Palette.AQUA : Palette.MUTED)).row();
             card.add(label(level.region(), 1, Palette.AQUA)).row();
             card.add(rating(record.bestStars)).height(36).row();
             card.add(label("Best score " + record.bestScore, .92f, Palette.GOLD)).row();
@@ -53,10 +56,11 @@ public final class LevelSelectScreen extends StageMenuScreen {
         for (Difficulty difficulty : Difficulty.values()) {
             boolean open = record.canPlay(difficulty);
             String state = !open ? "Locked" : record.completed(difficulty) ? "Cleared" : "Ready";
-            TextButton select = button("difficulty-" + difficulty, difficulty + " / " + state, () -> {
+            boolean selectedDifficulty = game.router().selectedDifficulty() == difficulty;
+            TextButton select = button("difficulty-" + difficulty, difficulty + " / " + (selectedDifficulty ? "SELECTED" : state), () -> {
                 game.router().selectDifficulty(difficulty); showBriefing();
             });
-            select.setDisabled(!open); select.setChecked(game.router().selectedDifficulty() == difficulty);
+            select.setDisabled(!open); select.setChecked(selectedDifficulty);
             choices.add(select).uniformX();
             if (difficulty.ordinal() % 2 == 1) choices.row();
         }
