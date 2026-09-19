@@ -1,9 +1,20 @@
 # Project Blue
 
 An original, Android-first 2D underwater shooter prototype written in Java/libGDX
-and played in portrait orientation. Pilot a submarine, disable drones, collect plastic,
-rescue turtles, and complete **The Quiet Reef**, a **180-second** level. Cleanup and
-rescue visibly improve the water color, coral, and fish density.
+and played in portrait orientation. Pilot a submarine through **Blue Coast**, disable
+NEREID recovery drones, remove several kinds of waste, rescue turtles, protect coral,
+and shut down the Shoreline Compactor. Cleanup and rescue visibly improve the water.
+
+The campaign keeps **10 stable sector records**, with Blue Coast as the only authored playable
+sector in this pass. It includes four difficulties, persistent progression, a Hangar,
+crew/vessel selection, permanent upgrades,
+achievements, settings, and dive reports. Data-driven TIDE/MANTA/LEVIATHAN vessels, four
+pilots, six upgrades, five weapons and twelve local achievements extend that progression.
+The new default is TIDE / Kaia / Pulse Cannon; Kaia adds a cleanup bonus. The original
+simulation fixture remains covered by regression tests. See
+[equipment systems and balance](docs/EQUIPMENT_SYSTEMS.md) and
+[meta-progression](docs/META_PROGRESSION.md), and [Blue Coast](docs/BLUE_COAST.md) for
+architecture, provisional balance, and manual checks.
 
 Sky Force is a genre reference only. No names, assets, UI, levels, enemies, story,
 or source code have been copied. No game assets have been downloaded from the internet.
@@ -50,12 +61,15 @@ first-thread option. The platform verified in this development session is Window
 - Hold the left mouse button or one finger inside the play area and **drag**. Relative
   movement prevents the submarine from jumping to the initial touch position.
 - Firing is automatic. Cyan projectiles belong to the player; red projectiles belong to drones.
-- Move within 112 units of a bottle: the cleanup beam collects it in 0.42 seconds.
-- Stay within 96 units of a turtle for **1.5 uninterrupted seconds** to remove its net.
+- Move within 112 units of a bottle: the base cleanup time is 0.42 seconds, reduced by
+  vessel, pilot and Cleanup Beam bonuses.
+- Stay within 96 units of a turtle to remove its net. Base rescue takes **1.5 uninterrupted
+  seconds**, reduced by pilot and Rescue System bonuses.
 - Gold salvage pieces are pulled toward the submarine when it gets close.
 - Use the top-right pause button, **Esc**, **P**, or Android's back button to pause.
 - Continue from the pause screen. Returning to the menu ends the current dive.
-- Toggle sound and music from the main menu or pause screen; settings are saved.
+- Toggle sound and music from Settings or the pause screen; settings are saved.
+- Scroll menu panels with a finger drag or mouse wheel. Back/Esc returns to the parent screen.
 
 ## Versions and compatibility
 
@@ -103,6 +117,12 @@ See [versioning](docs/VERSIONING.md) for branch and history rules.
 # Automated desktop check in a real OpenGL window; exits when complete
 .\gradlew.bat :lwjgl3:run --args=--smoke
 
+# Launch a second process to verify the smoke profile survived application exit
+.\gradlew.bat :lwjgl3:run --args=--smoke-reload
+
+# Explicit desktop development build; enables the guarded reset control in Settings
+.\gradlew.bat :lwjgl3:run -PdevelopmentBuild=true
+
 # Desktop distribution that requires an installed Java runtime
 .\gradlew.bat :lwjgl3:installDist
 .\lwjgl3\build\install\lwjgl3\bin\lwjgl3.bat
@@ -144,20 +164,21 @@ On a connected device: `adb install -r android/build/outputs/apk/debug/android-d
 ```text
 core/       com.projectblue.game
   ProjectBlueGame             Application and resource ownership
-  config/GameConfig          Game balance, timing, scoring, and limits
-  logic/                     Pure Java GameWorld, Rules, LevelResult, seeded random
+  config/                    GameConfig, CampaignConfig, ContentCatalog, Difficulty, RunSpec, Loadout
+  logic/                     Pure Java GameWorld, Rules, LevelResult, seeded random, weapon strategies
   events/GameEvents          Synchronous game event dispatch without allocations
   input/                     PlayerInput, PointerInput, MenuInput
   render/OceanRenderer       Programmatic underwater visuals
-  ui/                        HUD, palette, shared drawing resources
-  screens/                   Boot, MainMenu, Game, Pause, Result, ScreenRouter
+  ui/                        HUD, palette, shared drawing resources, original Scene2D theme
+  screens/                   Scene2D menus, campaign, hangar, settings, Game/Pause, ScreenRouter
   assets/GameAssets          Central AssetManager
   audio/AudioService         Sound/music settings and lifecycle handling
-  save/                      Versioned profile, checksum, safe defaults
+  save/                      Versioned profile, per-level records, migrations, backup recovery
   platform/                  Service interfaces and shared no-op behavior
 lwjgl3/                      Desktop launcher, platform adapter, GL smoke check
 android/                     Android launcher, safe window insets, no-op adapter
 assets/                      Original font/audio and license inventory
+core/src/main/resources/     Campaign/difficulty properties and equipment/achievement JSON
 tools/GenerateAssets.java     Offline asset regeneration
 ```
 
@@ -174,12 +195,18 @@ tools/GenerateAssets.java     Offline asset regeneration
   pauses gameplay/audio, and saves the profile. Returning requires selecting **Resume Dive**.
 - Android system bar and cutout insets are applied to the game View. FitViewport preserves
   the full play area with letterboxing on wide screens, tablets, and window resizing.
+- New Scene2D menus use a separate ExtendViewport, scrollable content, 84-unit touch
+  targets, and a persistent Back control. They do not change the gameplay viewport.
 - `AdsService`, `ConsentService`, `AchievementService`, `AnalyticsService`, and `PlatformService`
   define the platform boundary. The no-op ads service reports unavailable and never grants
   rewards. No network permission, ad SDK, or account connection is included.
-- Profile schema **v1** includes explicit v0 migration and CRC32 corruption detection.
-  Writes use temporary files and backups; missing, corrupt, or unknown schemas fall back
-  to defaults. Storage errors are shown in the menu/results without crashing the game.
+- Profile schema **v3** includes explicit v0/v1/v2 migrations and CRC32 corruption detection.
+  Equipment selections, upgrade purchases and achievement notifications persist locally.
+  Purchases commit to disk before updating the live profile; write failures spend no salvage.
+  Writes use temporary files, atomic replacement and verified backups; corrupt profiles try the backup before
+  falling back to defaults. Storage errors appear throughout the menus; Settings provides
+  a save retry. An old v1 completion becomes Level 1 / Normal progress without inventing
+  historical cleanup/rescue percentages.
   CRC32 is not a security or anti-cheat mechanism.
 - Desktop saves: `.projectblue/profile.properties` in the user's home directory.
   Android saves: the app's private files directory. Smoke mode uses `build/smoke/profile`.
@@ -188,27 +215,47 @@ tools/GenerateAssets.java     Offline asset regeneration
 
 ## Level and scoring rules
 
-The level contains 40 drones, 36 plastic items, and 5 turtles. A fixed seed, a deterministic
-spawn schedule, and a quiet final stretch make the level learnable.
+Level 1 is the authored **Blue Coast** mission. Its five-minute target route uses a deterministic
+JSON timeline with 36 scheduled drones, 52 cleanup targets, 3 turtles, 4 coral areas, and the
+three-stage Shoreline Compactor. Six component-based enemy definitions share movement, weapon,
+stats, and reward systems.
 
-- Combat = destroyed / 40; Cleanup = collected / 36; Rescue = rescued / 5.
-- Integrity = remaining health / 100. Percentages are clamped to 0-100.
-- Drones award 100 points, plastic 40, rescues 300, and each salvage unit 20.
-  Each drone drops 5 salvage. Completing the level adds 500 + remaining health x 5.
+- Combat uses enemies actually encountered. Cleanup uses authored waste and applies coral damage;
+  Rescue uses the three turtles; Integrity uses remaining hull and coral protection.
+- Enemy and waste rewards come from the mission config. Completing the level adds the existing
+  completion and remaining-hull score bonuses.
 - A failed dive earns **0 stars**; a completed dive earns at least **1 star**.
   An average of at least 45 across the four categories earns **2 stars**.
   An average of at least 75 with every category at least 50 earns **3 stars**.
-- Visual recovery: Cleanup x 55% + Rescue x 45%.
+- Visual recovery combines cleanup, rescue, and coral integrity, then completes its transition
+  during the six-second post-boss recovery sequence.
+
+Only Level 1 / Normal is open in a new profile. Completing Blue Coast with at least one star
+records the Sector 2 unlock, while Sectors 2-10 remain visibly unavailable until their authored
+content is implemented. Blue Coast difficulties open **Normal > Hard > Expert > Abyss** in order.
+Best stars, score, cleanup, rescue, and completed difficulties are saved independently.
+
+Higher difficulties increase enemy density, health, bullet speed, firing frequency, and boss cadence.
+The Shoreline Compactor uses telegraphed press arms, two destructible discharge pipes, and a gated
+core. The authored timeline is in [`blue-coast.json`](core/src/main/resources/config/blue-coast.json);
+difficulty tuning remains in [`campaign.properties`](core/src/main/resources/config/campaign.properties).
 
 ## Verification and limitations
 
-Verified in the Windows x64 development session on 2026-09-16:
+Verified in the Windows x64 development session on 2026-09-19:
 
-- **32 JUnit 5 tests passed:** the seven requested rule groups, plus collisions, pooling,
-  uninterrupted rescue, salvage, seeded reproducibility, 180-second survival,
-  save round trips, corruption, schema migration, and write failures.
+- **130 JUnit 5 tests passed:** the original rule groups, plus collisions, pooling,
+  uninterrupted rescue, salvage, seeded reproducibility, Blue Coast completion,
+  save round trips, corruption, schema migration, and write failures. Added coverage includes
+  all difficulty multipliers, live spawn/shot/boss behavior, independent locks, replay records,
+  purchases, loadouts, achievements, real file persistence, backup recovery and reset gating.
+  Equipment coverage includes config validation/fallback, concurrent purchase and save-failure
+  rollback, all five weapon behaviors, shield/cleanup/rescue effects and v2 profile migration.
 - A real LWJGL3/OpenGL window passed boot, menu, drag, pause/resume, lifecycle pause/resume,
-  wide viewport, 180-second completion, results, saving, and replay checks.
+  wide viewport, Blue Coast completion, results, saving, and replay checks. All requested
+  screens, purchases, settings, narrow/wide menu layouts, and Shoreline Compactor rendering were exercised.
+  Weapon selection and locks were also exercised. A separate application launch verified
+  profile persistence, including vessel, pilot and weapon choices.
 - Desktop distributions were built. Test report: `core/build/reports/tests/test/index.html`;
   screenshots: `build/smoke/`. See [local packaging](docs/LOCAL_PACKAGING.md) for installer validation status.
 - Android SDK 36 was installed and a **debug APK was built**. Application ID, minimum/target
@@ -221,8 +268,9 @@ Verified in the Windows x64 development session on 2026-09-16:
   or establish readiness for Play Store publication.
 - Visuals/audio are original placeholders. Professional artwork, music production,
   localization, cross-device performance profiling, and comprehensive balancing are pending.
-- Level/pilot selection, upgrades, real ads, a consent SDK, Google Play Games,
-  online analytics, and additional levels are outside this phase.
+- Sectors 2-10 are configurable missions using the current procedural ocean, enemy roster,
+  and ecology schedule; distinct handcrafted environments and comprehensive balancing are
+  pending. Real ads, a consent SDK, Google Play Games and online analytics remain outside this phase.
 
 Asset policy and source inventory: [ASSET_LICENSES.md](assets/licenses/ASSET_LICENSES.md).
 Unverified sources/licenses or changes to verified asset hashes stop packaging.

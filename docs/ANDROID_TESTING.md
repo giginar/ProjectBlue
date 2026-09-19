@@ -98,7 +98,7 @@ Store publication, release signing keys, and persistent CI signing are outside t
 - Approaching a bottle triggers cleanup; staying beside a turtle for 1.5 seconds rescues it.
 - The pause button and Android back button work.
 - Returning from the home screen leaves the game paused; resuming does not jump the clock.
-- Results and stars appear after three minutes; replay starts a fresh run.
+- Results and stars appear after the Shoreline Compactor and recovery sequence; replay starts a fresh run.
 - Fully stopping and relaunching the process restores the menu and saved settings.
 
 No physical device/emulator was connected in this session, so actual Android launch,

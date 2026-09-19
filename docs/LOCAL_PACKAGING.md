@@ -23,7 +23,7 @@ From the IntelliJ terminal:
 
 The script also works when called by absolute path from another working directory.
 `-SmokeTest` requires a graphics session. It checks the menu, dragging, pause/resume,
-lifecycle, aspect ratio, 180-second level, results, and replay, then exits.
+lifecycle, aspect ratio, a full Blue Coast run, results, and replay, then exits.
 System `JAVA_HOME` and Java PATH entries are removed during that test to verify the
 bundled runtime. Normal packaging always runs JUnit and asset checks; Android builds
 also require lint, signature, and alignment checks to pass.
@@ -120,10 +120,13 @@ directory for diagnosis. A successful build ends with `READY: ...`.
 
 ## Validation status
 
-Verified: 32 JUnit tests, Android lint/signature/16 KB alignment, combined platform builds,
+The initial packaging validation covered 32 JUnit tests, Android lint/signature/16 KB alignment, combined platform builds,
 Android-only builds from a different working directory, and real OpenGL gameplay with
 the packaged Java runtime. Concurrent packaging and invalid target/test combinations
 were rejected.
+The subsequent [meta-progression update](META_PROGRESSION.md) passes 68 JUnit tests,
+Android debug/lint, desktop distribution, and expanded OpenGL/relaunch checks. Installer
+creation, signature and alignment checks were not repeated for that update.
 The silent Windows installation attempt did not complete in this development environment.
 Installer creation and embedded version metadata were checked, but installation,
 upgrade, and uninstall have not been verified end to end.
