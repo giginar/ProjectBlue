@@ -1,17 +1,53 @@
 # Manual release acceptance matrix
 
-Date: 2026-09-19. **No Android device or emulator was connected. All device execution
-below is Pending.** Automated/source evidence is supporting evidence, not a manual pass.
+Date: 2026-09-19. Android execution was completed on a Huawei SNE-LX1 (Android 10/API 29)
+and an x86_64 phone emulator (Android 16/API 36). ADB-driven checks are recorded as device
+evidence, not as human touch/audio evidence. Remaining items explicitly say
+`MANUAL VERIFICATION REQUIRED`.
 Record tester, date, artifact SHA-256, OS/API, model, RAM, density, refresh rate, navigation
 mode and result for every run. Attach screenshots/logs without personal data.
+
+## Prompt 13 requested device scope
+
+| # | Requested check | Result and evidence |
+|---:|---|---|
+| 1 | Clean install and first launch | PASS on both targets; physical debug data was uninstalled/reinstalled and fresh profiles were created |
+| 2 | Update over existing install | PASS on both; `firstInstallTime` stayed stable while `lastUpdateTime` advanced |
+| 3 | Main menu and level select | PASS on both with captured screens |
+| 4 | Blue Coast gameplay | PASS on both, online and with all radios disabled |
+| 5 | Completion and next-level unlock | **MANUAL VERIFICATION REQUIRED**; failed result was reached, successful clear/unlock was not |
+| 6 | Save, close and reload | PASS on both; persisted Sound/Music changes survived force-stop and cold start |
+| 7 | Touch movement and fire | PASS for ADB drag and visible auto-fire; physical feel remains manual |
+| 8 | Second finger/multi-touch | **MANUAL VERIFICATION REQUIRED**; regression unit test passes, ADB did not provide simultaneous human fingers |
+| 9 | HUD touch areas | PARTIAL PASS: pause edge tap worked on both; exhaustive physical measurement is manual |
+| 10 | Portrait view | PASS on both |
+| 11 | Different aspect ratios | PASS at 1080x2340, 1080x2400 and emulated 720x1280; tablet/foldable remains manual |
+| 12 | Display cutout/safe area | PASS for real 90 px and emulated 132 px top cutouts; rotated/asymmetric cases are manual |
+| 13 | Home background/foreground | PASS on both; return opened Pause |
+| 14 | Back key and Android back gesture | PASS for `KEYCODE_BACK`; **MANUAL VERIFICATION REQUIRED** for edge gesture navigation |
+| 15 | Screen off/on | PASS on both; return opened Pause |
+| 16 | Close from recent apps | PASS on emulator by dismissing its card; **MANUAL VERIFICATION REQUIRED** on physical Huawei recents UI |
+| 17 | Process death/reopen | PASS on both with force-stop/cold launch and valid persisted profile |
+| 18 | Airplane-mode launch | PASS on both using `cmd connectivity airplane-mode enable`; mode was restored afterward |
+| 19 | Gameplay without internet | PASS on both with Wi-Fi and mobile data disabled; radios were restored afterward |
+| 20 | UMP consent flow | PARTIAL: runtime request passed and returned non-EEA (`gdprApplies=0`); **MANUAL VERIFICATION REQUIRED** for forced EEA form/choices |
+| 21 | Rewarded ad flow | PASS on API 36 emulator with official Google Test Ad: show, `Reward granted`, dismiss, one-time continue |
+| 22 | Interstitial ad flow | **MANUAL VERIFICATION REQUIRED**; three-win/later-session placement was not reached |
+| 23 | Ad-load failure fallback | PASS on both offline: both test ad loads returned error 0 and gameplay/navigation continued |
+| 24 | R8/minified QA APK launch | PASS on both using debug-signed `com.projectblue.game.qa`; an API 29 early-resume crash was fixed and the rebuilt APK passed locked-screen/repeated cold starts; ads disabled; not a production artifact |
+| 25 | Boss and result screen | PARTIAL: failed Blue Coast result PASS on emulator; **MANUAL VERIFICATION REQUIRED** for on-device boss encounter/clear |
+| 26 | Audio pause/resume | Lifecycle/audio state path passed; **MANUAL VERIFICATION REQUIRED** for audible confirmation |
+| 27 | Texture/context recovery | Process/surface recreation and desktop managed-texture smoke passed; **MANUAL VERIFICATION REQUIRED** for forced Android EGL context loss |
+| 28 | Crash/ANR/important logcat review | PASS after fix: one API 29 minified-QA early-resume crash was captured, retraced, fixed and rerun with an empty crash buffer; no ANR, StrictMode or GL invalid-operation record. Huawei logs show a recoverable EGL 0x3004 line followed by successful Mali-G51 GLES 3.2 initialization |
 
 ## Device coverage
 
 | Environment | Required coverage | Status |
 |---|---|---|
 | API 26 phone, low-memory class | Minimum API startup, all mission configs, save/migration, audio, 30-minute soak | Pending |
-| API 33-35 tall phone with cutout | Two-finger control, consent, gesture navigation, background/context loss | Pending |
-| API 36 phone | Minified AAB-generated APK, predictive/system back, offline cold start | Pending |
+| API 29 Huawei SNE-LX1 with cutout | Debug/minified QA startup, menu/gameplay, save, lifecycle, offline/airplane and logs | Partial pass; manual multi-touch/audio/boss/soak remain |
+| API 33-35 tall phone with cutout | Two-finger control, consent, gesture navigation, background/context loss | Pending; API 29 and 36 do not replace this band |
+| API 36 phone emulator | Debug and local minified QA APK, Back key, offline/airplane cold start, rewarded test ad | Partial pass; AAB-generated/signed APK, predictive gesture and forced UMP remain |
 | API 36 tablet/foldable or resizable window | Portrait request handling, large-screen orientation policy, safe bounds and resize | Pending |
 | 16 KB page-size Android environment | Native library loading and actual gameplay from AAB-generated APK | Pending |
 | Narrow phone around 360 dp wide | HUD legibility, story wrapping, touch targets and large-UI settings | Pending |
@@ -24,23 +60,23 @@ configuration. See [release steps](RELEASE_STEPS.md).
 
 | ID | Steps and expected result | Existing evidence / device status |
 |---|---|---|
-| G-01 | Drag from several initial touch points; submarine moves relatively, stays in bounds, stops on release/cancel. Touch outside letterboxing must not move it. | Pointer unit tests and desktop GL smoke; Pending |
-| G-02 | Hold movement with one finger; use the second on sonar and pause; resume and continue dragging without pointer theft or stuck input. | Second-pointer regression; Pending |
-| G-03 | Fire automatically while stationary/moving. Compare all five weapons against drones, protected coral, nets, boss parts and shielded targets. No shots while paused. | Weapon/collision tests; laser-coral regression; Pending |
+| G-01 | Drag from several initial touch points; submarine moves relatively, stays in bounds, stops on release/cancel. Touch outside letterboxing must not move it. | ADB drag moved the submarine correctly on both devices; boundary/feel **MANUAL VERIFICATION REQUIRED** |
+| G-02 | Hold movement with one finger; use the second on sonar and pause; resume and continue dragging without pointer theft or stuck input. | Second-pointer regression passes; simultaneous physical input **MANUAL VERIFICATION REQUIRED** |
+| G-03 | Fire automatically while stationary/moving. Compare all five weapons against drones, protected coral, nets, boss parts and shielded targets. No shots while paused. | Auto-fire visible on both devices; all-weapon/target matrix **MANUAL VERIFICATION REQUIRED** |
 | G-04 | Take projectile/contact/hazard damage, exhaust and regenerate shield, reach zero hull. Invulnerability must prevent repeated immediate hits; failed run earns zero stars. | Pure gameplay tests; Pending |
 | G-05 | Compare pilot/vessel passive bonuses. Activate sonar where available, exhaust energy and wait for recharge; verify hidden targets and gated weak points. | Loadout/sonar tests; no universal active special ability; Pending |
 | G-06 | Approach waste, hold the cleanup beam, interrupt range and restart. Check oil valves, debris clusters, combo and result percentages. | Cleanup/environment tests; Pending |
 | G-07 | Rescue each authored species/diver; interrupt rescue, let a timed signal expire, free multiple creatures and observe despawn. Weapons must not kill rescue creatures. | Rescue/net tests and freed-vortex pool regression; Pending |
 | G-08 | Damage coral with every weapon and enemy hazard; verify habitat health and Cleanup/Integrity decrease without granting kills or salvage for coral. | Rules/laser regression; Pending |
-| G-09 | Pause with button, keyboard/back; lock screen, Home, task switch and resume. Simulation/audio stop; returning requires Resume Dive and clears stale touch. | Desktop lifecycle smoke; Android Pending |
-| G-10 | Finish/fail/replay a mission. Verify category totals, 0-3 stars, salvage, before/after view and navigation. No duplicate settlement on repeated taps. | Results/persistence/GL smoke; Pending |
+| G-09 | Pause with button, keyboard/back; lock screen, Home, task switch and resume. Simulation/audio stop; returning requires Resume Dive and clears stale touch. | Android pause/Home/screen-off/Back lifecycle passed on both; audible audio check manual |
+| G-10 | Finish/fail/replay a mission. Verify category totals, 0-3 stars, salvage, before/after view and navigation. No duplicate settlement on repeated taps. | Failed Blue Coast result passed on emulator; successful finish/replay **MANUAL VERIFICATION REQUIRED** |
 | G-11 | Complete every boss phase through normal controls, observe warnings and invulnerable gates. Reach recovery and wait for result transition. | Boss state-machine tests; full human route Pending |
 | G-12 | Finish NEREID Core, escape, inspect finale, return to menus and replay. Let escape time out, earn the single continue and finish; second continue must be unavailable. | Four-difficulty completion/continue regression with assisted combat; Pending |
-| M-01 | Check 16:9, tall portrait, narrow phone, tablet and multi-window. No stretching or hidden controls; measure cutout/system-bar clearance on both sides. | Desktop narrow/wide smoke; device Pending |
-| M-02 | Back from every menu, gameplay, pause, result, finale, privacy form and ad. No accidental duplicate screens, stuck pause or reward. | Desktop navigation/source review; Pending |
-| M-03 | Background under memory pressure, kill the background process, cold start. Completed progression survives; interrupted dive returns to menu rather than a fabricated restored run. | File reload tests; actual OS process death Pending |
-| M-04 | Cold start in airplane mode with fresh app data, then with an existing profile. Menus/gameplay must work without waiting for consent or ads. | No-op/platform logic tests; device Pending |
-| M-05 | Measure all touch hit rectangles, HUD font and contrast at physical scale; test large UI, reduced motion, reduced particles/background and sound/music controls. | Small-target/readability findings open; Pending |
+| M-01 | Check 16:9, tall portrait, narrow phone, tablet and multi-window. No stretching or hidden controls; measure cutout/system-bar clearance on both sides. | Phone ratios/cutouts passed; tablet, multi-window and both-side rotation **MANUAL VERIFICATION REQUIRED** |
+| M-02 | Back from every menu, gameplay, pause, result, finale, privacy form and ad. No accidental duplicate screens, stuck pause or reward. | Gameplay/Pause Back and rewarded dismissal passed; all-screen gesture route manual |
+| M-03 | Background under memory pressure, kill the background process, cold start. Completed progression survives; interrupted dive returns to menu rather than a fabricated restored run. | Force-stop/cold-start and setting reload passed on both; OS low-memory eviction manual |
+| M-04 | Cold start in airplane mode with fresh app data, then with an existing profile. Menus/gameplay must work without waiting for consent or ads. | Airplane launch and no-network gameplay passed on both targets |
+| M-05 | Measure all touch hit rectangles, HUD font and contrast at physical scale; test large UI, reduced motion, reduced particles/background and sound/music controls. | Pause edge target and saved Sound/Music passed; full accessibility measurement manual |
 | M-06 | Play/retry/visit every screen for 30 minutes, rotate/resize where OS permits, repeatedly background and resume. Track frame time, Java/native heap, audio and managed textures. | Fixed pool/source ownership review and desktop texture reload smoke; device soak Pending |
 
 ## Progression and persistence cases
@@ -61,12 +97,12 @@ configuration. See [release steps](RELEASE_STEPS.md).
 
 | ID | Steps and expected result | Existing evidence / device status |
 |---|---|---|
-| A-01 | Inspect debug App ID/units: official Google demos only. Inspect chosen release flags; ads disabled unless explicitly provisioned. | Build task and release-input scan; SDK runtime Pending |
-| A-02 | Rewarded: earn+dismiss, close early, show failure, double callback, stale screen, save failure and process death. Only a valid earned+dismissed event may settle once. | `AdsIntegrationTest`; real SDK Pending |
-| A-03 | Fail, accept continue, resume, fail again; one continue per run. Verify +60 seconds, hull/protection and incremental salvage without paying the first result again. | Shared reward/world tests; Pending |
-| A-04 | First session has no interstitial. Later require three successful runs and both three-minute timers; no ads during play, failure or replay, or after a reward on the result. Test clock rollback. | Interstitial policy tests; Pending |
-| A-05 | Exercise required/not-required UMP regions, denial, consent error, cached permission and Privacy Options withdrawal. No requests before `canRequestAds`; old ads invalidated on privacy change. | Consent gate/source review; Pending |
-| A-06 | Airplane mode, no-fill and repeated load/show failures must preserve result navigation and gameplay. Background during ad/form, then return. | Shared failure paths/source review; Pending |
+| A-01 | Inspect debug App ID/units: official Google demos only. Inspect chosen release flags; ads disabled unless explicitly provisioned. | Build task passed; runtime displayed Google's `Test Ad`; QA/release-style ads disabled |
+| A-02 | Rewarded: earn+dismiss, close early, show failure, double callback, stale screen, save failure and process death. Only a valid earned+dismissed event may settle once. | Real earned+dismissed test ad passed on API 36; negative cases remain covered by `AdsIntegrationTest` |
+| A-03 | Fail, accept continue, resume, fail again; one continue per run. Verify +60 seconds, hull/protection and incremental salvage without paying the first result again. | Real test-ad continue reached Pause and unit policy passes; second post-continue failure **MANUAL VERIFICATION REQUIRED** |
+| A-04 | First session has no interstitial. Later require three successful runs and both three-minute timers; no ads during play, failure or replay, or after a reward on the result. Test clock rollback. | Interstitial policy tests pass; real placement **MANUAL VERIFICATION REQUIRED** |
+| A-05 | Exercise required/not-required UMP regions, denial, consent error, cached permission and Privacy Options withdrawal. No requests before `canRequestAds`; old ads invalidated on privacy change. | Non-EEA runtime passed on both; forced EEA/denial/privacy choices **MANUAL VERIFICATION REQUIRED** |
+| A-06 | Airplane mode, no-fill and repeated load/show failures must preserve result navigation and gameplay. Background during ad/form, then return. | Offline load failures and gameplay passed on both; background during form/ad manual |
 
 ## Per-sector content verification
 

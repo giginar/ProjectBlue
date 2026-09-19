@@ -93,7 +93,7 @@ public final class ScreenRouter {
             case CONTINUE -> {
                 if (run != null && run.world().continueAfterFailure()) {
                     // Commit after rendering; the player explicitly resumes combat from Pause.
-                    run.resetInput(); game.audio().suspend(); switchTo(new PauseScreen(game));
+                    run.resetInput(); run.refreshHud(); game.audio().suspend(); switchTo(new PauseScreen(game));
                 }
             }
             case RESULT -> {

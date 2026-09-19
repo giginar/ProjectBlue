@@ -22,6 +22,10 @@ public final class Hud implements GameEvents.Listener {
         refresh -= dt;
         if (refresh > 0) return;
         refresh = .1f; // Avoid formatting fresh strings in the render loop.
+        refresh(w);
+    }
+    /** Refresh cached labels after an out-of-band world mutation such as rewarded continue. */
+    public void refresh(GameWorld w) {
         score.setLength(0); score.append("SCORE ").append(w.score());
         stats.setLength(0); stats.append("CLEAN ").append(w.cleanedCount()).append('/').append(w.wasteTotal())
             .append("   RESCUE ").append(w.rescueCount()).append('/').append(w.turtleTotal());
@@ -53,6 +57,7 @@ public final class Hud implements GameEvents.Listener {
         if (w.mission()!=null) facilityObjective.append("HEADQUARTERS ENTRY / DISABLE POWER CORES ")
             .append(w.energyStationsDisabled()).append('/').append(w.mission().boss.powerCores());
     }
+    String healthText() { return health.toString(); }
     public void draw(GameWorld w) {
         ui.beginShapes();
         ui.rect(0, 838, WIDTH, 122, Palette.INK);

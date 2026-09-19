@@ -103,8 +103,20 @@ achievement ID/type mappings, tester accounts, and an approved sign-in experienc
 `AdsIntegrationTest` covers earned/closed/failed/duplicate/stale callbacks, restart replay,
 save failures, one continue, incremental results, caps, consent permission, and desktop No-Op/offline logic.
 Run `gradlew.bat :core:test :android:verifyDebugAdConfiguration` and
-`powershell -File tools/verify-release-inputs.ps1`. Device UMP forms, real SDK callbacks, privacy
-changes, lifecycle/process death, and airplane-mode startup remain part of the release checklist.
+`powershell -File tools/verify-release-inputs.ps1`.
+
+The 2026-09-19 local device pass used only Google's official sample identifiers. UMP ran on the
+API 29 physical phone and API 36 emulator and returned a non-EEA result (`gdprApplies=0`). The
+emulator loaded Google's visible `Test Ad`, emitted `Reward granted`, dismissed normally and
+returned to the one-time continue Pause flow. Offline starts on both targets logged rewarded and
+interstitial load error 0 without blocking menus or Blue Coast gameplay. A device-discovered
+stale Pause HUD label after continue was fixed by immediately refreshing cached HUD text and is
+covered by `HudTest`.
+
+**MANUAL VERIFICATION REQUIRED:** forced EEA consent/denial/Privacy Options, early rewarded
+dismissal through the real SDK, background/process death during the ad/form, and a real
+interstitial after the three-win/session cooldown. Production identifiers were not supplied or
+shown, and the minified QA build keeps ads disabled.
 
 ## Changed files in this integration
 

@@ -57,6 +57,7 @@ public final class GameScreen extends ScreenAdapter implements GameEvents.Listen
         camera.position.set(originalX, originalY, camera.position.z); camera.update();
         hud.draw(world);
     }
+    void refreshHud() { hud.refresh(world); }
     public GameWorld world() { return world; }
     public void resetInput() { input.reset(); accumulator = 0; }
     public void hide() { resetInput(); Gdx.input.setInputProcessor(null); }

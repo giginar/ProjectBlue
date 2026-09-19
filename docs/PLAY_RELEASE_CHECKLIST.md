@@ -32,6 +32,7 @@ powershell -File tools/verify-android-artifacts.ps1
 ```
 
 Artifacts: `android/build/outputs/apk/debug/android-debug.apk`,
+`android/build/outputs/apk/qa/android-qa.apk` (local R8 QA only),
 `android/build/outputs/bundle/release/android-release.aab`, and `lwjgl3/build/distributions/`.
 The AAB produced without owner signing credentials is unsigned and is not upload-ready.
 See [signing](RELEASE_SIGNING.md). A bundle build alone does not verify Play's generated APKs.
@@ -46,13 +47,15 @@ documents Android packaging considerations.
 
 ## Required device and console checks
 
-- [ ] Fresh offline launch and already-consented offline launch both reach gameplay.
+- [x] Fresh/updated debug installs reach offline gameplay on API 29 hardware and API 36 emulator.
 - [ ] Complete, skip, fail, background and process-kill rewarded ads; no duplicate payment.
 - [ ] Continue once, fail again, replay normally; no duplicate base salvage or progression.
 - [ ] First session, insufficient completions, cooldown, failure and active gameplay show no interstitial.
-- [ ] No-fill/show failure transitions normally; Privacy Options updates cached ads correctly.
+- [x] Offline rewarded/interstitial load failure leaves startup and gameplay usable on both targets.
+- [ ] Privacy Options updates cached ads correctly in a forced-consent region.
 - [ ] Test UMP regions/choices using the [privacy matrix](PRIVACY_CHECKLIST.md).
-- [ ] Install a minified release generated from AAB; verify assets/UI/JNI, lifecycle and 16 KB support.
+- [x] Install and launch the debug-signed local R8/resource-shrunk QA APK on API 29 and 36.
+- [ ] Install a signed minified APK generated from the final AAB; verify 16 KB runtime support.
 - [ ] Play internal track/pre-launch report: crashes, ANRs, devices, permissions, accessibility.
 - [ ] Public privacy policy, Data Safety, ads, target audience, app access and content-rating forms.
 - [ ] Confirm developer/account verification and testing requirements shown for this Play account.
@@ -63,25 +66,28 @@ Do not make sign-in mandatory for this release. See [integration notes](ADS_INTE
 
 ## Verification record
 
-Validation on 2026-09-19 (Git-derived version `0.1.16-g07f65ef45ace-dirty`, versionCode 16):
+Device addendum on 2026-09-19 used Git-derived version
+`0.1.17-g016d001ad0f4-dirty`, versionCode 17:
 
 | Check | Result |
 | --- | --- |
-| Core unit suite | 198 tests, zero failures/errors; includes 9 advertising integration tests |
+| Core unit suite | 254 tests, zero failures/errors; includes advertising, rewarded-continue HUD and pre-create Android lifecycle regression coverage |
 | Desktop distribution build | Passed |
 | Desktop OpenGL smoke | Passed: menus, all ten sectors, saves, replay, equipment, lifecycle |
 | Separate desktop process reload | Passed: progression, records, equipment, achievements, settings |
 | Android debug APK | Built; official demo configuration, signature and ZIP alignment verified |
+| Local QA APK | R8/resource-shrunk, debug-signed, ads disabled; an API 29 early-resume crash was fixed, then locked-screen/repeated launches passed on API 29 and API 36; not Play-uploadable |
 | Android lint | Zero errors; four existing compatibility/orientation/tool-version warnings |
 | Release AAB | Built with R8/resource shrinking; bundletool structural validation passed |
 | 64-bit native libraries in APK/AAB | arm64-v8a and x86_64 ELF LOAD segments support 16 KB alignment |
 | Signing | Zero AAB signature blocks: intentionally unsigned; no release key supplied |
 | Source/index identifiers and ignored files | Verification script passed; only official demo ad IDs |
-| Runtime SDK/device matrix | Pending: no connected Android device or installed emulator |
+| Runtime SDK/device matrix | Partial pass: Huawei SNE-LX1/API 29 and x86_64 emulator/API 36; see `MANUAL_TEST_MATRIX.md` |
 
 The AGP-supplied bundletool emits an SDK XML-version compatibility warning on this installed
 command-line SDK; validation still completes successfully. Gradle reports existing deprecated
 features ahead of Gradle 9. Neither is evidence of a Play acceptance test.
-Offline pure-logic/desktop startup is covered; **actual Android airplane-mode startup, UMP
-regional forms, SDK callbacks, minified release launch and a 16 KB runtime are not verified**.
+Actual Android airplane/offline startup, official rewarded test-ad callback and local minified
+QA launch are verified. **Forced UMP regional forms, a real interstitial placement, final
+signed-AAB APKs, API 26 and a 16 KB runtime are not verified.**
 No production identifiers, release keys or commits were created.

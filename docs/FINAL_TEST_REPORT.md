@@ -2,12 +2,109 @@
 
 Date: 2026-09-19. Decision: **NOT READY FOR RELEASE**.
 
-The automated candidate checks pass after seven focused defect fixes. Publication remains
-blocked by unsigned release output, missing real Android acceptance evidence, privacy/store
-owner inputs and approved store exports. This report does not certify a full human campaign
-playthrough or Android runtime behavior from desktop/build results.
+The automated candidate checks and the device checks described below pass after nine focused
+defect fixes. Publication remains blocked by unsigned release output, incomplete manual campaign
+and device coverage, privacy/store owner inputs and approved store exports. **The code candidate
+is technically suitable for continued closed-testing QA, but no Play-uploadable closed-test
+artifact exists until the owner supplies signing and Play Console inputs.**
 
-## Candidate and scope
+## Prompt 13 Android device verification
+
+The remaining runtime work was performed locally from IntelliJ's workspace, not in a cloud
+environment. The initial working tree was clean. ADB 37.0.1 found both targets:
+
+| Target | Android | Display evidence |
+|---|---|---|
+| Huawei SNE-LX1 (`HVYDU19124010569`) | Android 10 / API 29 | 1080x2340, 480 dpi, physical top cutout 90 px |
+| `sdk_gphone64_x86_64` (`emulator-5554`) | Android 16 / API 36 | 1080x2400, 420 dpi, top cutout 132 px; also exercised at 720x1280 (16:9) |
+
+Installed variants were `android-debug.apk` (`com.projectblue.game`) and the local
+`android-qa.apk` (`com.projectblue.game.qa`). The QA variant is non-debuggable, R8/minified,
+resource-shrunk, signed with the Android debug certificate and has ads disabled. It is not a
+production or Play-uploadable artifact. Debug advertising used only Google's official sample
+App ID and rewarded/interstitial units.
+
+| Installed artifact | Size | SHA-256 |
+|---|---:|---|
+| `android-debug.apk` | 9,697,746 bytes | `603892567C52285F1269C4995FDC1C807796A474F08FBB0B30811C53AF8BFC4F` |
+| `android-qa.apk` | 3,588,637 bytes | `E93D0324DA0E1B282FEFA86EB993641D184FE20D313C049D74F21037667BCF07` |
+
+Both APKs use APK Signature Scheme v2 and the same local Android Debug certificate
+(`SHA-256 EEF614D0F01E3F2FB8A269331AE44DCE1DC55058ACA6A9963D8CAB26416C9531`).
+
+Passed on both targets: clean install, cold launch, update-over-existing install, main menu,
+level select, Blue Coast startup/gameplay, automatic fire, ADB drag movement, pause hit target,
+portrait layout, real cutout safe area, Home/background/foreground, Android Back key, screen
+off/on, forced process death/relaunch, profile creation/reload, airplane-mode cold launch,
+no-network gameplay, debug native/OpenGL startup and minified QA startup. The emulator also
+passed recent-task dismissal, a real failed-run result screen, the official Google rewarded
+test ad, earned reward dismissal and one-time continue return. Offline ad loads failed without
+blocking navigation or gameplay.
+
+No final product failure remains from the executed checks. Two device findings were fixed.
+Rewarded continue restored the world correctly but Pause drew cached pre-continue hull/time
+labels; `Hud.refresh`, the continue transition and `HudTest` now refresh and cover those labels.
+The first final QA launch on the locked API 29 phone also exposed an early-lifecycle crash:
+Android called `resume()` before `create()` initialized `ScreenRouter`. Null-safe lifecycle
+guards and `ProjectBlueGameLifecycleTest` cover that ordering. The rebuilt minified QA APK then
+passed a locked-screen start, three repeated cold starts and a visible launch on the phone, plus
+a cold start on the emulator, with an empty crash buffer.
+
+The complete captured crash stack is retained at
+`build/device-qa/physical/qa-r8-crash-stacktrace.txt` and was retraced with the matching R8 map:
+
+```text
+FATAL EXCEPTION: GLThread 7743
+Process: com.projectblue.game.qa, PID: 11274
+java.lang.NullPointerException: Attempt to write to field 'boolean i4.l.d' on a null object reference
+    at a1.i.onDrawFrame(r8-map-id-4ccb77c6178b42c18a3e9ebe35e1f2198e0a5617a476d1bea9085890e9690119:119)
+    at a1.h.run(r8-map-id-4ccb77c6178b42c18a3e9ebe35e1f2198e0a5617a476d1bea9085890e9690119:30)
+    at android.opengl.GLSurfaceView$GLThread.guardedRun(GLSurfaceView.java:1521)
+    at android.opengl.GLSurfaceView$GLThread.run(GLSurfaceView.java:1281)
+```
+
+**MANUAL VERIFICATION REQUIRED:** real simultaneous two-finger input; exhaustive HUD hit-box
+measurement and gesture navigation; a successful Blue Coast clear and next-sector unlock;
+an on-device boss clear; forced UMP EEA/consent/privacy-options choices; interstitial display
+after its three-win/session cooldown; physical-device recent-card dismissal; audible audio
+pause/resume; forced Android EGL context loss; API 26 and 16 KB page-size runtimes; tablet/
+foldable/multi-window; and the 30-minute memory/thermal soak. ADB cannot honestly certify touch
+feel, simultaneous fingers or audible output.
+
+Release blockers remain: an owner-signed production AAB and package/version confirmation, the
+public privacy-policy URL and Play Console declarations, approved store exports, and closure of
+the high-priority manual campaign/device rows. High findings are the missing human boss/clear
+evidence and missing API 26/16 KB runtime. Medium findings are the open touch/accessibility,
+context-loss and extended-soak coverage. Cosmetic review remains open for narrow 16:9 layout
+crowding and placeholder-art approval.
+
+Principal commands executed for this device pass were:
+
+```powershell
+where.exe adb
+adb version
+adb devices -l
+git status --short
+.\gradlew.bat :check :lwjgl3:build :android:testDebugUnitTest :android:lintDebug :android:lintQa :android:verifyDebugAdConfiguration :android:assembleDebug :android:assembleQa --rerun-tasks --warning-mode all
+.\gradlew.bat :lwjgl3:run --args=--smoke
+.\gradlew.bat :lwjgl3:run --args=--smoke-reload
+.\gradlew.bat :core:test :android:assembleQa --rerun-tasks --warning-mode all
+adb -d install -r android\build\outputs\apk\debug\android-debug.apk
+adb -e install -r android\build\outputs\apk\debug\android-debug.apk
+adb -d install -r android\build\outputs\apk\qa\android-qa.apk
+adb -e install -r android\build\outputs\apk\qa\android-qa.apk
+```
+
+All device actions used `adb -d` or `adb -e`; package starts, input, screen capture, lifecycle,
+network, package metadata, process and logcat commands were also target-qualified. The final
+decision is **NOT READY FOR RELEASE**. The remaining limitations are listed above and in the
+manual matrix; no production key, production AdMob ID, AAB device install or Play upload was used.
+
+## Previous automated audit baseline (historical)
+
+The following baseline records the earlier Prompt 13 automated audit. Its HEAD, dirty-tree and
+artifact values are historical; the device addendum above records this task's initially clean
+`016d001ad0f4a73c2fd7452d15520b03c9bc9bdd` checkout and final rebuilt APKs.
 
 | Item | Inspected candidate |
 |---|---|
@@ -20,7 +117,7 @@ playthrough or Android runtime behavior from desktop/build results.
 | Android | minSdk 26, compile/target 36, build-tools 35.0.0 |
 | Android SDKs | AdMob 25.5.0, UMP 4.0.0; Android-only dependencies |
 | Release configuration | `DEBUG=false`, R8 and resource shrinking enabled, ads disabled, no upload signing supplied |
-| Device availability | `adb devices -l`: no connected device/emulator |
+| Device availability | Huawei SNE-LX1 API 29 and x86_64 emulator API 36; both online |
 
 Read the repository instructions and inventoried source, configuration, tests, documentation,
 assets, scripts and Android release setup before editing. Reviewed the shared simulation,
@@ -37,8 +134,8 @@ after the report was produced and does not change the recorded artifact hashes.
 | Check | Result | Evidence / limits |
 |---|---|---|
 | Initial baseline | PASS: 198 JUnit tests; desktop and Android builds | `build/final-qa/baseline-build.log`; passing baseline did not cover the defects below |
-| Final full unit/headless suite | PASS: **252 tests, 32 suites, 0 failures, 0 errors, 0 skipped** | `core/build/reports/tests/test/index.html`, XML results; all tests rerun |
-| Headless world integration | PASS: all 10 sectors x 4 difficulties; boss/environment/save tests | Included in the 252 count, not an additional test count; no separate headless module |
+| Final full unit/headless suite | PASS: **254 tests, 34 suites, 0 failures, 0 errors, 0 skipped** | `core/build/reports/tests/test/index.html`, XML results; all tests rerun after the device fixes |
+| Headless world integration | PASS: all 10 sectors x 4 difficulties; boss/environment/save tests | Included in the 254 count, not an additional test count; no separate headless module |
 | Desktop build/distributions | PASS | `:lwjgl3:build`; Java-runtime distribution built; Windows installer packaging was not rerun |
 | Desktop GL smoke | PASS | Real OpenGL process, all ten sector render paths, menus, drag, pause/lifecycle, results, replay, equipment, settings and aspect ratios |
 | Texture recovery regression | PASS | Smoke deletes generated UI/font GPU textures, invalidates/reloads managed textures and checks valid handles/count; not actual Android OS context loss |
@@ -56,7 +153,7 @@ after the report was produced and does not change the recorded artifact hashes.
 | Minimum-API regression | PASS in tests and DEX inspection | Incompatible `InputStream.readAllBytes()` invocation removed from MissionConfig debug DEX |
 | Script syntax / diff whitespace | PASS | PowerShell parser checks and `git diff --check`; Git line-ending notices are not whitespace errors |
 | Versioning fixture script | Not run | `tools/test-versioning.ps1` creates temporary Git commits; omitted to honor the no-commit instruction |
-| Android runtime / R8 device execution | NOT RUN | No device/emulator; required before release |
+| Android runtime / R8 device execution | PASS with manual gaps | Debug ran on API 29 and 36; debug-signed minified QA APK ran on both. API 26, 16 KB and full manual campaign coverage remain open |
 
 The complete final Gradle command was:
 
@@ -81,6 +178,8 @@ before those output directories are replaced by another run.
 | F-05 Wildlife pool cleanup | Debugger observed a freed creature still active at x=600 and y=1757 after 600 frames: vortex clamping prevented the strict greater-than despawn condition. | Include the boundary and upper escape bound; regression confirms despawn and reuse of the same pool slot. |
 | F-06 Laser/environment collision | Debugger observed coral health 30, enemy health 40 and coral damage 0 after a laser shot through coral. | Nearest-target laser selection includes protected coral, records habitat damage and never grants coral kill/salvage rewards; regression passes. |
 | F-07 Unregistered asset bypass | The entire `licenses/` subtree was excluded from the packageable-file inventory. | Only two exact metadata files are exempt; hash keys and documented paths must match the allowlist. Negative probe test passes. |
+| F-08 Rewarded-continue HUD cache | On the API 36 emulator, rewarded continue restored the world but Pause displayed cached pre-continue hull/time text while the live health bar was full. | Refresh cached HUD strings immediately after `continueAfterFailure`; `HudTest` verifies the label changes from `HULL 0/100` to `HULL 100/100`. |
+| F-09 Early Android lifecycle crash | A debug-signed minified QA cold start behind the API 29 lock screen delivered `resume()` before `create()` initialized `ScreenRouter`, causing a GL-thread null dereference. | Guard pre-create `pause()`/`resume()` dependencies; `ProjectBlueGameLifecycleTest` reproduces both callbacks before creation. The rebuilt QA APK passed locked-screen startup, three physical cold starts and an emulator cold start with no crash. |
 
 Failing-before and passing-after logs are retained in `build/final-qa/` as
 `regressions-before/after.log`, `campaign-before/after.log`, `texture-before.log`,
@@ -95,7 +194,9 @@ Local source anchors for the runtime fixes: [continue state](D:/Workspace/Projec
 [managed texture ownership](D:/Workspace/ProjectBlue/core/src/main/java/com/projectblue/game/ui/MenuTheme.java:64),
 [wildlife cleanup](D:/Workspace/ProjectBlue/core/src/main/java/com/projectblue/game/logic/GameWorld.java:1343),
 [laser target selection](D:/Workspace/ProjectBlue/core/src/main/java/com/projectblue/game/logic/GameWorld.java:1429)
-and [compatible mission reader](D:/Workspace/ProjectBlue/core/src/main/java/com/projectblue/game/config/MissionConfig.java:300).
+[compatible mission reader](D:/Workspace/ProjectBlue/core/src/main/java/com/projectblue/game/config/MissionConfig.java:300),
+[rewarded HUD refresh](D:/Workspace/ProjectBlue/core/src/main/java/com/projectblue/game/ui/Hud.java:25) and
+[pre-create lifecycle guards](D:/Workspace/ProjectBlue/core/src/main/java/com/projectblue/game/ProjectBlueGame.java:50).
 
 ## Gameplay, progression and content assessment
 

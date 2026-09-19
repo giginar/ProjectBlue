@@ -49,12 +49,13 @@ public class ProjectBlueGame extends Game {
     }
     public void pause() {
         super.pause();
-        router.pauseForLifecycle();
-        saves.save();
+        // Android can dispatch lifecycle callbacks before create() finishes.
+        if (router != null) router.pauseForLifecycle();
+        if (saves != null) saves.save();
     }
     public void resume() {
         super.resume();
-        router.resumeFromLifecycle();
+        if (router != null) router.resumeFromLifecycle();
     }
     public void dispose() {
         if (router != null) router.dispose();

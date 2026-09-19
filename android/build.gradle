@@ -64,6 +64,17 @@ android {
             buildConfigField 'String', 'INTERSTITIAL_AD_ID', '"' + (releaseAds ? envValue('PB_INTERSTITIAL_AD_ID') : '') + '"'
             if (hasSigning) signingConfig signingConfigs.upload
         }
+        qa {
+            initWith release
+            applicationIdSuffix '.qa'
+            versionNameSuffix '-qa'
+            signingConfig = signingConfigs.debug
+            manifestPlaceholders = [admobAppId: sampleAppId]
+            buildConfigField 'boolean', 'ADS_ENABLED', 'false'
+            buildConfigField 'String', 'REWARDED_AD_ID', '""'
+            buildConfigField 'String', 'INTERSTITIAL_AD_ID', '""'
+            matchingFallbacks = ['release']
+        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
