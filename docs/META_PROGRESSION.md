@@ -13,16 +13,16 @@ configurable difficulties and Scene2D menus beside Game/Pause. Equipment now ext
 that foundation with a v3 profile and JSON content; see
 [equipment systems](EQUIPMENT_SYSTEMS.md). Blue Coast now supplies the Level 1 duration,
 timeline and encounter rules while keeping the existing fixed-step loop and profile IDs.
-TIDE / Kaia / Pulse Cannon is the default, including Kaia's cleanup bonus. The previous
-procedural simulation fixture remains covered by tests on the preserved later-level path.
+TIDE / Kaia / Pulse Cannon is the default, including Kaia's cleanup bonus. The shared
+fixed-step simulation remains covered by regression tests across the campaign.
 
 ## Navigation and progression
 
-Main Menu offers Play, Hangar, Achievements, Settings, and Credits. Play opens the
+Main Menu offers Play, Hangar, Achievements, Settings, and Credits. A completed campaign also exposes Final Results. Play opens the
 scrollable Level Select chart. Select an unlocked card to see its briefing, difficulty
 buttons and Begin Dive action. Hangar links to Submarine Select, Pilot Select, Weapon Select
 and Upgrades.
-Result offers replay of the same sector/difficulty, Level Select, Hangar and Main Menu.
+Result offers replay of the same sector/difficulty, Level Select, Hangar and Main Menu. Completing sector 10 opens the final world recovery map, wildlife return, campaign totals, replay, and Credits actions.
 Back/Esc follows the parent screen; within Level Select it returns from briefing to chart.
 
 - There are ten stable sector IDs, 1 through 10. Only sector 1 / Normal starts open.
@@ -41,7 +41,7 @@ Back/Esc follows the parent screen; within Level Select it returns from briefing
 `core/src/main/resources/config/campaign.properties` is a Java resource packaged in both
 desktop jars and Android APKs. It is configuration rather than a downloaded game asset.
 Each sector keeps its stable name, region, seed and record ID. Blue Coast, Coral Gardens, Ghost Nets,
-Sunken City, Black Tide, Silent Reef, Frozen Depths, Abyss Mine, and Plastic Vortex are authored and playable. Sector 10 preserves save compatibility and appears as coming later.
+Sunken City, Black Tide, Silent Reef, Frozen Depths, Abyss Mine, Plastic Vortex, and NEREID Core are authored and playable. Sector 10 uses the record that has existed since the profile progression foundation, so final completion needs no schema change.
 
 | Difficulty | Health | Shot speed | Spawn density | Fire rate | Boss cadence | Fan shots | Movement | Phases |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -120,8 +120,9 @@ Commands executed on Windows:
 .\gradlew.bat :android:assembleDebug :android:lintDebug :android:generateReleaseBuildConfig :lwjgl3:installDist
 ```
 
-- 169 JUnit invocations pass, including the original regression checks and the sector 8-9
-  pressure, deterministic-current, cleanup-combo, timeline, pool-capacity, and boss-state checks.
+- 180 JUnit invocations pass, including the original regression checks, sector 8-9 systems,
+  NEREID Core telegraphs and transitions, base-loadout completion, escape success/failure,
+  difficulty-specific requirements, final unlock/achievement, and final save reload.
 - Real LWJGL/OpenGL smoke covers menus including Weapon Select, a full Blue Coast dive, drag,
   pause/resume, lifecycle, locked routes, automatic unlocks, disk persistence, replay,
   selections, exactly-once purchases/toggles, narrow/wide layouts, and boss rendering.
@@ -154,7 +155,7 @@ Screenshots: `build/smoke/01-menu.png` through the numbered scenario captures, i
     Return to Level Select. Sector 2 / Normal should be playable; its Hard should remain locked.
 5. Clear Coral Gardens and confirm Ghost Nets opens. Clear Ghost Nets and confirm the Sector 4
     mission opens. Clear Sunken City and Black Tide; confirm Silent Reef opens. Clear Silent Reef,
-    then Frozen Depths and Abyss Mine. Confirm Plastic Vortex opens, and clearing it unlocks the saved Sector 10 record while its card remains `COMING LATER`.
+    then Frozen Depths and Abyss Mine. Confirm Plastic Vortex opens, and clearing it unlocks NEREID Core.
 6. Replay sector 1 / Normal. A worse result must not lower any existing best record.
    A failed run must not unlock the next difficulty. Pause > End Dive must not add rewards.
 7. Complete sector 1 / Hard, then Expert, defeating the Shoreline Compactor before the deadline.
@@ -166,12 +167,16 @@ Screenshots: `build/smoke/01-menu.png` through the numbered scenario captures, i
 9. Toggle sound/music, cycle volumes, enable reduced menu motion, and inspect Achievements.
    Exit the application completely and launch it again. Verify progress, records, settings,
    selections, upgrade levels and salvage are unchanged.
-10. Visit every screen and use Back/Esc. Scroll to sector 10, the bottom of Settings and the
-   last achievement. Resize desktop to 320 x 640 and 960 x 540; controls must stay reachable.
-11. Run without `-PdevelopmentBuild=true`: Reset Profile must be absent. Install the debug
+10. Clear NEREID Core. Confirm its power cores, Core Sentinel, four Leviathan Core phases,
+    cleanup/sonar/rescue gate, timed upper-exit escape, ten-region final map, wildlife list,
+    totals, Guardian of the Blue unlock, replay links, and Credits transition. Exit and reopen;
+    Final Results and all ten replayable sectors must remain available.
+11. Visit every screen and use Back/Esc. Scroll to sector 10, the bottom of Settings and the
+    last achievement. Resize desktop to 320 x 640 and 960 x 540; controls must stay reachable.
+12. Run without `-PdevelopmentBuild=true`: Reset Profile must be absent. Install the debug
     APK on a phone: it should be present. Check touch/scrolling, cutout clearance, system
     back, background/resume, sound and a full dive. Repeat on a wide/tall screen if available.
-12. Optional isolated corruption test: run both smoke commands, close the app, replace
+13. Optional isolated corruption test: run both smoke commands, close the app, replace
     `build/smoke/profile/profile.properties` with invalid text, and run `--smoke-reload`.
     The verified backup should restore the profile. Production saves need not be edited.
 

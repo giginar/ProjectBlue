@@ -9,7 +9,7 @@ import com.projectblue.game.save.Profile;
 
 /** Transitions commit after render, so a screen can never dispose itself mid-frame. */
 public final class ScreenRouter {
-    public enum Route { MENU, LEVEL_SELECT, HANGAR, SUBMARINE_SELECT, PILOT_SELECT, WEAPON_SELECT, UPGRADES, ACHIEVEMENTS, SETTINGS, CREDITS, PLAY, PAUSE, RESUME, RESULT, EXIT }
+    public enum Route { MENU, LEVEL_SELECT, HANGAR, SUBMARINE_SELECT, PILOT_SELECT, WEAPON_SELECT, UPGRADES, ACHIEVEMENTS, SETTINGS, CREDITS, FINALE, PLAY, PAUSE, RESUME, RESULT, EXIT }
     private final ProjectBlueGame game;
     private GameScreen run;
     private Route pending;
@@ -37,7 +37,7 @@ public final class ScreenRouter {
         Route route = pending; pending = null;
         if (lifecyclePaused && (route == Route.PLAY || route == Route.RESUME)) return;
         switch (route) {
-            case MENU, LEVEL_SELECT, HANGAR, SUBMARINE_SELECT, PILOT_SELECT, WEAPON_SELECT, UPGRADES, ACHIEVEMENTS, SETTINGS, CREDITS -> {
+            case MENU, LEVEL_SELECT, HANGAR, SUBMARINE_SELECT, PILOT_SELECT, WEAPON_SELECT, UPGRADES, ACHIEVEMENTS, SETTINGS, CREDITS, FINALE -> {
                 game.audio().resume(); switchTo(menu(route)); disposeRun();
             }
             case PLAY -> {
@@ -72,7 +72,8 @@ public final class ScreenRouter {
                     String unlocked = "";
                     if (!levelWasOpen && profile.canPlay(nextLevel, Difficulty.NORMAL)) unlocked += "Sector " + nextLevel + " unlocked. ";
                     if (!difficultyWasOpen && nextDifficulty != null && profile.canPlay(result.levelId, nextDifficulty)) unlocked += nextDifficulty + " unlocked for this sector.";
-                    switchTo(new ResultScreen(game, result, unlocked));
+                    if (result.completed && result.levelId==CampaignConfig.LEVEL_COUNT) switchTo(new FinaleScreen(game));
+                    else switchTo(new ResultScreen(game, result, unlocked));
                     disposeRun();
                 }
             }
@@ -91,6 +92,7 @@ public final class ScreenRouter {
             case ACHIEVEMENTS -> new AchievementsScreen(game);
             case SETTINGS -> new SettingsScreen(game);
             case CREDITS -> new CreditsScreen(game);
+            case FINALE -> game.saves().profile().campaignCompleted() ? new FinaleScreen(game) : new LevelSelectScreen(game);
             default -> throw new IllegalArgumentException("Not a menu route");
         };
     }

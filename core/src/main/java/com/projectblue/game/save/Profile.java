@@ -42,6 +42,7 @@ public final class Profile {
     public boolean canPlay(int id,Difficulty difficulty) {
         return id >= 1 && id <= levels.length && level(id).canPlay(difficulty);
     }
+    public boolean campaignCompleted() { return level(CampaignConfig.LEVEL_COUNT).completed(Difficulty.NORMAL); }
     public boolean meets(ContentCatalog.Unlock condition) {
         return switch (condition.metric()) {
             case ALWAYS -> true;

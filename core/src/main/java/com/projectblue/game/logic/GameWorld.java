@@ -37,6 +37,7 @@ public final class GameWorld {
     private final BorealisDrill borealisDrill;
     private final TheHarvester theHarvester;
     private final RecyclerLeviathan recyclerLeviathan;
+    private final LeviathanCore leviathanCore;
     private final SonarSystem sonar;
     private final ThermalSystem thermal;
     private final PressureSystem pressure;
@@ -49,7 +50,8 @@ public final class GameWorld {
     private int shield, damageTaken, cleanedCount, coralDamage, combatScore, enemiesEncountered;
     private int spawnedDrones, spawnedPlastic, spawnedTurtles, kills, plasticCount, rescueCount, salvageCount;
     private int oilSpawned, oilCleaned, valvesClosed, bossOilTotal, drillPointsDisabled, energyStationsDisabled;
-    private boolean finished, bossSpawned, cleaning, recovering;
+    private int finalBossDronesLaunched;
+    private boolean finished, bossSpawned, cleaning, recovering, finalObjectivesSpawned;
     private LevelResult result;
 
     public GameWorld(RandomProvider random) {
@@ -78,6 +80,8 @@ public final class GameWorld {
             ? new TheHarvester(mission.boss,spec.tuning().health(),spec.tuning().bossCadence()) : null;
         recyclerLeviathan = mission != null && mission.boss.kind()==MissionConfig.BossKind.RECYCLER_LEVIATHAN
             ? new RecyclerLeviathan(mission.boss,mission.vortex.bossWasteRequired(),spec.tuning().health(),spec.tuning().bossCadence()) : null;
+        leviathanCore = mission != null && mission.boss.kind()==MissionConfig.BossKind.LEVIATHAN_CORE
+            ? new LeviathanCore(mission.boss,spec.difficulty(),spec.tuning().health(),spec.tuning().bossCadence()) : null;
         sonar=mission!=null && mission.sonar!=null?new SonarSystem(mission.sonar,spec.difficulty()):null;
         thermal=mission!=null && mission.thermal!=null?new ThermalSystem(mission.thermal,spec.difficulty()):null;
         pressure=mission!=null && mission.pressure!=null?new PressureSystem(mission.pressure,spec.difficulty()):null;
@@ -520,6 +524,7 @@ public final class GameWorld {
                 case BOREALIS_DRILL -> updateBorealisDrill(dt);
                 case THE_HARVESTER -> updateTheHarvester(dt);
                 case RECYCLER_LEVIATHAN -> updateRecyclerLeviathan(dt);
+                case LEVIATHAN_CORE -> updateLeviathanCore(dt);
             }
             return;
         }
@@ -749,6 +754,114 @@ public final class GameWorld {
         }
         if (recyclerLeviathan.defeated()) beginRecovery();
     }
+    private void updateLeviathanCore(float dt) {
+        if (!bossSpawned && elapsed>=mission.boss.start()) {
+            ensureFinalPowerCores();
+            if (energyStationsDisabled<mission.boss.powerCores()) return;
+            bossSpawned=true; timeline.stop(); leviathanCore.start(); boss.reset();
+            boss.x=WIDTH/2f; boss.y=834; boss.radius=88;
+            boss.health=boss.maxHealth=leviathanCore.maxHealth(); enemiesEncountered++;
+        }
+        if (!bossSpawned || recovering) return;
+        LeviathanCore.State before=leviathanCore.state();
+        leviathanCore.update(dt,player.y>=700);
+        boss.x=WIDTH/2f+(float)Math.sin(leviathanCore.stateTime()*.34f*spec.tuning().bossMovement())*38;
+        boss.y=Math.max(738,834-leviathanCore.stateTime()*26); boss.health=leviathanCore.health();
+        boolean generators=leviathanCore.state()==LeviathanCore.State.SHIELD_GENERATORS;
+        configureBossPart(bossLeftPipe,140,boss.y-8,leviathanCore.generatorHealth(true),leviathanCore.maxGeneratorHealth(),generators);
+        configureBossPart(bossRightPipe,400,boss.y-8,leviathanCore.generatorHealth(false),leviathanCore.maxGeneratorHealth(),generators);
+        if (before!=LeviathanCore.State.RESTORATION_SYSTEMS
+            && leviathanCore.state()==LeviathanCore.State.RESTORATION_SYSTEMS) spawnFinalObjectives();
+        LeviathanCore.Attack attack=leviathanCore.consumeAttack();
+        if (attack!=null) fireLeviathanAttack(attack);
+        if (leviathanCore.escapeFailed()) { finishMission(false); return; }
+        if (leviathanCore.defeated()) beginRecovery();
+    }
+    private void ensureFinalPowerCores() {
+        int active=0;
+        for (int i=0;i<environments.capacity();i++) {
+            Entity e=environments.at(i);
+            if (e.active && e.environment==MissionConfig.EnvironmentKind.ENERGY_STATION) active++;
+        }
+        int missing=mission.boss.powerCores()-energyStationsDisabled-active;
+        for (int i=0;i<missing;i++) {
+            Entity e=environments.obtain(); if (e==null) return;
+            e.environment=MissionConfig.EnvironmentKind.ENERGY_STATION;
+            e.x=i%2==0?155:385; e.y=420+i*150; e.radius=38; e.health=e.maxHealth=100; e.value=3;
+        }
+    }
+    private void spawnFinalObjectives() {
+        if (finalObjectivesSpawned) return;
+        finalObjectivesSpawned=true;
+        // Retire temporary attack pollution so the fixed hazard pool always has room for required objectives.
+        for (int i=0;i<hazards.capacity();i++) {
+            Entity hazard=hazards.at(i);
+            if (hazard.active && hazard.value==1) hazard.active=false;
+        }
+        float[] cleanupX={95,215,335,455};
+        float[] cleanupY={510,350,510,350};
+        for (int i=0;i<mission.boss.restorationCleanup();i++) {
+            Entity e=spawnHazard(MissionConfig.EnvironmentKind.OIL_FIELD,cleanupX[i%cleanupX.length],cleanupY[i%cleanupY.length],true);
+            if (e!=null) e.value=2;
+        }
+        MissionConfig.Creature[] choices={mission.creature(MissionConfig.CreatureKind.MANTA),
+            mission.creature(MissionConfig.CreatureKind.FISH_SCHOOL)};
+        for (int i=0;i<mission.boss.restorationRescues();i++) {
+            MissionConfig.Creature creature=choices[i%choices.length];
+            if (creature==null) creature=mission.creatures().iterator().next();
+            Entity e=turtles.obtain(); if (e==null) return;
+            e.x=i%2==0?155:385; e.y=270+i*170; e.radius=creature.radius(); e.creature=creature;
+            e.vy=0; e.lifetime=0; e.value=2; spawnedTurtles++;
+        }
+    }
+    private void fireLeviathanAttack(LeviathanCore.Attack attack) {
+        int complexity=leviathanCore.attackComplexity();
+        switch (attack) {
+            case ARCHIVE_FAN -> {
+                fireBossVolley();
+                if (finalBossDronesLaunched<mission.boss.droneBudget()) {
+                    spawnEnemy(mission.enemy("DEFENSE_DRONE"),boss.x,boss.y-45);
+                    finalBossDronesLaunched++;
+                }
+            }
+            case NET_CROSS -> {
+                spawnBossNet(boss.x-90); spawnBossNet(boss.x+90);
+                if (complexity>=3) spawnBossNet(boss.x);
+            }
+            case OIL_SURGE -> {
+                int count=1+complexity/2;
+                for (int i=0;i<count;i++) spawnHazard(MissionConfig.EnvironmentKind.OIL_FIELD,
+                    80+random.nextFloat()*(WIDTH-160),320+random.nextFloat()*280,true);
+            }
+            case SONAR_RING -> fireRadial(boss.x,boss.y-35,6+complexity*2,
+                spec.tuning().shotSpeed()*.78f,8);
+            case SHIELD_LANES -> {
+                int count=5+complexity;
+                int gap=(int)(boss.value++%count);
+                for (int i=0;i<count;i++) if (i!=gap) {
+                    float x=45+i*(WIDTH-90f)/Math.max(1,count-1);
+                    hostileProjectile(x,boss.y-30,0,-spec.tuning().shotSpeed(),9,0);
+                }
+            }
+            case RESCUE_SWEEP -> {
+                double aim=Math.atan2(player.y-boss.y,player.x-boss.x);
+                for (int i=0;i<2+complexity;i++) {
+                    double angle=aim+(i-(1+complexity)/2f)*.18;
+                    hostileProjectile(boss.x,boss.y-45,(float)Math.cos(angle)*spec.tuning().shotSpeed(),
+                        (float)Math.sin(angle)*spec.tuning().shotSpeed(),8,0);
+                }
+            }
+            case CORE_BURST -> {
+                fireRadial(boss.x,boss.y-30,8+complexity*2,spec.tuning().shotSpeed()*.85f,9);
+                if (complexity>=3) fireBossVolley();
+            }
+            case COLLAPSE -> {
+                int count=1+complexity/2;
+                for (int i=0;i<count;i++) spawnEnvironment(MissionConfig.EnvironmentKind.ICE_FALL,
+                    Rules.clamp(player.x+(i-(count-1)/2f)*150,70,WIDTH-70),Math.min(800,player.y+330+i*35));
+            }
+        }
+    }
     private void fireResonanceWave() {
         int count=Math.max(6,spec.tuning().bossProjectiles()+3);
         float speed=spec.tuning().shotSpeed()*.82f;
@@ -837,6 +950,7 @@ public final class GameWorld {
         if (borealisDrill!=null) return borealisDrill.phase();
         if (theHarvester!=null) return theHarvester.phase();
         if (recyclerLeviathan!=null) return recyclerLeviathan.phase();
+        if (leviathanCore!=null) return leviathanCore.phase();
         if (!boss.active) return 0;
         float remaining = (float) boss.health / boss.maxHealth;
         return Math.min(spec.tuning().bossPhases(), remaining > .66f ? 1 : remaining > .33f ? 2 : 3);
@@ -982,6 +1096,10 @@ public final class GameWorld {
             recyclerLeviathan.hitArmor(left,damage);
             (left?bossLeftPipe:bossRightPipe).health=recyclerLeviathan.armorHealth(left);
         }
+        else if (leviathanCore!=null) {
+            leviathanCore.hitGenerator(left,damage);
+            (left?bossLeftPipe:bossRightPipe).health=leviathanCore.generatorHealth(left);
+        }
     }
     private void hitBossCore(int damage) {
         if (compactor!=null) { compactor.hitCore(damage); boss.health=compactor.health(); }
@@ -993,6 +1111,7 @@ public final class GameWorld {
         else if (borealisDrill!=null) { borealisDrill.hitCore(damage); boss.health=borealisDrill.health(); }
         else if (theHarvester!=null) { theHarvester.hitCore(damage); boss.health=theHarvester.health(); }
         else if (recyclerLeviathan!=null) { recyclerLeviathan.hitCore(damage); boss.health=recyclerLeviathan.health(); }
+        else if (leviathanCore!=null) { leviathanCore.hitCore(damage); boss.health=leviathanCore.health(); }
     }
     private void hitPlayer(int damage) {
         if (invulnerability > 0) return;
@@ -1193,6 +1312,7 @@ public final class GameWorld {
         if (!e.active) return;
         e.active=false; cleanedCount++; salvageCount+=e.environment==MissionConfig.EnvironmentKind.OIL_FIELD?4:2;
         if (e.environment==MissionConfig.EnvironmentKind.OIL_FIELD) oilCleaned++;
+        if (e.value==2 && leviathanCore!=null) leviathanCore.recordCleanup();
         burst(e.x,e.y,1);
     }
     private void absorbNearestOil() {
@@ -1218,6 +1338,7 @@ public final class GameWorld {
                 float multiplier=e.creature==null?1:e.creature.rescueMultiplier();
                 if (e.progress >= spec.loadout().rescueSeconds()*multiplier) {
                     e.friendly = true; rescueCount++; burst(e.x, e.y, 1);
+                    if (e.value==2 && leviathanCore!=null) leviathanCore.recordRescue();
                     events.emit(TURTLE_RESCUED, e.x, e.y, RESCUE_SCORE);
                 }
             } else e.progress = 0; // A continuous short stay is required.
@@ -1368,12 +1489,13 @@ public final class GameWorld {
     public BorealisDrill borealisDrill() { return borealisDrill; }
     public TheHarvester theHarvester() { return theHarvester; }
     public RecyclerLeviathan recyclerLeviathan() { return recyclerLeviathan; }
+    public LeviathanCore leviathanCore() { return leviathanCore; }
     public int spawnedDrones() { return spawnedDrones; }
     public float progress() { return elapsed / (mission==null?LEVEL_SECONDS:mission.durationSeconds); }
     public float restoration() {
         if (mission==null) return (Rules.cleanup(plasticCount)*CLEANUP_RESTORE_WEIGHT+Rules.rescue(rescueCount)*RESCUE_RESTORE_WEIGHT)/100f;
         float cleanup=Rules.percentage(cleanedCount,mission.cleanupCount())/100f;
-        float rescue=Rules.percentage(rescueCount,mission.turtleCount)/100f;
+        float rescue=Rules.percentage(rescueCount,mission.rescueCount())/100f;
         float coral=1-Rules.percentage(coralDamage,Math.max(1,mission.coralCount*30))/100f;
         float base=Rules.clamp(cleanup*.55f+rescue*.3f+coral*.15f,0,1);
         return recovering ? base+(1-base)*Rules.clamp(recoveryTimer/mission.recoverySeconds,0,1) : base;
@@ -1385,7 +1507,7 @@ public final class GameWorld {
     public int score() { return Rules.score(0,cleanedCount,rescueCount,salvageCount,player.health,false)+combatScore; }
     public int cleanedCount() { return mission==null?plasticCount:cleanedCount; }
     public int wasteTotal() { return mission==null?PLASTIC_COUNT:mission.cleanupCount(); }
-    public int turtleTotal() { return mission==null?TURTLE_COUNT:mission.turtleCount; }
+    public int turtleTotal() { return mission==null?TURTLE_COUNT:mission.rescueCount(); }
     public int valvesClosed() { return valvesClosed; }
     public int oilCleaned() { return oilCleaned; }
     public int drillPointsDisabled() { return drillPointsDisabled; }
@@ -1408,6 +1530,7 @@ public final class GameWorld {
         && (!enemy.concealed || sonar!=null&&sonar.revealing()); }
     public boolean activateSonar() {
         if (sonar==null || !sonar.activate()) return false;
+        if (leviathanCore!=null) leviathanCore.recordSonarPulse();
         events.emit(SONAR_PULSE,player.x,player.y,0); return true;
     }
     public boolean hasSonar() { return sonar!=null; }
@@ -1432,6 +1555,7 @@ public final class GameWorld {
     public float comboRemaining() { return cleanupCombo==null?0:cleanupCombo.remaining(); }
     public float comboWindow() { return cleanupCombo==null?1:cleanupCombo.window(); }
     public boolean escapingVortex() { return vortex!=null&&vortex.escaping()&&recovering; }
+    public boolean escapingCore() { return leviathanCore!=null&&leviathanCore.escaping(); }
     public int coralDamage() { return coralDamage; }
     public boolean midpointActive() { return mission!=null && elapsed>=mission.midpointStart && elapsed<mission.midpointStart+mission.midpointDuration; }
     public boolean bossCoreVulnerable() {
@@ -1444,7 +1568,8 @@ public final class GameWorld {
         if (resonanceEngine!=null) return resonanceEngine.coreVulnerable();
         if (borealisDrill!=null) return borealisDrill.coreVulnerable();
         if (theHarvester!=null) return theHarvester.coreVulnerable();
-        return recyclerLeviathan!=null && recyclerLeviathan.coreVulnerable();
+        if (recyclerLeviathan!=null) return recyclerLeviathan.coreVulnerable();
+        return leviathanCore!=null && leviathanCore.coreVulnerable();
     }
     public boolean cleaning() { return cleaning; }
     public boolean slowed() { return slowTimer>0; }

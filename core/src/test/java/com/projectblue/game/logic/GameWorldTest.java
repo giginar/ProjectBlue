@@ -68,22 +68,20 @@ class GameWorldTest {
             assertEquals(a.drones.at(i).y,b.drones.at(i).y);
         }
     }
-    @Test void legacyThreeMinuteSimulationStillFinishesOnce() {
+    @Test void authoredFinalMissionDoesNotAutoCompleteAtTheLegacyThreeMinuteMark() {
         GameWorld w=new GameWorld(RandomProvider.seeded(LEVEL_SEED),
             com.projectblue.game.config.RunSpec.create(10,com.projectblue.game.config.Difficulty.NORMAL,
                 com.projectblue.game.config.Loadout.standard()));
         int[] finishedEvents={0};
         w.events.subscribe((type,x,y,value)->{if(type==GameEvents.Type.FINISHED)finishedEvents[0]++;});
         for(int i=0;i<11000 && !w.finished();i++) {
+            w.player.health=w.player.maxHealth;
             float target=WIDTH/2f+(float)Math.sin(w.elapsed()*1.5f)*190;
             w.update(STEP,true,target,PLAYER_START_Y);
         }
-        assertTrue(w.finished());
-        assertTrue(w.result().completed,"Scripted moving pilot should survive; elapsed="+w.elapsed());
-        assertEquals(LEVEL_SECONDS,w.elapsed(),.01f);
-        assertTrue(w.result().stars>=1);
-        steps(w,120);
-        assertEquals(1,finishedEvents[0]);
+        assertFalse(w.finished());
+        assertTrue(w.elapsed()>LEVEL_SECONDS);
+        assertEquals(0,finishedEvents[0]);
     }
     @Test void deathEndsLevelAndCannotGrantCompletionStars() {
         GameWorld w=world(); w.player.health=0; steps(w,1);

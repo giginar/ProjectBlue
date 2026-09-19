@@ -20,6 +20,6 @@ The enemy set is VortexDrone, TrashSwarm, MagneticCollector, and CurrentDisrupto
 
 Normal, Hard, Expert, and Abyss retain the campaign health, density, projectile, fire-rate, movement, projectile-count, and boss-cadence multipliers. Abyss Mine also scales pressure gain, damage cadence, and the number of boss hazards. Plastic Vortex scales current force and debris rotation. Both bosses add denser patterns on higher difficulties.
 
-Simulation entities continue to use prewarmed fixed-capacity pools. Mission JSON is parsed and expanded before the simulation begins; the update and rendering loops do not parse data. Completing sector 8 with at least one star unlocks sector 9. Completing sector 9 unlocks the existing sector 10 profile record without changing the profile schema.
+Simulation entities continue to use prewarmed fixed-capacity pools. Mission JSON is parsed and expanded before the simulation begins; the update and rendering loops do not parse data. Completing sector 8 with at least one star unlocks sector 9. Completing sector 9 unlocks NEREID Core while retaining the existing sector 10 profile record and save schema.
 
 All new visuals are original procedural geometry in `OceanRenderer`; no external assets were added.

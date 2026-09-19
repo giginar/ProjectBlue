@@ -36,14 +36,16 @@ public final class ResultScreen extends StageMenuScreen {
             : mission!=null && mission.type==MissionConfig.MissionType.BLACK_TIDE
             ? "BEFORE\nBLACK OIL\nOPEN LEAKS" : mission!=null && mission.type==MissionConfig.MissionType.SILENT_REEF
             ? "BEFORE\nSONAR HAZE\nSILENT REEF" : mission!=null && mission.type==MissionConfig.MissionType.FROZEN_DEPTHS
-            ? "BEFORE\nTHERMAL WASTE\nACTIVE DRILLS" : "BEFORE\nMURKY WATER\nMUTED REEF";
+            ? "BEFORE\nTHERMAL WASTE\nACTIVE DRILLS" : mission!=null && mission.type==MissionConfig.MissionType.NEREID_CORE
+            ? "BEFORE\nBLACK METAL\nRED ALARMS" : "BEFORE\nMURKY WATER\nMUTED REEF";
         String after=mission!=null && mission.type==MissionConfig.MissionType.CORAL_GARDENS
             ? "AFTER\nCORAL COLOR +" : mission!=null && mission.type==MissionConfig.MissionType.GHOST_NETS
             ? "AFTER\nOPEN WATER +" : mission!=null && mission.type==MissionConfig.MissionType.SUNKEN_CITY
             ? "AFTER\nSAFE CITY +" : mission!=null && mission.type==MissionConfig.MissionType.BLACK_TIDE
             ? "AFTER\nCLEAN CURRENT +" : mission!=null && mission.type==MissionConfig.MissionType.SILENT_REEF
             ? "AFTER\nREEF SONG +" : mission!=null && mission.type==MissionConfig.MissionType.FROZEN_DEPTHS
-            ? "AFTER\nCOOLED WATER +" : "AFTER\nCLEAR WATER +";
+            ? "AFTER\nCOOLED WATER +" : mission!=null && mission.type==MissionConfig.MissionType.NEREID_CORE
+            ? "AFTER\nLIVING OCEAN +" : "AFTER\nCLEAR WATER +";
         comparison.add(environmentPanel(before, new Color(.08f,.16f,.19f,1))).uniformX();
         int restored = Math.round(result.afterRestoration * 100);
         comparison.add(environmentPanel(after + restored + "%\nWILDLIFE RETURNED", new Color(.08f,.42f,.39f,1))).uniformX();

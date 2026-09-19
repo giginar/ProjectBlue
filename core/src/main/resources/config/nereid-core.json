@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "id": "NEREID_CORE",
+  "missionType": "NEREID_CORE",
+  "displayName": "NEREID Core",
+  "briefing": "Descend into NEREID Industries' ocean-floor headquarters, disable its power cores, and turn the systems built to exploit the ocean toward its recovery.",
+  "introMessage": "NEREID HEADQUARTERS AHEAD / ALARM GRID ACTIVE",
+  "midpointMessage": "CAPTURED SYSTEMS ONLINE / CLEAN, SCAN, RESCUE",
+  "midpointStart": 168,
+  "midpointDuration": 14,
+  "durationSeconds": 360,
+  "deadlineSeconds": 520,
+  "recoverySeconds": 8,
+  "cleaningSpeedMultiplier": 0.72,
+  "netSeconds": 1.8,
+  "netSpeedMultiplier": 0.55,
+  "currentStrength": 24,
+  "hostileBulletLimit": 96,
+  "sonar": {
+    "maxEnergy": 100,
+    "pulseCost": 30,
+    "regenPerSecond": 4,
+    "revealSeconds": 3.2,
+    "pickupEnergy": 36
+  },
+  "boss": {
+    "kind": "LEVIATHAN_CORE",
+    "name": "Leviathan Core",
+    "start": 325,
+    "coreHealth": 1500,
+    "pipeHealth": 150,
+    "droneBudget": 5,
+    "arrivalSeconds": 3,
+    "telegraphSeconds": 1.5,
+    "attackInterval": 3.2,
+    "pressInset": 92,
+    "salvage": 180,
+    "powerCores": 2,
+    "restorationCleanup": 4,
+    "restorationRescues": 2,
+    "restorationSonarPulses": 2,
+    "escapeSeconds": 15
+  },
+  "enemies": [
+    {
+      "id": "DEFENSE_DRONE", "displayName": "Defense Drone", "movement": "SWEEP", "weapon": "TRIPLE", "ability": "RESONANCE_DRONE",
+      "stats": {"health": 82, "speed": 72, "radius": 25, "shotInterval": 3.2, "bulletSpeed": 178, "damage": 8, "lifetime": 30, "frontArmor": false, "repairAmount": 0},
+      "reward": {"score": 155, "salvage": 6}
+    },
+    {
+      "id": "NET_INTERCEPTOR", "displayName": "Net Interceptor", "movement": "HUNTER", "weapon": "NET", "ability": "NET_RECYCLER",
+      "stats": {"health": 90, "speed": 68, "radius": 27, "shotInterval": 3.8, "bulletSpeed": 160, "damage": 6, "lifetime": 32, "frontArmor": false, "repairAmount": 0},
+      "reward": {"score": 170, "salvage": 7}
+    },
+    {
+      "id": "PIPE_GUARD", "displayName": "Pipeline Guard", "movement": "HOLD", "weapon": "AIMED", "ability": "PIPELINE_GUARD",
+      "stats": {"health": 125, "speed": 52, "radius": 31, "shotInterval": 4.3, "bulletSpeed": 190, "damage": 10, "lifetime": 34, "frontArmor": true, "repairAmount": 5},
+      "reward": {"score": 210, "salvage": 9}
+    },
+    {
+      "id": "RECOVERY_HUNTER", "displayName": "Recovery Hunter", "movement": "HUNTER", "weapon": "AIMED", "ability": "ECHO_HUNTER",
+      "stats": {"health": 105, "speed": 78, "radius": 26, "shotInterval": 3.5, "bulletSpeed": 195, "damage": 9, "lifetime": 31, "frontArmor": false, "repairAmount": 0},
+      "reward": {"score": 185, "salvage": 8}
+    },
+    {
+      "id": "CORE_SENTINEL", "displayName": "Core Sentinel", "movement": "HOLD", "weapon": "TRIPLE", "ability": "ABYSS_GUARDIAN",
+      "stats": {"health": 360, "speed": 38, "radius": 46, "shotInterval": 2.8, "bulletSpeed": 205, "damage": 12, "lifetime": 45, "frontArmor": true, "repairAmount": 0},
+      "reward": {"score": 500, "salvage": 30}
+    }
+  ],
+  "wasteDefinitions": [
+    {"kind": "BOTTLE", "radius": 12, "cleanMultiplier": 1, "drift": 42, "salvage": 1, "plastic": true},
+    {"kind": "BAG", "radius": 16, "cleanMultiplier": 1.2, "drift": 38, "salvage": 1, "plastic": true},
+    {"kind": "METAL", "radius": 18, "cleanMultiplier": 1.7, "drift": 35, "salvage": 4, "plastic": false},
+    {"kind": "NET", "radius": 31, "cleanMultiplier": 2.3, "drift": 30, "salvage": 3, "plastic": false},
+    {"kind": "DIRTY_WATER", "radius": 62, "cleanMultiplier": 4, "drift": 25, "salvage": 3, "plastic": false}
+  ],
+  "creatureDefinitions": [
+    {"kind": "TURTLE", "radius": 25, "rescueMultiplier": 1, "drift": 23, "timeoutSeconds": 0},
+    {"kind": "MANTA", "radius": 34, "rescueMultiplier": 1.1, "drift": 20, "timeoutSeconds": 0},
+    {"kind": "SEAL", "radius": 29, "rescueMultiplier": 1.15, "drift": 21, "timeoutSeconds": 0},
+    {"kind": "FISH_SCHOOL", "radius": 27, "rescueMultiplier": 0.85, "drift": 25, "timeoutSeconds": 0}
+  ],
+  "waves": [
+    {"time": 12, "enemy": "DEFENSE_DRONE", "count": 3, "interval": 5, "x": 95, "spacing": 175},
+    {"time": 47, "enemy": "NET_INTERCEPTOR", "count": 3, "interval": 5, "x": 95, "spacing": 175},
+    {"time": 83, "enemy": "PIPE_GUARD", "count": 2, "interval": 7, "x": 150, "spacing": 240},
+    {"time": 119, "enemy": "RECOVERY_HUNTER", "count": 3, "interval": 5, "x": 95, "spacing": 175},
+    {"time": 156, "enemy": "DEFENSE_DRONE", "count": 4, "interval": 4, "x": 75, "spacing": 130},
+    {"time": 194, "enemy": "NET_INTERCEPTOR", "count": 3, "interval": 5, "x": 95, "spacing": 175},
+    {"time": 230, "enemy": "CORE_SENTINEL", "count": 1, "interval": 2, "x": 270, "spacing": 0},
+    {"time": 252, "enemy": "PIPE_GUARD", "count": 2, "interval": 6, "x": 150, "spacing": 240},
+    {"time": 278, "enemy": "RECOVERY_HUNTER", "count": 3, "interval": 4, "x": 95, "spacing": 175}
+  ],
+  "props": [
+    {"time": 4, "kind": "WASTE", "waste": "METAL", "x": 160},
+    {"time": 10, "kind": "MECHANIC", "environment": "SONAR_CELL", "x": 390},
+    {"time": 24, "kind": "CREATURE", "creature": "TURTLE", "x": 390},
+    {"time": 38, "kind": "WASTE", "waste": "NET", "x": 130},
+    {"time": 53, "kind": "MECHANIC", "environment": "CHEMICAL_BARREL", "x": 410},
+    {"time": 68, "kind": "WASTE", "waste": "BOTTLE", "x": 230},
+    {"time": 82, "kind": "MECHANIC", "environment": "SONAR_CELL", "x": 120},
+    {"time": 97, "kind": "CREATURE", "creature": "MANTA", "x": 150},
+    {"time": 112, "kind": "WASTE", "waste": "DIRTY_WATER", "x": 390},
+    {"time": 128, "kind": "MECHANIC", "environment": "RUIN", "x": 160},
+    {"time": 143, "kind": "WASTE", "waste": "BAG", "x": 320},
+    {"time": 159, "kind": "MECHANIC", "environment": "SONAR_CELL", "x": 420},
+    {"time": 174, "kind": "CREATURE", "creature": "SEAL", "x": 280},
+    {"time": 190, "kind": "WASTE", "waste": "METAL", "x": 120},
+    {"time": 205, "kind": "MECHANIC", "environment": "CHEMICAL_BARREL", "x": 390},
+    {"time": 220, "kind": "WASTE", "waste": "NET", "x": 240},
+    {"time": 236, "kind": "MECHANIC", "environment": "SONAR_CELL", "x": 130},
+    {"time": 251, "kind": "WASTE", "waste": "DIRTY_WATER", "x": 400},
+    {"time": 266, "kind": "WASTE", "waste": "BOTTLE", "x": 260},
+    {"time": 280, "kind": "MECHANIC", "environment": "ENERGY_STATION", "x": 155},
+    {"time": 296, "kind": "MECHANIC", "environment": "ENERGY_STATION", "x": 385}
+  ]
+}

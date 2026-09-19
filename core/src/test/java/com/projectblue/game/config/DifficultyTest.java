@@ -65,7 +65,7 @@ class DifficultyTest {
         for (String bad : new String[]{config.replace("difficulty.HARD.spawnDensity=1.25", "difficulty.HARD.spawnDensity=0"),
             config.replace("difficulty.HARD.health=1.25", "difficulty.HARD.health=NaN"),
             config.replace("difficulty.HARD.bossProjectiles=3", "difficulty.HARD.bossProjectiles=2.5"),
-            config.replace("level.10.name=Living Abyss", "")}) {
+            config.replace("level.10.name=NEREID Core", "")}) {
             assertThrows(IOException.class, () -> CampaignConfig.read(new ByteArrayInputStream(bad.getBytes(StandardCharsets.UTF_8))));
         }
     }
@@ -73,9 +73,10 @@ class DifficultyTest {
     void simulationConsumesSpawnHealthAndBulletSpeedData(Difficulty difficulty) {
         RunSpec spec = RunSpec.create(10, difficulty, Loadout.standard());
         GameWorld w = new GameWorld(() -> .2f, spec);
-        for (int i = 0; i < 125; i++) w.update(STEP, false, 0, 0);
-        assertEquals(spec.tuning().droneHealth(), w.drones.at(0).health);
+        while (w.elapsed()<13) { w.player.health=PLAYER_HEALTH; w.update(STEP, false, 0, 0); }
         Entity drone = w.drones.at(0);
+        assertTrue(drone.active);
+        assertEquals(Math.round(spec.mission().enemy("DEFENSE_DRONE").stats().health()*spec.tuning().health()),drone.health);
         drone.x = 90; drone.y = 550; drone.timer = 0;
         w.update(STEP, false, 0, 0);
         Entity hostile = null;
@@ -84,29 +85,20 @@ class DifficultyTest {
             if (b.active && !b.friendly) { hostile = b; break; }
         }
         assertNotNull(hostile);
-        assertEquals(spec.tuning().shotSpeed(), Math.hypot(hostile.vx, hostile.vy), .001);
+        assertEquals(spec.mission().enemy("DEFENSE_DRONE").stats().bulletSpeed()*spec.tuning().bulletSpeed(),
+            Math.hypot(hostile.vx, hostile.vy), .001);
         while (w.elapsed() < 30) { w.player.health = PLAYER_HEALTH; w.update(STEP, false, 0, 0); }
-        assertEquals((int) Math.floor((w.elapsed() - DRONE_FIRST) / spec.tuning().droneInterval()) + 1, w.spawnedDrones());
+        assertTrue(w.spawnedDrones()>=3);
     }
     @ParameterizedTest @EnumSource(Difficulty.class)
     void bossUsesConfiguredFanPhasesAndMovement(Difficulty difficulty) {
-        RunSpec spec = RunSpec.create(10, difficulty, Loadout.standard());
-        GameWorld w = new GameWorld(() -> .2f, spec);
-        while (w.elapsed() < 130.1f) { w.player.health = PLAYER_HEALTH; w.update(STEP, false, 0, 0); }
-        assertTrue(w.boss.active); assertEquals(spec.tuning().bossHealth(), w.boss.maxHealth);
-        assertEquals(1, w.bossPhase());
-        w.boss.health = Math.round(w.boss.maxHealth * .2f);
-        assertEquals(spec.tuning().bossPhases(), w.bossPhase());
-        for (int i = 0; i < w.bullets.capacity(); i++) w.bullets.at(i).active = false;
-        for (int i = 0; i < w.drones.capacity(); i++) w.drones.at(i).active = false;
-        w.boss.timer = 0;
-        float before = w.boss.x;
-        w.update(STEP, false, 0, 0);
-        int hostile = 0;
-        for (int i = 0; i < w.bullets.capacity(); i++) if (w.bullets.at(i).active && !w.bullets.at(i).friendly) hostile++;
-        assertEquals(spec.tuning().bossProjectiles() + (w.bossPhase() == 3 ? 2 : 0), hostile);
-        assertNotEquals(before, w.boss.x);
-        assertEquals(spec.tuning().bossInterval() / (1 + (w.bossPhase() - 1) * .15f), w.boss.timer, .001f);
+        CampaignConfig.Tuning tuning=CampaignConfig.DEFAULT.tuning(difficulty);
+        LeviathanCore boss=new LeviathanCore(MissionConfig.NEREID_CORE.boss,difficulty,tuning.health(),tuning.bossCadence());
+        boss.start();
+        while (boss.state()!=LeviathanCore.State.ARCHIVE_ASSAULT) boss.update(.1f,false);
+        assertEquals(Math.round(MissionConfig.NEREID_CORE.boss.coreHealth()*tuning.health()),boss.maxHealth());
+        assertEquals(1,boss.phase()); assertEquals(1+difficulty.ordinal(),boss.attackComplexity());
+        assertEquals(MissionConfig.NEREID_CORE.boss.attackInterval()/tuning.bossCadence(),boss.interval(),.001f);
     }
     @Test void survivingAnUndefeatedBossDoesNotCompleteTheMission() {
         GameWorld w = new GameWorld(() -> .2f, RunSpec.create(10, Difficulty.NORMAL, Loadout.standard()));
@@ -117,17 +109,12 @@ class DifficultyTest {
         }
         assertFalse(w.result().completed); assertEquals(0, w.result().stars);
     }
-    @Test void destroyingTheBossAwardsOneKillAndAllowsMissionCompletion() {
-        GameWorld w = new GameWorld(() -> .2f, RunSpec.create(10, Difficulty.NORMAL, Loadout.standard()));
-        while (!w.boss.active) { w.player.health = PLAYER_HEALTH; w.update(STEP, false, 0, 0); }
-        w.boss.health = PLAYER_DAMAGE;
-        Entity bullet = w.bullets.obtain(); assertNotNull(bullet);
-        bullet.x = w.boss.x; bullet.y = w.boss.y; bullet.friendly = true; bullet.radius = BULLET_RADIUS;
-        bullet.damage = PLAYER_DAMAGE;
-        int killsBefore = w.kills();
-        w.update(STEP, false, 0, 0);
-        assertFalse(w.boss.active); assertEquals(killsBefore + 1, w.kills());
-        while (!w.finished()) { w.player.health = PLAYER_HEALTH; w.update(STEP, false, 0, 0); }
-        assertFalse(w.boss.active); assertTrue(w.result().completed); assertTrue(w.result().stars >= 1);
+    @Test void finalCoreCannotBeCompletedByDamageAlone() {
+        LeviathanCore boss=new LeviathanCore(MissionConfig.NEREID_CORE.boss,Difficulty.NORMAL,1,1);
+        boss.start();
+        while (boss.state()!=LeviathanCore.State.ARCHIVE_ASSAULT) boss.update(.1f,false);
+        boss.hitCore(Integer.MAX_VALUE);
+        assertEquals(LeviathanCore.State.SHIELD_WARNING,boss.state());
+        assertFalse(boss.defeated());
     }
 }

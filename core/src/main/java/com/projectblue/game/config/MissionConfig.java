@@ -11,7 +11,7 @@ import static com.projectblue.game.config.GameConfig.*;
 public final class MissionConfig {
     public enum MissionType {
         BLUE_COAST, CORAL_GARDENS, GHOST_NETS, SUNKEN_CITY, BLACK_TIDE, SILENT_REEF, FROZEN_DEPTHS,
-        ABYSS_MINE, PLASTIC_VORTEX
+        ABYSS_MINE, PLASTIC_VORTEX, NEREID_CORE
     }
     public enum Movement { DESCEND, SWEEP, HOLD, HUNTER, BURROW }
     public enum WeaponPattern { SINGLE, TRIPLE, NET, AIMED, NONE }
@@ -34,7 +34,7 @@ public final class MissionConfig {
     public enum SpawnKind { ENEMY, WASTE, TURTLE, CREATURE, CORAL, MECHANIC }
     public enum BossKind {
         SHORELINE_COMPACTOR, REEF_BREAKER, GHOST_NET_HARVESTER, URBAN_SALVAGER, OIL_KRAKEN,
-        RESONANCE_ENGINE, BOREALIS_DRILL, THE_HARVESTER, RECYCLER_LEVIATHAN
+        RESONANCE_ENGINE, BOREALIS_DRILL, THE_HARVESTER, RECYCLER_LEVIATHAN, LEVIATHAN_CORE
     }
     public record Stats(int health, float speed, float radius, float shotInterval, float bulletSpeed,
                         int damage, float lifetime, boolean frontArmor, int repairAmount) {}
@@ -47,7 +47,9 @@ public final class MissionConfig {
     public record Prop(float time, SpawnKind kind, WasteKind waste, CreatureKind creature,
                        EnvironmentKind environment, float x) {}
     public record Boss(BossKind kind, String name, float start, int coreHealth, int pipeHealth, int droneBudget,
-                       float arrivalSeconds, float telegraphSeconds, float attackInterval, float pressInset, int salvage) {}
+                       float arrivalSeconds, float telegraphSeconds, float attackInterval, float pressInset, int salvage,
+                       int powerCores, int restorationCleanup, int restorationRescues,
+                       int restorationSonarPulses, float escapeSeconds) {}
     public record Sonar(float maxEnergy, float pulseCost, float regenPerSecond, float revealSeconds, float pickupEnergy) {}
     public record Thermal(float maxHeat, float damageThreshold, float hotGainPerSecond,
                           float coldRecoveryPerSecond, float passiveRecoveryPerSecond, float damageInterval) {}
@@ -102,6 +104,7 @@ public final class MissionConfig {
     public static final MissionConfig FROZEN_DEPTHS = loadRequired("/config/frozen-depths.json");
     public static final MissionConfig ABYSS_MINE = loadRequired("/config/abyss-mine.json");
     public static final MissionConfig PLASTIC_VORTEX = loadRequired("/config/plastic-vortex.json");
+    public static final MissionConfig NEREID_CORE = loadRequired("/config/nereid-core.json");
 
     private MissionConfig(JsonValue root) {
         uniqueKeys(root,0);
@@ -124,9 +127,15 @@ public final class MissionConfig {
         boss = new Boss(BossKind.valueOf(optionalString(b,"kind","SHORELINE_COMPACTOR")),string(b,"name"),
             number(b,"start",180,durationSeconds-20),integer(b,"coreHealth",300,3000),
             integer(b,"pipeHealth",30,300),integer(b,"droneBudget",0,12),number(b,"arrivalSeconds",1,5),
-            number(b,"telegraphSeconds",.6f,3),number(b,"attackInterval",2,6),number(b,"pressInset",60,140),integer(b,"salvage",0,500));
+            number(b,"telegraphSeconds",.6f,3),number(b,"attackInterval",2,6),number(b,"pressInset",60,140),integer(b,"salvage",0,500),
+            optionalInteger(b,"powerCores",0,0,4),optionalInteger(b,"restorationCleanup",0,0,6),
+            optionalInteger(b,"restorationRescues",0,0,4),optionalInteger(b,"restorationSonarPulses",0,0,4),
+            optionalNumber(b,"escapeSeconds",8,4,24));
+        if (type==MissionType.NEREID_CORE) check(boss.kind()==BossKind.LEVIATHAN_CORE && boss.powerCores()>0
+            && boss.restorationCleanup()>0 && boss.restorationRescues()>0 && boss.restorationSonarPulses()>0,
+            "NEREID Core requires final boss interaction tuning");
         JsonValue sonarNode=root.get("sonar");
-        if (type==MissionType.SILENT_REEF || type==MissionType.ABYSS_MINE)
+        if (type==MissionType.SILENT_REEF || type==MissionType.ABYSS_MINE || type==MissionType.NEREID_CORE)
             check(sonarNode!=null,"Sonar mission requires sonar tuning");
         sonar=sonarNode==null?null:new Sonar(number(sonarNode,"maxEnergy",20,200),
             number(sonarNode,"pulseCost",5,100),number(sonarNode,"regenPerSecond",.1f,20),
@@ -227,9 +236,12 @@ public final class MissionConfig {
             if (kind == SpawnKind.MECHANIC && cleanupMechanic(environment)) mechanics++;
         }
         boolean coralMission=type==MissionType.BLUE_COAST || type==MissionType.CORAL_GARDENS || type==MissionType.GHOST_NETS;
-        check(creatureTotal > 0 && creatureTotal <= 8 && wasteTotal <= 100 && corals <= 8
+        check(creatureTotal > 0 && creatureTotal + boss.restorationRescues() <= 8 && wasteTotal <= 100 && corals <= 8
             && (!coralMission || corals > 0),"Invalid environment counts");
         props = Collections.unmodifiableList(authoredProps);
+        if (type==MissionType.NEREID_CORE) check(authoredProps.stream().filter(p ->
+            p.environment()==EnvironmentKind.ENERGY_STATION).count()>=boss.powerCores(),
+            "NEREID Core requires authored power cores");
         wasteCount = wasteTotal; plasticCount = plastics; turtleCount = creatureTotal; creatureCount = creatureTotal;
         coralCount = corals; mechanicCount = mechanics;
     }
@@ -237,9 +249,11 @@ public final class MissionConfig {
     public Collection<Enemy> enemies() { return enemies.values(); }
     public Waste waste(WasteKind kind) { return wastes.get(kind); }
     public Creature creature(CreatureKind kind) { return creatures.get(kind); }
+    public Collection<Creature> creatures() { return Collections.unmodifiableCollection(creatures.values()); }
     public List<Wave> waves() { return waves; }
     public List<Prop> props() { return props; }
-    public int cleanupCount() { return wasteCount+mechanicCount; }
+    public int cleanupCount() { return wasteCount+mechanicCount+boss.restorationCleanup(); }
+    public int rescueCount() { return turtleCount+boss.restorationRescues(); }
     public int enemyCount(float density) {
         int count = boss.droneBudget()+1;
         for (Wave wave : waves) count += Math.max(1,Math.round(wave.count()*density));
@@ -271,6 +285,7 @@ public final class MissionConfig {
             case 7 -> FROZEN_DEPTHS;
             case 8 -> ABYSS_MINE;
             case 9 -> PLASTIC_VORTEX;
+            case 10 -> NEREID_CORE;
             default -> null;
         };
     }
@@ -317,6 +332,10 @@ public final class MissionConfig {
     }
     private static int integer(JsonValue n,String key,int min,int max) {
         float value=number(n,key,min,max); check(value==(int)value,"Expected integer: "+key); return (int)value;
+    }
+    private static int optionalInteger(JsonValue n,String key,int fallback,int min,int max) {
+        float value=optionalNumber(n,key,fallback,min,max);
+        check(value==(int)value,"Expected integer: "+key); return (int)value;
     }
     private static boolean cleanupMechanic(EnvironmentKind kind) {
         return kind!=EnvironmentKind.ICE_FALL && kind!=EnvironmentKind.THERMAL_VENT

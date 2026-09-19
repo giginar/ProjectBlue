@@ -1,6 +1,7 @@
 package com.projectblue.game.ui;
 
 import com.projectblue.game.logic.GameWorld;
+import com.projectblue.game.logic.LeviathanCore;
 import com.projectblue.game.events.GameEvents;
 import static com.projectblue.game.config.GameConfig.*;
 
@@ -80,11 +81,15 @@ public final class Hud implements GameEvents.Listener {
         else if (noticeTime > 0) ui.centered(notice, 793, .62f, Palette.TEXT);
         else if (w.midpointActive()) ui.centered(w.mission().midpointMessage,812,.58f,Palette.GOLD);
         else if (w.escapingVortex()) ui.centered("VORTEX CORE COLLAPSING / RIDE THE CURRENT OUT",812,.58f,Palette.AQUA);
+        else if (w.escapingCore()) ui.centered("CORE COLLAPSE / REACH AND HOLD THE UPPER EXIT / "
+            +Math.max(0,(int)Math.ceil(w.leviathanCore().escapeRemaining())),812,.58f,Palette.RED);
         else if (w.recovering()) ui.centered("HABITAT RECOVERING / COLOR RETURNING", 812, .58f, Palette.AQUA);
         else if (w.boss.active && w.mission() != null) {
             String objective = bossObjective(w);
             ui.centered(objective, 812, .58f, Palette.GOLD);
         } else if (w.boss.active) ui.centered("WARDEN / DISABLE BEFORE SURFACING", 812, .58f, Palette.GOLD);
+        else if (w.mission()!=null && w.mission().type==com.projectblue.game.config.MissionConfig.MissionType.NEREID_CORE)
+            ui.centered(finalFacilityObjective(w),812,.58f,Palette.GOLD);
         else if (w.slowed()) ui.centered("NETTED / THRUST REDUCED", 812, .58f, Palette.GOLD);
         else if (w.cleaning()) ui.centered("CLEANUP BEAM / THRUST REDUCED", 812, .58f, Palette.AQUA);
         ui.endText();
@@ -163,7 +168,43 @@ public final class Hud implements GameEvents.Listener {
                 case CORE_EXPOSED -> "RECYCLER CORE OPEN / END THE VORTEX";
                 default -> "RECYCLER LEVIATHAN / READ THE CURRENT";
             };
+            case LEVIATHAN_CORE -> switch (w.leviathanCore().state()) {
+                case ARCHIVE_WARNING -> "ARCHIVED WEAPON SYSTEMS CHARGING";
+                case ARCHIVE_ASSAULT -> finalAttackWarning(w,"LEVIATHAN CORE / READ THE ARCHIVED PATTERNS");
+                case SHIELD_WARNING -> "SHIELD GENERATORS OPENING / WATCH THE LANES";
+                case SHIELD_GENERATORS -> finalAttackWarning(w,"DESTROY BOTH SHIELD GENERATORS");
+                case RESTORATION_WARNING -> "RECOVERY SYSTEMS CAPTURED / PREPARE TO CLEAN AND RESCUE";
+                case RESTORATION_SYSTEMS -> finalAttackWarning(w,"CLEAN " + w.leviathanCore().cleanupProgress()+"/"+w.leviathanCore().cleanupRequired()
+                    + "  RESCUE " + w.leviathanCore().rescueProgress()+"/"+w.leviathanCore().rescueRequired()
+                    + "  SONAR " + w.leviathanCore().sonarProgress()+"/"+w.leviathanCore().sonarRequired());
+                case CORE_WARNING -> "CENTRAL CORE OPENING / FINAL ATTACK INCOMING";
+                case CORE_EXPOSED -> finalAttackWarning(w,"CENTRAL CORE EXPOSED / END NEREID");
+                case ESCAPE_WARNING -> "CORE COLLAPSE DETECTED / UPPER EXIT OPENING";
+                default -> "LEVIATHAN CORE / FOLLOW THE TELEGRAPHS";
+            };
         };
+    }
+    private static String finalAttackWarning(GameWorld world,String fallback) {
+        LeviathanCore.Attack attack=world.leviathanCore().warningAttack();
+        if (attack==null) return fallback;
+        return switch (attack) {
+            case ARCHIVE_FAN -> "WARNING / ARCHIVED AIMED FAN";
+            case NET_CROSS -> "WARNING / CROSSING NET LANES";
+            case OIL_SURGE -> "WARNING / CONTAMINATION SURGE";
+            case SONAR_RING -> "WARNING / EXPANDING SONAR RING";
+            case SHIELD_LANES -> "WARNING / SHIELD LANE BARRAGE";
+            case RESCUE_SWEEP -> "WARNING / RECOVERY SWEEP";
+            case CORE_BURST -> "WARNING / CENTRAL CORE BURST";
+            case COLLAPSE -> "WARNING / FACILITY COLLAPSE";
+        };
+    }
+    private static String finalFacilityObjective(GameWorld world) {
+        if (world.elapsed()<70) return "FACILITY APPROACH / READ THE ALARM LANES";
+        if (world.elapsed()<155) return "DEFENSE GRID / BREAK THE DRONE FORMATIONS";
+        if (world.elapsed()<225) return "CAPTURED NEREID SYSTEMS / CONTROL THE COMBINATION";
+        if (world.elapsed()<275) return "CORE SENTINEL / CLEAR THE CENTRAL ACCESS";
+        return "HEADQUARTERS ENTRY / DISABLE POWER CORES " + world.energyStationsDisabled()+"/"
+            +world.mission().boss.powerCores();
     }
     public void onEvent(GameEvents.Type type, float x, float y, int value) {
         switch (type) {

@@ -28,7 +28,7 @@ class ProgressionTest {
         assertTrue(p.canPlay(2, Difficulty.NORMAL)); assertTrue(p.canPlay(1, Difficulty.HARD));
         assertFalse(p.canPlay(2, Difficulty.HARD)); assertFalse(p.canPlay(3, Difficulty.NORMAL));
     }
-    @Test void authoredSectorCompletionsOpenAbyssMinePlasticVortexAndFutureSectorTenRecord() {
+    @Test void authoredSectorCompletionsOpenAbyssMinePlasticVortexAndNereidCore() {
         Profile p=new Profile();
         assertTrue(p.record(clear(1,Difficulty.NORMAL))); assertTrue(p.canPlay(2,Difficulty.NORMAL));
         assertTrue(p.record(clear(2,Difficulty.NORMAL))); assertTrue(p.canPlay(3,Difficulty.NORMAL));
@@ -49,7 +49,7 @@ class ProgressionTest {
         assertTrue(p.record(clear(8,Difficulty.NORMAL))); assertTrue(p.canPlay(9,Difficulty.NORMAL));
         assertTrue(CampaignConfig.isAvailable(9));
         assertTrue(p.record(clear(9,Difficulty.NORMAL))); assertTrue(p.canPlay(10,Difficulty.NORMAL));
-        assertFalse(CampaignConfig.isAvailable(10));
+        assertTrue(CampaignConfig.isAvailable(10));
     }
     @Test void difficultyUnlocksAreSequentialAndLocalToEachLevel() {
         Profile p = new Profile();

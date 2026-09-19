@@ -15,6 +15,7 @@ public final class MainMenuScreen extends StageMenuScreen {
         route("hangar", "Hangar", ScreenRouter.Route.HANGAR);
         route("achievements", "Achievements", ScreenRouter.Route.ACHIEVEMENTS);
         route("settings", "Settings", ScreenRouter.Route.SETTINGS);
+        if (profile.campaignCompleted()) route("finale", "Final Results", ScreenRouter.Route.FINALE);
         route("credits", "Credits", ScreenRouter.Route.CREDITS);
         note("Build " + BuildInfo.VERSION_NAME);
         ((com.badlogic.gdx.scenes.scene2d.ui.TextButton) stage.getRoot().findActor("back")).setText("EXIT");

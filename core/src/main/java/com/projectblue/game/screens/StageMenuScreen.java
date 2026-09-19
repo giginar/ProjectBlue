@@ -10,6 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.projectblue.game.ProjectBlueGame;
+import com.projectblue.game.config.MissionConfig;
 import com.projectblue.game.ui.Palette;
 import com.projectblue.game.save.Profile;
 import java.util.Locale;
@@ -102,7 +103,7 @@ public abstract class StageMenuScreen extends ScreenAdapter {
     }
     public void render(float delta) {
         if (!profile.reducedMotion) time += Math.min(Math.max(delta, 0), .1f);
-        game.ocean().backdrop(time, .45f);
+        game.ocean().backdrop(time, backdropRestoration(), backdropType());
         if (game.saves().writeFailed()) status.setText("SAVE FAILED / RETRY IN SETTINGS");
         else if (game.saves().recoveredBackup()) status.setText("PROFILE RESTORED FROM BACKUP");
         else if (game.saves().recovered()) status.setText("DAMAGED PROFILE / DEFAULTS RESTORED");
@@ -111,4 +112,6 @@ public abstract class StageMenuScreen extends ScreenAdapter {
         stage.act(Math.min(Math.max(delta, 0), .1f)); stage.draw();
     }
     public void dispose() { stage.dispose(); }
+    protected float backdropRestoration() { return .45f; }
+    protected MissionConfig.MissionType backdropType() { return MissionConfig.MissionType.BLUE_COAST; }
 }

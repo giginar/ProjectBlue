@@ -99,6 +99,18 @@ class MissionConfigTest {
         assertThrows(IllegalArgumentException.class,() -> MissionConfig.parse(
             source("/config/plastic-vortex.json").replace("\"maxCombo\": 10","\"maxCombo\": 1")));
     }
+    @Test void sectorTenAuthorsTheFinalFacilityAndRecoveryRequirements() {
+        MissionConfig core=MissionConfig.NEREID_CORE;
+        assertSame(core,MissionConfig.forLevel(10)); assertTrue(CampaignConfig.isAvailable(10));
+        assertEquals(MissionConfig.MissionType.NEREID_CORE,core.type);
+        assertEquals(MissionConfig.BossKind.LEVIATHAN_CORE,core.boss.kind());
+        assertEquals("Leviathan Core",core.boss.name());
+        assertEquals(2,core.boss.powerCores()); assertEquals(4,core.boss.restorationCleanup());
+        assertEquals(2,core.boss.restorationRescues()); assertEquals(2,core.boss.restorationSonarPulses());
+        assertNotNull(core.sonar); assertNotNull(core.enemy("CORE_SENTINEL"));
+        assertTrue(core.props().stream().filter(p -> p.environment()==MissionConfig.EnvironmentKind.ENERGY_STATION).count()>=2);
+        assertTrue(core.cleanupCount()>core.wasteCount); assertTrue(core.rescueCount()>core.turtleCount);
+    }
     @Test void invalidJsonLogsAndUsesSafePlayableFallback() throws Exception {
         ByteArrayOutputStream log=new ByteArrayOutputStream();
         MissionConfig fallback=MissionConfig.readOrFallback(
@@ -120,7 +132,7 @@ class MissionConfigTest {
     @Test void authoredTimelinesScaleEnemyDensityWithoutDuplicatingEnvironmentProps() {
         for (MissionConfig mission : List.of(MissionConfig.CORAL_GARDENS,MissionConfig.GHOST_NETS,
             MissionConfig.SUNKEN_CITY,MissionConfig.BLACK_TIDE,MissionConfig.SILENT_REEF,MissionConfig.FROZEN_DEPTHS,
-            MissionConfig.ABYSS_MINE,MissionConfig.PLASTIC_VORTEX)) {
+            MissionConfig.ABYSS_MINE,MissionConfig.PLASTIC_VORTEX,MissionConfig.NEREID_CORE)) {
             SpawnTimeline normal=new SpawnTimeline(mission,1), abyss=new SpawnTimeline(mission,2);
             assertTrue(abyss.size()>normal.size());
             int props=mission.props().size();
