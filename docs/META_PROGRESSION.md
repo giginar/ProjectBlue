@@ -41,7 +41,7 @@ Back/Esc follows the parent screen; within Level Select it returns from briefing
 `core/src/main/resources/config/campaign.properties` is a Java resource packaged in both
 desktop jars and Android APKs. It is configuration rather than a downloaded game asset.
 Each sector keeps its stable name, region, seed and record ID. Blue Coast, Coral Gardens, Ghost Nets,
-Sunken City, Black Tide, Silent Reef, and Frozen Depths are authored and playable. Sectors 8-10 preserve save compatibility and appear as coming later.
+Sunken City, Black Tide, Silent Reef, Frozen Depths, Abyss Mine, and Plastic Vortex are authored and playable. Sector 10 preserves save compatibility and appears as coming later.
 
 | Difficulty | Health | Shot speed | Spawn density | Fire rate | Boss cadence | Fan shots | Movement | Phases |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -57,7 +57,7 @@ a living boss at the deadline fails the mission.
 Combat uses enemies actually encountered. Cleanup uses authored waste and coral damage, Rescue
 uses configured wildlife, and Integrity uses the loadout's maximum hull plus coral protection.
 Loadout is captured at run creation. See [Blue Coast](BLUE_COAST.md) and
-[Sectors 2-3](SECTORS_2_3.md), [Sectors 4-5](SECTORS_4_5.md), and [Sectors 6-7](SECTORS_6_7.md) for mission details.
+[Sectors 2-3](SECTORS_2_3.md), [Sectors 4-5](SECTORS_4_5.md), [Sectors 6-7](SECTORS_6_7.md), and [Sectors 8-9](SECTORS_8_9.md) for mission details.
 
 Three vessels, four pilots and five weapons use permanent unlock conditions from JSON.
 Six upgrades have up to five configured levels, increasing prices and atomic purchases.
@@ -120,7 +120,8 @@ Commands executed on Windows:
 .\gradlew.bat :android:assembleDebug :android:lintDebug :android:generateReleaseBuildConfig :lwjgl3:installDist
 ```
 
-- 160 JUnit invocations pass, including the original regression checks.
+- 169 JUnit invocations pass, including the original regression checks and the sector 8-9
+  pressure, deterministic-current, cleanup-combo, timeline, pool-capacity, and boss-state checks.
 - Real LWJGL/OpenGL smoke covers menus including Weapon Select, a full Blue Coast dive, drag,
   pause/resume, lifecycle, locked routes, automatic unlocks, disk persistence, replay,
   selections, exactly-once purchases/toggles, narrow/wide layouts, and boss rendering.
@@ -153,7 +154,7 @@ Screenshots: `build/smoke/01-menu.png` through the numbered scenario captures, i
     Return to Level Select. Sector 2 / Normal should be playable; its Hard should remain locked.
 5. Clear Coral Gardens and confirm Ghost Nets opens. Clear Ghost Nets and confirm the Sector 4
     mission opens. Clear Sunken City and Black Tide; confirm Silent Reef opens. Clear Silent Reef,
-    then Frozen Depths, and confirm the saved Sector 8 record unlocks while its card remains `COMING LATER`.
+    then Frozen Depths and Abyss Mine. Confirm Plastic Vortex opens, and clearing it unlocks the saved Sector 10 record while its card remains `COMING LATER`.
 6. Replay sector 1 / Normal. A worse result must not lower any existing best record.
    A failed run must not unlock the next difficulty. Pause > End Dive must not add rewards.
 7. Complete sector 1 / Hard, then Expert, defeating the Shoreline Compactor before the deadline.

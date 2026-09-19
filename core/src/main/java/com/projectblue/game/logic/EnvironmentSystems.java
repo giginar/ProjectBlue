@@ -36,6 +36,8 @@ public final class EnvironmentSystems {
             case TOXIC_FIELD -> 1.1f;
             case VALVE -> 1.8f;
             case DRILL_POINT -> 2f;
+            case ENERGY_STATION -> 2.1f;
+            case TRASH_CLUSTER -> 1.35f;
             default -> .8f;
         };
         return base*(1+difficulty.ordinal()*.12f);

@@ -71,7 +71,7 @@ class DifficultyTest {
     }
     @ParameterizedTest @EnumSource(Difficulty.class)
     void simulationConsumesSpawnHealthAndBulletSpeedData(Difficulty difficulty) {
-        RunSpec spec = RunSpec.create(8, difficulty, Loadout.standard());
+        RunSpec spec = RunSpec.create(10, difficulty, Loadout.standard());
         GameWorld w = new GameWorld(() -> .2f, spec);
         for (int i = 0; i < 125; i++) w.update(STEP, false, 0, 0);
         assertEquals(spec.tuning().droneHealth(), w.drones.at(0).health);
@@ -90,7 +90,7 @@ class DifficultyTest {
     }
     @ParameterizedTest @EnumSource(Difficulty.class)
     void bossUsesConfiguredFanPhasesAndMovement(Difficulty difficulty) {
-        RunSpec spec = RunSpec.create(8, difficulty, Loadout.standard());
+        RunSpec spec = RunSpec.create(10, difficulty, Loadout.standard());
         GameWorld w = new GameWorld(() -> .2f, spec);
         while (w.elapsed() < 130.1f) { w.player.health = PLAYER_HEALTH; w.update(STEP, false, 0, 0); }
         assertTrue(w.boss.active); assertEquals(spec.tuning().bossHealth(), w.boss.maxHealth);
@@ -109,7 +109,7 @@ class DifficultyTest {
         assertEquals(spec.tuning().bossInterval() / (1 + (w.bossPhase() - 1) * .15f), w.boss.timer, .001f);
     }
     @Test void survivingAnUndefeatedBossDoesNotCompleteTheMission() {
-        GameWorld w = new GameWorld(() -> .2f, RunSpec.create(8, Difficulty.NORMAL, Loadout.standard()));
+        GameWorld w = new GameWorld(() -> .2f, RunSpec.create(10, Difficulty.NORMAL, Loadout.standard()));
         while (!w.finished()) {
             w.player.health = PLAYER_HEALTH;
             if (w.boss.active) w.boss.health = w.boss.maxHealth;
@@ -118,7 +118,7 @@ class DifficultyTest {
         assertFalse(w.result().completed); assertEquals(0, w.result().stars);
     }
     @Test void destroyingTheBossAwardsOneKillAndAllowsMissionCompletion() {
-        GameWorld w = new GameWorld(() -> .2f, RunSpec.create(8, Difficulty.NORMAL, Loadout.standard()));
+        GameWorld w = new GameWorld(() -> .2f, RunSpec.create(10, Difficulty.NORMAL, Loadout.standard()));
         while (!w.boss.active) { w.player.health = PLAYER_HEALTH; w.update(STEP, false, 0, 0); }
         w.boss.health = PLAYER_DAMAGE;
         Entity bullet = w.bullets.obtain(); assertNotNull(bullet);

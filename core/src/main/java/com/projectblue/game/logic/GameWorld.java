@@ -21,7 +21,7 @@ public final class GameWorld {
     public final EntityPool salvage = new EntityPool(ITEM_CAPACITY);
     public final EntityPool particles = new EntityPool(PARTICLE_CAPACITY);
     public final EntityPool corals = new EntityPool(8);
-    public final EntityPool environments = new EntityPool(24);
+    public final EntityPool environments = new EntityPool(36);
     public final EntityPool hazards = new EntityPool(24);
     public final GameEvents events = new GameEvents();
     private final RandomProvider random;
@@ -35,15 +35,20 @@ public final class GameWorld {
     private final OilKraken oilKraken;
     private final ResonanceEngine resonanceEngine;
     private final BorealisDrill borealisDrill;
+    private final TheHarvester theHarvester;
+    private final RecyclerLeviathan recyclerLeviathan;
     private final SonarSystem sonar;
     private final ThermalSystem thermal;
+    private final PressureSystem pressure;
+    private final VortexSystem vortex;
+    private final CleanupCombo cleanupCombo;
     // Separate stream: changing a visual effect must never change gameplay spawns.
     private final RandomProvider effects = RandomProvider.seeded(7);
     private float elapsed, invulnerability, slowTimer, recoveryTimer, visibilityExposure, hazardDamageTimer;
     private final WeaponController weapons;
     private int shield, damageTaken, cleanedCount, coralDamage, combatScore, enemiesEncountered;
     private int spawnedDrones, spawnedPlastic, spawnedTurtles, kills, plasticCount, rescueCount, salvageCount;
-    private int oilSpawned, oilCleaned, valvesClosed, bossOilTotal, drillPointsDisabled;
+    private int oilSpawned, oilCleaned, valvesClosed, bossOilTotal, drillPointsDisabled, energyStationsDisabled;
     private boolean finished, bossSpawned, cleaning, recovering;
     private LevelResult result;
 
@@ -69,8 +74,16 @@ public final class GameWorld {
             ? new ResonanceEngine(mission.boss,spec.tuning().health(),spec.tuning().bossCadence()) : null;
         borealisDrill = mission != null && mission.boss.kind()==MissionConfig.BossKind.BOREALIS_DRILL
             ? new BorealisDrill(mission.boss,spec.tuning().health(),spec.tuning().bossCadence()) : null;
+        theHarvester = mission != null && mission.boss.kind()==MissionConfig.BossKind.THE_HARVESTER
+            ? new TheHarvester(mission.boss,spec.tuning().health(),spec.tuning().bossCadence()) : null;
+        recyclerLeviathan = mission != null && mission.boss.kind()==MissionConfig.BossKind.RECYCLER_LEVIATHAN
+            ? new RecyclerLeviathan(mission.boss,mission.vortex.bossWasteRequired(),spec.tuning().health(),spec.tuning().bossCadence()) : null;
         sonar=mission!=null && mission.sonar!=null?new SonarSystem(mission.sonar,spec.difficulty()):null;
         thermal=mission!=null && mission.thermal!=null?new ThermalSystem(mission.thermal,spec.difficulty()):null;
+        pressure=mission!=null && mission.pressure!=null?new PressureSystem(mission.pressure,spec.difficulty()):null;
+        vortex=mission!=null && mission.vortex!=null?new VortexSystem(mission.vortex,spec.difficulty()):null;
+        cleanupCombo=mission!=null && mission.vortex!=null
+            ?new CleanupCombo(mission.vortex.comboWindowSeconds(),mission.vortex.comboDecaySeconds(),mission.vortex.maxCombo()):null;
         weapons = new WeaponController(spec.loadout());
         shield = spec.loadout().shieldCapacity();
         player.reset();
@@ -87,8 +100,11 @@ public final class GameWorld {
         slowTimer = Math.max(0, slowTimer - dt);
         hazardDamageTimer=Math.max(0,hazardDamageTimer-dt);
         if (sonar!=null) sonar.update(dt);
+        if (vortex!=null) vortex.update(dt);
+        if (cleanupCombo!=null) cleanupCombo.update(dt);
         visibilityExposure=mission!=null && mission.type==MissionConfig.MissionType.BLACK_TIDE ? .18f
-            : mission!=null && mission.type==MissionConfig.MissionType.SILENT_REEF ? .82f : 0;
+            : mission!=null && mission.type==MissionConfig.MissionType.SILENT_REEF ? .82f
+            : mission!=null && mission.type==MissionConfig.MissionType.ABYSS_MINE ? .88f : 0;
         cleaning = mission != null && cleaningInRange();
         EnvironmentSystems.Route activeRoute=route();
         if (moving) {
@@ -103,7 +119,9 @@ public final class GameWorld {
             player.x += dx * fraction;
             player.y += dy * fraction;
         }
+        applyVortex(player,dt,.68f);
         player.x=Rules.clamp(player.x,activeRoute.left()+PLAYER_RADIUS,activeRoute.right()-PLAYER_RADIUS);
+        player.y=Rules.clamp(player.y,PLAY_MIN_Y,PLAY_MAX_Y);
         if (mission == null) spawnScheduled();
         else if (!recovering) timeline.advance(elapsed, this::spawnMission);
         laser.timer = Math.max(0, laser.timer - dt);
@@ -116,6 +134,7 @@ public final class GameWorld {
         if (mission != null) updateCorals(dt);
         if (mission != null) { updateEnvironments(dt); updateHazards(dt); }
         if (thermal!=null) updateThermal(dt);
+        if (pressure!=null) updatePressure(dt);
         updateSalvage(dt);
         updateParticles(dt);
         if (mission != null) updateMissionEnd(dt);
@@ -131,6 +150,7 @@ public final class GameWorld {
     }
     private void updateMissionEnd(float dt) {
         if (recovering) {
+            if (vortex!=null && player.health<=0) { finishMission(false); return; }
             recoveryTimer += dt;
             if (recoveryTimer >= mission.recoverySeconds) finishMission(true);
         } else if (player.health <= 0 || elapsed >= mission.deadlineSeconds) finishMission(false);
@@ -207,6 +227,18 @@ public final class GameWorld {
             case COLD_ZONE -> { e.radius=74; e.vy=-18; }
             case DRILL_POINT -> { e.radius=36; e.health=e.maxHealth=90; e.vy=-22; }
             case ICE_WALL -> { e.radius=52; e.health=e.maxHealth=70; e.vy=-20; }
+            case SAFE_PRESSURE_ZONE -> { e.radius=78; e.vy=-17; }
+            case PRESSURE_ZONE -> {
+                e.radius=82; e.vy=-17;
+            }
+            case MINE_PATH -> { e.radius=46; e.vy=-19; e.concealed=true; }
+            case DRILL_ARM -> {
+                e.radius=48; e.health=e.maxHealth=85; e.vy=-18; e.originX=x;
+            }
+            case ENERGY_STATION -> { e.radius=36; e.health=e.maxHealth=100; e.vy=-21; }
+            case TRASH_CLUSTER -> {
+                e.radius=44; e.health=e.maxHealth=80; e.vy=-18; e.originX=x;
+            }
             default -> { e.radius=25; e.vy=-28; }
         }
     }
@@ -251,6 +283,7 @@ public final class GameWorld {
             if (mission != null && e.enemy != null) {
                 EnemySystems.update(this,e,dt);
                 if (e.active) updateEnemyAbility(e,dt);
+                if (e.active) applyVortex(e,dt,.42f);
                 if (e.active && Rules.overlaps(e.x,e.y,e.radius,player.x,player.y,player.radius)) hitPlayer(CONTACT_DAMAGE);
                 continue;
             }
@@ -360,8 +393,65 @@ public final class GameWorld {
                     enemy.repairTimer=6f/spec.tuning().fireRate(); enemy.effectTime=.4f;
                 }
             }
+            case DEEP_MINER -> {
+                if (enemy.y>PLAY_MAX_Y) return;
+                enemy.repairTimer-=dt;
+                if (enemy.repairTimer<=0) {
+                    spawnEnvironment(MissionConfig.EnvironmentKind.MINE_PATH,enemy.x,enemy.y-45);
+                    enemy.repairTimer=6.2f/spec.tuning().fireRate(); enemy.effectTime=.4f;
+                }
+            }
+            case PRESSURE_DRONE -> {
+                if (enemy.y>PLAY_MAX_Y) return;
+                enemy.repairTimer-=dt;
+                if (enemy.repairTimer<=0) {
+                    spawnEnvironment(MissionConfig.EnvironmentKind.PRESSURE_ZONE,player.x,Math.min(790,player.y+230));
+                    enemy.repairTimer=5.6f/spec.tuning().fireRate(); enemy.effectTime=.45f;
+                }
+            }
+            case RAIL_TURRET -> {
+                if (enemy.y>PLAY_MAX_Y) return;
+                if (enemy.warned) enemy.effectTime=Math.max(enemy.effectTime,.08f);
+            }
+            case ABYSS_GUARDIAN -> {
+                if (enemy.y<=PLAY_MAX_Y && enemy.effectTime>0) enemy.shieldTime=Math.max(enemy.shieldTime,.15f);
+            }
+            case VORTEX_DRONE -> {
+                if (enemy.y<=PLAY_MAX_Y && vortex!=null && enemy.effectTime>0) vortex.disrupt(.12f);
+            }
+            case TRASH_SWARM -> {
+                if (enemy.y>PLAY_MAX_Y) return;
+                enemy.repairTimer-=dt;
+                if (enemy.repairTimer<=0) {
+                    spawnWaste(MissionConfig.WasteKind.BAG,enemy.x,enemy.y-30);
+                    enemy.repairTimer=5.4f/spec.tuning().fireRate(); enemy.effectTime=.35f;
+                }
+            }
+            case MAGNETIC_COLLECTOR -> {
+                Entity waste=nearestWaste(enemy.x,enemy.y);
+                if (waste!=null && distanceSquared(waste,enemy.x,enemy.y)<210*210) {
+                    float dx=enemy.x-waste.x,dy=enemy.y-waste.y,length=Math.max(1,(float)Math.sqrt(dx*dx+dy*dy));
+                    waste.x+=dx/length*34*dt; waste.y+=dy/length*34*dt;
+                    enemy.aimX=waste.x; enemy.aimY=waste.y; enemy.effectTime=.1f;
+                }
+            }
+            case CURRENT_DISRUPTOR -> {
+                if (enemy.y>PLAY_MAX_Y) return;
+                enemy.repairTimer-=dt;
+                if (enemy.repairTimer<=0) {
+                    vortex.disrupt(1.6f+spec.difficulty().ordinal()*.25f);
+                    enemy.repairTimer=6f/spec.tuning().fireRate(); enemy.effectTime=.5f;
+                }
+            }
             default -> { }
         }
+    }
+
+    private void spawnWaste(MissionConfig.WasteKind kind,float x,float y) {
+        Entity e=plastics.obtain(); if (e==null) return;
+        MissionConfig.Waste waste=mission.waste(kind);
+        e.x=Rules.clamp(x,55,WIDTH-55); e.y=y; e.radius=waste.radius(); e.vy=-waste.drift(); e.waste=waste;
+        spawnedPlastic++;
     }
 
     private void fireRadial(float x,float y,int count,float speed,int damage) {
@@ -384,6 +474,14 @@ public final class GameWorld {
         for (int i=0;i<corals.capacity();i++) {
             Entity coral=corals.at(i); float candidate=distanceSquared(coral,x,y);
             if (coral.active && candidate<distance) { closest=coral; distance=candidate; }
+        }
+        return closest;
+    }
+    private Entity nearestWaste(float x,float y) {
+        Entity closest=null; float distance=Float.MAX_VALUE;
+        for (int i=0;i<plastics.capacity();i++) {
+            Entity waste=plastics.at(i); float candidate=distanceSquared(waste,x,y);
+            if (waste.active && candidate<distance) { closest=waste; distance=candidate; }
         }
         return closest;
     }
@@ -420,6 +518,8 @@ public final class GameWorld {
                 case OIL_KRAKEN -> updateOilKraken(dt);
                 case RESONANCE_ENGINE -> updateResonanceEngine(dt);
                 case BOREALIS_DRILL -> updateBorealisDrill(dt);
+                case THE_HARVESTER -> updateTheHarvester(dt);
+                case RECYCLER_LEVIATHAN -> updateRecyclerLeviathan(dt);
             }
             return;
         }
@@ -600,6 +700,55 @@ public final class GameWorld {
             75+random.nextFloat()*(WIDTH-150),430+random.nextFloat()*210);
         if (borealisDrill.defeated()) beginRecovery();
     }
+    private void updateTheHarvester(float dt) {
+        if (!bossSpawned && elapsed>=mission.boss.start()) {
+            bossSpawned=true; timeline.stop(); theHarvester.start(); boss.reset();
+            boss.x=WIDTH/2f; boss.y=830; boss.radius=80;
+            boss.health=boss.maxHealth=theHarvester.maxHealth(); enemiesEncountered++;
+            spawnEnvironment(MissionConfig.EnvironmentKind.SAFE_PRESSURE_ZONE,WIDTH/2f,300);
+        }
+        if (!bossSpawned || recovering) return;
+        theHarvester.update(dt);
+        boss.x=WIDTH/2f+(float)Math.sin(theHarvester.stateTime()*.4f*spec.tuning().bossMovement())*45;
+        boss.y=Math.max(740,830-theHarvester.stateTime()*28); boss.health=theHarvester.health();
+        boolean stations=theHarvester.state()==TheHarvester.State.POWERED_ARMOR;
+        configureBossPart(bossLeftPipe,140,boss.y-8,theHarvester.stationHealth(true),theHarvester.maxStationHealth(),stations);
+        configureBossPart(bossRightPipe,400,boss.y-8,theHarvester.stationHealth(false),theHarvester.maxStationHealth(),stations);
+        if (stations) { serviceBossEnergyStation(bossLeftPipe,true,dt); serviceBossEnergyStation(bossRightPipe,false,dt); }
+        if (theHarvester.consumeDrillVolley()) fireBossVolley();
+        if (theHarvester.consumeDebris()) {
+            int count=1+spec.difficulty().ordinal()/2;
+            for (int i=0;i<count;i++) spawnEnvironment(MissionConfig.EnvironmentKind.DRILL_ARM,
+                100+random.nextFloat()*(WIDTH-200),Math.min(790,player.y+300+i*55));
+        }
+        if (theHarvester.consumePressureBurst()) {
+            int count=1+spec.difficulty().ordinal()/2;
+            for (int i=0;i<count;i++) spawnEnvironment(MissionConfig.EnvironmentKind.PRESSURE_ZONE,
+                Rules.clamp(player.x+(i-count*.5f)*120,70,WIDTH-70),Math.min(790,player.y+220+i*45));
+        }
+        if (theHarvester.defeated()) beginRecovery();
+    }
+    private void updateRecyclerLeviathan(float dt) {
+        if (!bossSpawned && elapsed>=mission.boss.start()) {
+            bossSpawned=true; timeline.stop(); recyclerLeviathan.start(); boss.reset();
+            boss.x=WIDTH/2f; boss.y=830; boss.radius=82;
+            boss.health=boss.maxHealth=recyclerLeviathan.maxHealth(); enemiesEncountered++;
+        }
+        if (!bossSpawned || recovering) return;
+        recyclerLeviathan.update(dt);
+        boss.x=WIDTH/2f+(float)Math.sin(recyclerLeviathan.stateTime()*.44f*spec.tuning().bossMovement())*52;
+        boss.y=Math.max(740,830-recyclerLeviathan.stateTime()*28); boss.health=recyclerLeviathan.health();
+        boolean armor=recyclerLeviathan.state()==RecyclerLeviathan.State.PLASTIC_ARMOR;
+        configureBossPart(bossLeftPipe,145,boss.y-7,recyclerLeviathan.armorHealth(true),recyclerLeviathan.maxArmorHealth(),armor);
+        configureBossPart(bossRightPipe,395,boss.y-7,recyclerLeviathan.armorHealth(false),recyclerLeviathan.maxArmorHealth(),armor);
+        if (recyclerLeviathan.consumeVolley()) fireBossVolley();
+        if (recyclerLeviathan.consumeCurrentShift()) vortex.shiftDirection();
+        if (recyclerLeviathan.consumeTrash()) {
+            spawnWaste((boss.value++&1)==0?MissionConfig.WasteKind.BOTTLE:MissionConfig.WasteKind.BAG,
+                100+random.nextFloat()*(WIDTH-200),boss.y-45);
+        }
+        if (recyclerLeviathan.defeated()) beginRecovery();
+    }
     private void fireResonanceWave() {
         int count=Math.max(6,spec.tuning().bossProjectiles()+3);
         float speed=spec.tuning().shotSpeed()*.82f;
@@ -616,6 +765,15 @@ public final class GameWorld {
                 oilKraken.closeValve(left); valve.active=false; valvesClosed++; salvageCount+=5;
             }
         } else valve.progress=0;
+    }
+    private void serviceBossEnergyStation(Entity station,boolean left,float dt) {
+        if (!station.active) return;
+        if (near(station,spec.loadout().cleanupRadius())) {
+            station.progress+=dt;
+            if (station.progress>=EnvironmentSystems.interactionSeconds(MissionConfig.EnvironmentKind.ENERGY_STATION,spec.difficulty())) {
+                theHarvester.disableStation(left); station.active=false; energyStationsDisabled++; salvageCount+=6;
+            }
+        } else station.progress=Math.max(0,station.progress-dt*.35f);
     }
     private void fireScrapVolley() {
         int count=Math.max(3,spec.tuning().bossProjectiles());
@@ -663,6 +821,7 @@ public final class GameWorld {
     private void beginRecovery() {
         if (recovering) return;
         recovering=true; boss.active=false; bossLeftPipe.active=bossRightPipe.active=false; timeline.stop();
+        if (vortex!=null) vortex.beginEscape();
         kills++; combatScore+=500; salvageCount+=mission.boss.salvage();
         for (int i=0;i<bullets.capacity();i++) if (!bullets.at(i).friendly) bullets.at(i).active=false;
         for (int i=0;i<drones.capacity();i++) drones.at(i).active=false;
@@ -676,6 +835,8 @@ public final class GameWorld {
         if (oilKraken!=null) return oilKraken.phase();
         if (resonanceEngine!=null) return resonanceEngine.phase();
         if (borealisDrill!=null) return borealisDrill.phase();
+        if (theHarvester!=null) return theHarvester.phase();
+        if (recyclerLeviathan!=null) return recyclerLeviathan.phase();
         if (!boss.active) return 0;
         float remaining = (float) boss.health / boss.maxHealth;
         return Math.min(spec.tuning().bossPhases(), remaining > .66f ? 1 : remaining > .33f ? 2 : 3);
@@ -714,6 +875,7 @@ public final class GameWorld {
                 }
             }
             b.x += b.vx * dt; b.y += b.vy * dt;
+            applyVortex(b,dt,.16f);
             if (b.y < -DESPAWN_MARGIN || b.y > SPAWN_Y || b.x < -DESPAWN_MARGIN || b.x > WIDTH + DESPAWN_MARGIN) { b.active = false; continue; }
             if (b.friendly) {
                 for (int j = 0; j < drones.capacity(); j++) {
@@ -761,6 +923,12 @@ public final class GameWorld {
                 || e.environment==MissionConfig.EnvironmentKind.THERMAL_VENT
                 || e.environment==MissionConfig.EnvironmentKind.COLD_ZONE
                 || e.environment==MissionConfig.EnvironmentKind.DRILL_POINT
+                || e.environment==MissionConfig.EnvironmentKind.SAFE_PRESSURE_ZONE
+                || e.environment==MissionConfig.EnvironmentKind.PRESSURE_ZONE
+                || e.environment==MissionConfig.EnvironmentKind.MINE_PATH
+                || e.environment==MissionConfig.EnvironmentKind.DRILL_ARM
+                || e.environment==MissionConfig.EnvironmentKind.ENERGY_STATION
+                || e.environment==MissionConfig.EnvironmentKind.TRASH_CLUSTER
                 || !Rules.overlaps(bullet.x,bullet.y,bullet.radius,e.x,e.y,e.radius)) continue;
             bullet.active=false; damageEnvironment(e,bullet.damage); return true;
         }
@@ -810,6 +978,10 @@ public final class GameWorld {
             (left?bossLeftPipe:bossRightPipe).health=resonanceEngine.weakPointHealth(left);
         }
         else if (borealisDrill!=null) { borealisDrill.hitUnit(left,damage); (left?bossLeftPipe:bossRightPipe).health=borealisDrill.unitHealth(left); }
+        else if (recyclerLeviathan!=null) {
+            recyclerLeviathan.hitArmor(left,damage);
+            (left?bossLeftPipe:bossRightPipe).health=recyclerLeviathan.armorHealth(left);
+        }
     }
     private void hitBossCore(int damage) {
         if (compactor!=null) { compactor.hitCore(damage); boss.health=compactor.health(); }
@@ -819,6 +991,8 @@ public final class GameWorld {
         else if (oilKraken!=null) { oilKraken.hitCore(damage); boss.health=oilKraken.health(); }
         else if (resonanceEngine!=null) { resonanceEngine.hitCore(damage); boss.health=resonanceEngine.health(); }
         else if (borealisDrill!=null) { borealisDrill.hitCore(damage); boss.health=borealisDrill.health(); }
+        else if (theHarvester!=null) { theHarvester.hitCore(damage); boss.health=theHarvester.health(); }
+        else if (recyclerLeviathan!=null) { recyclerLeviathan.hitCore(damage); boss.health=recyclerLeviathan.health(); }
     }
     private void hitPlayer(int damage) {
         if (invulnerability > 0) return;
@@ -842,10 +1016,14 @@ public final class GameWorld {
             Entity e=environments.at(i);
             if (e.active && (e.environment==MissionConfig.EnvironmentKind.VALVE
                 || e.environment==MissionConfig.EnvironmentKind.CLEANUP_CAPSULE
-                || e.environment==MissionConfig.EnvironmentKind.DRILL_POINT)
+                || e.environment==MissionConfig.EnvironmentKind.DRILL_POINT
+                || e.environment==MissionConfig.EnvironmentKind.ENERGY_STATION
+                || e.environment==MissionConfig.EnvironmentKind.TRASH_CLUSTER)
                 && near(e,spec.loadout().cleanupRadius())) return true;
         }
         if (oilKraken!=null && oilKraken.state()==OilKraken.State.VALVES
+            && (near(bossLeftPipe,spec.loadout().cleanupRadius()) || near(bossRightPipe,spec.loadout().cleanupRadius()))) return true;
+        if (theHarvester!=null && theHarvester.state()==TheHarvester.State.POWERED_ARMOR
             && (near(bossLeftPipe,spec.loadout().cleanupRadius()) || near(bossRightPipe,spec.loadout().cleanupRadius()))) return true;
         return false;
     }
@@ -854,6 +1032,7 @@ public final class GameWorld {
             Entity e = plastics.at(i);
             if (!e.active) continue;
             e.age+=dt; e.y += e.vy * dt;
+            applyVortex(e,dt,1);
             if (mission!=null && mission.currentStrength>0) {
                 float current=(float)Math.sin(elapsed*.7f+e.age*.35f+i*.83f)*mission.currentStrength;
                 if (e.waste!=null && e.waste.kind()==MissionConfig.WasteKind.NET) current*=1.35f;
@@ -880,6 +1059,12 @@ public final class GameWorld {
         e.active=false; cleanedCount++;
         if (e.waste==null || e.waste.plastic()) plasticCount++;
         if (e.waste!=null) salvageCount+=e.waste.salvage();
+        if (cleanupCombo!=null) {
+            int chain=cleanupCombo.collect();
+            combatScore+=chain*12;
+            if (chain%3==0) salvageCount++;
+            if (recyclerLeviathan!=null && recyclerLeviathan.deliverWaste()) combatScore+=120;
+        }
         burst(e.x,e.y,1); events.emit(PLASTIC_COLLECTED,e.x,e.y,PLASTIC_SCORE);
     }
     private void updateCorals(float dt) {
@@ -896,6 +1081,18 @@ public final class GameWorld {
             Entity e=environments.at(i); if (!e.active) continue;
             e.age+=dt; e.effectTime=Math.max(0,e.effectTime-dt); e.revealTime=Math.max(0,e.revealTime-dt);
             if (e.environment!=MissionConfig.EnvironmentKind.ICE_FALL || e.friendly) e.y+=e.vy*dt;
+            if (e.environment==MissionConfig.EnvironmentKind.DRILL_ARM) {
+                e.x=Rules.clamp(e.originX+(float)Math.sin(e.age*1.45f)*115,50,WIDTH-50);
+                if (!e.warned && e.y<780) { e.warned=true; e.timer=mission.pressure.warningSeconds(); }
+                if (e.warned) { e.timer-=dt; if (e.timer<=0) e.friendly=true; }
+            } else if (e.environment==MissionConfig.EnvironmentKind.PRESSURE_ZONE) {
+                if (!e.warned && e.y<780) { e.warned=true; e.timer=mission.pressure.warningSeconds(); }
+                if (e.warned) { e.timer-=dt; if (e.timer<=0) e.friendly=true; }
+            } else if (e.environment==MissionConfig.EnvironmentKind.TRASH_CLUSTER) {
+                float angle=vortex.debrisAngle(e.age,i);
+                e.x=Rules.clamp(e.originX+(float)Math.cos(angle)*52,55,WIDTH-55);
+            }
+            if (vortex!=null && e.environment!=MissionConfig.EnvironmentKind.TRASH_CLUSTER) applyVortex(e,dt,.55f);
             if (e.environment==MissionConfig.EnvironmentKind.COLLAPSIBLE && e.y<720) {
                 if (!e.warned) { e.warned=true; e.timer=EnvironmentSystems.collapseWarning(spec.difficulty()); }
                 if (!e.friendly) {
@@ -914,19 +1111,34 @@ public final class GameWorld {
                 e.warned=true; e.timer-=dt;
                 if (e.timer<=0) { e.friendly=true; e.vy=-150; }
             }
-            if (e.environment==MissionConfig.EnvironmentKind.VALVE || e.environment==MissionConfig.EnvironmentKind.DRILL_POINT) {
+            if (e.environment==MissionConfig.EnvironmentKind.MINE_PATH
+                && Rules.overlaps(e.x,e.y,e.radius,player.x,player.y,player.radius)) slowTimer=Math.max(slowTimer,.35f);
+            if (e.environment==MissionConfig.EnvironmentKind.VALVE || e.environment==MissionConfig.EnvironmentKind.DRILL_POINT
+                || e.environment==MissionConfig.EnvironmentKind.ENERGY_STATION
+                || e.environment==MissionConfig.EnvironmentKind.TRASH_CLUSTER) {
                 if (near(e,spec.loadout().cleanupRadius())) {
                     e.progress+=dt;
                     if (e.progress>=EnvironmentSystems.interactionSeconds(e.environment,spec.difficulty())) {
                         e.active=false;
-                        if (e.environment==MissionConfig.EnvironmentKind.VALVE) valvesClosed++; else drillPointsDisabled++;
+                        if (e.environment==MissionConfig.EnvironmentKind.VALVE) valvesClosed++;
+                        else if (e.environment==MissionConfig.EnvironmentKind.DRILL_POINT) drillPointsDisabled++;
+                        else if (e.environment==MissionConfig.EnvironmentKind.ENERGY_STATION) energyStationsDisabled++;
+                        else if (cleanupCombo!=null) {
+                            int chain=cleanupCombo.collect(); combatScore+=chain*15;
+                            if (chain%3==0) salvageCount++;
+                            if (recyclerLeviathan!=null && recyclerLeviathan.deliverWaste()) combatScore+=120;
+                        }
                         cleanedCount++; salvageCount+=4; burst(e.x,e.y,1); continue;
                     }
-                } else e.progress=0;
+                } else e.progress=Math.max(0,e.progress-dt*.25f);
             } else if (e.environment!=MissionConfig.EnvironmentKind.CLEANUP_CAPSULE
                 && e.environment!=MissionConfig.EnvironmentKind.SONAR_CELL
                 && e.environment!=MissionConfig.EnvironmentKind.THERMAL_VENT
                 && e.environment!=MissionConfig.EnvironmentKind.COLD_ZONE
+                && e.environment!=MissionConfig.EnvironmentKind.SAFE_PRESSURE_ZONE
+                && e.environment!=MissionConfig.EnvironmentKind.PRESSURE_ZONE
+                && e.environment!=MissionConfig.EnvironmentKind.MINE_PATH
+                && (e.environment!=MissionConfig.EnvironmentKind.DRILL_ARM || e.friendly)
                 && (e.environment!=MissionConfig.EnvironmentKind.ICE_FALL || e.friendly)
                 && Rules.overlaps(e.x,e.y,e.radius,player.x,player.y,player.radius)) hitPlayer(CONTACT_DAMAGE);
             if (e.y<-e.radius) e.active=false;
@@ -942,6 +1154,19 @@ public final class GameWorld {
         }
         thermal.update(dt,exposure,cold);
         int damage=thermal.consumeDamage();
+        if (damage>0) hitPlayer(damage);
+    }
+    private void updatePressure(float dt) {
+        boolean safe=false; float exposure=0;
+        for (int i=0;i<environments.capacity();i++) {
+            Entity e=environments.at(i);
+            if (!e.active || !Rules.overlaps(e.x,e.y,e.radius,player.x,player.y,player.radius)) continue;
+            if (e.environment==MissionConfig.EnvironmentKind.SAFE_PRESSURE_ZONE) safe=true;
+            else if (e.environment==MissionConfig.EnvironmentKind.PRESSURE_ZONE && e.friendly) exposure+=1;
+        }
+        if (theHarvester!=null && theHarvester.state()==TheHarvester.State.CORE_EXPOSED) exposure+=.35f;
+        pressure.update(dt,safe,exposure);
+        int damage=pressure.consumeDamage();
         if (damage>0) hitPlayer(damage);
     }
     private void updateHazards(float dt) {
@@ -980,10 +1205,12 @@ public final class GameWorld {
             if (!e.active) continue;
             if (e.friendly) {
                 e.x += FREED_TURTLE_SPEED_X * dt; e.y += FREED_TURTLE_SPEED_Y * dt;
+                applyVortex(e,dt,.45f);
                 if (e.x > WIDTH + DESPAWN_MARGIN) e.active = false;
                 continue;
             }
             e.age+=dt; e.y += e.vy * dt;
+            applyVortex(e,dt,.8f);
             if (mission!=null && mission.currentStrength>0)
                 e.x=Rules.clamp(e.x+(float)Math.sin(elapsed*.65f+i)*mission.currentStrength*.55f*dt,40,WIDTH-40);
             if (near(e, RESCUE_RADIUS)) {
@@ -1011,8 +1238,15 @@ public final class GameWorld {
                 float ratio = Math.min(1, SALVAGE_SPEED * dt / length);
                 e.x += dx * ratio; e.y += dy * ratio;
             } else e.y -= PLASTIC_SPEED * dt;
+            applyVortex(e,dt,.7f);
             if (e.y < -DESPAWN_MARGIN) e.active = false;
         }
+    }
+    private void applyVortex(Entity e,float dt,float scale) {
+        if (vortex==null || e==null || !e.active) return;
+        e.x+=vortex.forceX(e.x,e.y)*dt*scale;
+        e.y+=vortex.forceY(e.x,e.y)*dt*scale;
+        e.x=Rules.clamp(e.x,-DESPAWN_MARGIN,WIDTH+DESPAWN_MARGIN);
     }
     private void burst(float x, float y, int color) {
         for (int i = 0; i < PARTICLES_PER_BURST; i++) {
@@ -1075,6 +1309,12 @@ public final class GameWorld {
                     && e.environment!=MissionConfig.EnvironmentKind.THERMAL_VENT
                     && e.environment!=MissionConfig.EnvironmentKind.COLD_ZONE
                     && e.environment!=MissionConfig.EnvironmentKind.DRILL_POINT
+                    && e.environment!=MissionConfig.EnvironmentKind.SAFE_PRESSURE_ZONE
+                    && e.environment!=MissionConfig.EnvironmentKind.PRESSURE_ZONE
+                    && e.environment!=MissionConfig.EnvironmentKind.MINE_PATH
+                    && e.environment!=MissionConfig.EnvironmentKind.DRILL_ARM
+                    && e.environment!=MissionConfig.EnvironmentKind.ENERGY_STATION
+                    && e.environment!=MissionConfig.EnvironmentKind.TRASH_CLUSTER
                     && (!e.concealed || sonar!=null&&sonar.revealing())
                     && e.y>player.y && e.y<y && Math.abs(e.x-player.x)<=e.radius+3) { target=e; y=e.y; }
             }
@@ -1126,6 +1366,8 @@ public final class GameWorld {
     public OilKraken oilKraken() { return oilKraken; }
     public ResonanceEngine resonanceEngine() { return resonanceEngine; }
     public BorealisDrill borealisDrill() { return borealisDrill; }
+    public TheHarvester theHarvester() { return theHarvester; }
+    public RecyclerLeviathan recyclerLeviathan() { return recyclerLeviathan; }
     public int spawnedDrones() { return spawnedDrones; }
     public float progress() { return elapsed / (mission==null?LEVEL_SECONDS:mission.durationSeconds); }
     public float restoration() {
@@ -1147,6 +1389,7 @@ public final class GameWorld {
     public int valvesClosed() { return valvesClosed; }
     public int oilCleaned() { return oilCleaned; }
     public int drillPointsDisabled() { return drillPointsDisabled; }
+    public int energyStationsDisabled() { return energyStationsDisabled; }
     public EnvironmentSystems.Route route() {
         MissionConfig.MissionType type=mission==null?MissionConfig.MissionType.BLUE_COAST:mission.type;
         return EnvironmentSystems.route(type,elapsed,spec.difficulty());
@@ -1177,6 +1420,18 @@ public final class GameWorld {
     public float thermalHeat() { return thermal==null?0:thermal.heat(); }
     public float thermalCapacity() { return thermal==null?0:thermal.capacity(); }
     public float thermalThreshold() { return thermal==null?0:thermal.threshold(); }
+    public boolean hasPressure() { return pressure!=null; }
+    public float pressureLoad() { return pressure==null?0:pressure.pressure(); }
+    public float pressureCapacity() { return pressure==null?0:pressure.capacity(); }
+    public float pressureThreshold() { return pressure==null?0:pressure.threshold(); }
+    public boolean pressureWarning() { return pressure!=null&&pressure.warning(); }
+    public boolean hasVortex() { return vortex!=null; }
+    public float currentDirection() { return vortex==null?0:vortex.direction(); }
+    public int cleanupCombo() { return cleanupCombo==null?0:cleanupCombo.value(); }
+    public int bestCleanupCombo() { return cleanupCombo==null?0:cleanupCombo.best(); }
+    public float comboRemaining() { return cleanupCombo==null?0:cleanupCombo.remaining(); }
+    public float comboWindow() { return cleanupCombo==null?1:cleanupCombo.window(); }
+    public boolean escapingVortex() { return vortex!=null&&vortex.escaping()&&recovering; }
     public int coralDamage() { return coralDamage; }
     public boolean midpointActive() { return mission!=null && elapsed>=mission.midpointStart && elapsed<mission.midpointStart+mission.midpointDuration; }
     public boolean bossCoreVulnerable() {
@@ -1187,7 +1442,9 @@ public final class GameWorld {
         if (urbanSalvager!=null) return urbanSalvager.coreVulnerable();
         if (oilKraken!=null) return oilKraken.coreVulnerable();
         if (resonanceEngine!=null) return resonanceEngine.coreVulnerable();
-        return borealisDrill!=null && borealisDrill.coreVulnerable();
+        if (borealisDrill!=null) return borealisDrill.coreVulnerable();
+        if (theHarvester!=null) return theHarvester.coreVulnerable();
+        return recyclerLeviathan!=null && recyclerLeviathan.coreVulnerable();
     }
     public boolean cleaning() { return cleaning; }
     public boolean slowed() { return slowTimer>0; }

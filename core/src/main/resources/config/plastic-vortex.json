@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "id": "PLASTIC_VORTEX",
+  "missionType": "PLASTIC_VORTEX",
+  "displayName": "Plastic Vortex",
+  "briefing": "A continent-sized debris gyre is feeding NEREID's Recycler Leviathan. Read the current arrows, chain nearby cleanup targets, break apart rotating trash clusters, and ride the cleared channel out of the vortex core.",
+  "introMessage": "CURRENT ARROWS ROTATE / CLEAN IN CHAINS",
+  "midpointMessage": "VORTEX REVERSAL / KEEP THE COMBO ALIVE",
+  "midpointStart": 154,
+  "midpointDuration": 14,
+  "durationSeconds": 358,
+  "deadlineSeconds": 438,
+  "recoverySeconds": 10,
+  "cleaningSpeedMultiplier": 0.74,
+  "netSeconds": 1.8,
+  "netSpeedMultiplier": 0.58,
+  "currentStrength": 0,
+  "hostileBulletLimit": 92,
+  "vortex": {
+    "currentStrength": 68,
+    "directionSeconds": 12,
+    "debrisAngularSpeed": 0.72,
+    "comboWindowSeconds": 4.2,
+    "comboDecaySeconds": 2.2,
+    "maxCombo": 10,
+    "escapeSeconds": 10,
+    "escapeBoost": 118,
+    "bossWasteRequired": 5
+  },
+  "boss": {
+    "kind": "RECYCLER_LEVIATHAN", "name": "Recycler Leviathan", "start": 315,
+    "coreHealth": 1260, "pipeHealth": 175, "droneBudget": 8,
+    "arrivalSeconds": 2.8, "telegraphSeconds": 1.7, "attackInterval": 3,
+    "pressInset": 105, "salvage": 135
+  },
+  "enemies": [
+    {
+      "id":"VORTEX_DRONE","displayName":"VortexDrone","movement":"SWEEP","weapon":"TRIPLE","ability":"VORTEX_DRONE",
+      "stats":{"health":58,"speed":68,"radius":26,"shotInterval":3.8,"bulletSpeed":180,"damage":8,"lifetime":34,"frontArmor":false,"repairAmount":0},
+      "reward":{"score":235,"salvage":10}
+    },
+    {
+      "id":"TRASH_SWARM","displayName":"TrashSwarm","movement":"HUNTER","weapon":"SINGLE","ability":"TRASH_SWARM",
+      "stats":{"health":48,"speed":82,"radius":24,"shotInterval":4.2,"bulletSpeed":168,"damage":7,"lifetime":30,"frontArmor":false,"repairAmount":0},
+      "reward":{"score":220,"salvage":9}
+    },
+    {
+      "id":"MAGNETIC_COLLECTOR","displayName":"MagneticCollector","movement":"HOLD","weapon":"AIMED","ability":"MAGNETIC_COLLECTOR",
+      "stats":{"health":78,"speed":38,"radius":32,"shotInterval":4.5,"bulletSpeed":185,"damage":9,"lifetime":40,"frontArmor":true,"repairAmount":0},
+      "reward":{"score":290,"salvage":15}
+    },
+    {
+      "id":"CURRENT_DISRUPTOR","displayName":"CurrentDisruptor","movement":"SWEEP","weapon":"NET","ability":"CURRENT_DISRUPTOR",
+      "stats":{"health":72,"speed":49,"radius":30,"shotInterval":4,"bulletSpeed":174,"damage":9,"lifetime":38,"frontArmor":true,"repairAmount":0},
+      "reward":{"score":285,"salvage":14}
+    }
+  ],
+  "wasteDefinitions": [
+    {"kind":"BOTTLE","radius":12,"cleanMultiplier":0.9,"drift":40,"salvage":2,"plastic":true},
+    {"kind":"BAG","radius":16,"cleanMultiplier":1.05,"drift":36,"salvage":2,"plastic":true},
+    {"kind":"METAL","radius":18,"cleanMultiplier":1.55,"drift":33,"salvage":4,"plastic":false},
+    {"kind":"NET","radius":31,"cleanMultiplier":2.1,"drift":29,"salvage":3,"plastic":false},
+    {"kind":"DIRTY_WATER","radius":62,"cleanMultiplier":4,"drift":24,"salvage":3,"plastic":false}
+  ],
+  "creatureDefinitions": [
+    {"kind":"TURTLE","radius":25,"rescueMultiplier":1,"drift":23,"timeoutSeconds":28},
+    {"kind":"MANTA","radius":34,"rescueMultiplier":1.1,"drift":20,"timeoutSeconds":29}
+  ],
+  "waves": [
+    {"time":14,"enemy":"VORTEX_DRONE","count":3,"interval":5,"x":95,"spacing":175},
+    {"time":44,"enemy":"TRASH_SWARM","count":3,"interval":5,"x":95,"spacing":175},
+    {"time":75,"enemy":"MAGNETIC_COLLECTOR","count":2,"interval":7,"x":150,"spacing":240},
+    {"time":106,"enemy":"CURRENT_DISRUPTOR","count":2,"interval":7,"x":150,"spacing":240},
+    {"time":137,"enemy":"VORTEX_DRONE","count":4,"interval":3,"x":75,"spacing":130},
+    {"time":170,"enemy":"TRASH_SWARM","count":4,"interval":3,"x":75,"spacing":130},
+    {"time":203,"enemy":"MAGNETIC_COLLECTOR","count":3,"interval":5,"x":90,"spacing":180},
+    {"time":236,"enemy":"CURRENT_DISRUPTOR","count":3,"interval":5,"x":90,"spacing":180},
+    {"time":269,"enemy":"VORTEX_DRONE","count":4,"interval":3,"x":75,"spacing":130}
+  ],
+  "props": [
+    {"time":4,"kind":"WASTE","waste":"BOTTLE","x":180},
+    {"time":10,"kind":"WASTE","waste":"BAG","x":250},
+    {"time":17,"kind":"MECHANIC","environment":"TRASH_CLUSTER","x":380},
+    {"time":31,"kind":"CREATURE","creature":"TURTLE","x":420},
+    {"time":44,"kind":"WASTE","waste":"BOTTLE","x":130},
+    {"time":52,"kind":"WASTE","waste":"BAG","x":220},
+    {"time":63,"kind":"MECHANIC","environment":"TRASH_CLUSTER","x":360},
+    {"time":77,"kind":"WASTE","waste":"METAL","x":410},
+    {"time":91,"kind":"CREATURE","creature":"MANTA","x":145},
+    {"time":105,"kind":"MECHANIC","environment":"TRASH_CLUSTER","x":300},
+    {"time":119,"kind":"WASTE","waste":"BOTTLE","x":115},
+    {"time":127,"kind":"WASTE","waste":"BAG","x":205},
+    {"time":141,"kind":"MECHANIC","environment":"TRASH_CLUSTER","x":405},
+    {"time":156,"kind":"CREATURE","creature":"TURTLE","x":350},
+    {"time":171,"kind":"WASTE","waste":"NET","x":135},
+    {"time":184,"kind":"MECHANIC","environment":"TRASH_CLUSTER","x":330},
+    {"time":198,"kind":"WASTE","waste":"BOTTLE","x":390},
+    {"time":206,"kind":"WASTE","waste":"BAG","x":300},
+    {"time":220,"kind":"CREATURE","creature":"MANTA","x":125},
+    {"time":234,"kind":"MECHANIC","environment":"TRASH_CLUSTER","x":390},
+    {"time":248,"kind":"WASTE","waste":"METAL","x":170},
+    {"time":261,"kind":"WASTE","waste":"BOTTLE","x":250},
+    {"time":269,"kind":"WASTE","waste":"BAG","x":340},
+    {"time":282,"kind":"MECHANIC","environment":"TRASH_CLUSTER","x":160}
+  ]
+}

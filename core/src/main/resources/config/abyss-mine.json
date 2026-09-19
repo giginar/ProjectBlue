@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "id": "ABYSS_MINE",
+  "missionType": "ABYSS_MINE",
+  "displayName": "Abyss Mine",
+  "briefing": "NEREID's abyssal mine is crushing the trench under unstable pressure. Read every pressure warning, recover inside blue safe zones, reveal the mining routes with sonar, and disable the energy grid before facing The Harvester.",
+  "introMessage": "PRESSURE RISES SLOWLY / BLUE ZONES ARE SAFE",
+  "midpointMessage": "SONAR ROUTES SHIFTING / DRILL ARMS ONLINE",
+  "midpointStart": 156,
+  "midpointDuration": 14,
+  "durationSeconds": 360,
+  "deadlineSeconds": 435,
+  "recoverySeconds": 9,
+  "cleaningSpeedMultiplier": 0.7,
+  "netSeconds": 2.1,
+  "netSpeedMultiplier": 0.52,
+  "currentStrength": 8,
+  "hostileBulletLimit": 88,
+  "sonar": {
+    "maxEnergy": 110,
+    "pulseCost": 24,
+    "regenPerSecond": 5.5,
+    "revealSeconds": 3.1,
+    "pickupEnergy": 36
+  },
+  "pressure": {
+    "maxPressure": 100,
+    "dangerThreshold": 72,
+    "ambientGainPerSecond": 0.8,
+    "hazardGainPerSecond": 25,
+    "safeRecoveryPerSecond": 31,
+    "damageInterval": 0.95,
+    "warningSeconds": 1.8
+  },
+  "boss": {
+    "kind": "THE_HARVESTER", "name": "The Harvester", "start": 318,
+    "coreHealth": 1220, "pipeHealth": 165, "droneBudget": 7,
+    "arrivalSeconds": 2.8, "telegraphSeconds": 1.8, "attackInterval": 3.1,
+    "pressInset": 108, "salvage": 125
+  },
+  "enemies": [
+    {
+      "id":"DEEP_MINER","displayName":"DeepMiner","movement":"HOLD","weapon":"SINGLE","ability":"DEEP_MINER",
+      "stats":{"health":82,"speed":39,"radius":33,"shotInterval":4.4,"bulletSpeed":170,"damage":9,"lifetime":40,"frontArmor":true,"repairAmount":0},
+      "reward":{"score":270,"salvage":14}
+    },
+    {
+      "id":"PRESSURE_DRONE","displayName":"PressureDrone","movement":"HUNTER","weapon":"AIMED","ability":"PRESSURE_DRONE",
+      "stats":{"health":52,"speed":73,"radius":25,"shotInterval":3.7,"bulletSpeed":182,"damage":8,"lifetime":32,"frontArmor":false,"repairAmount":0},
+      "reward":{"score":225,"salvage":10}
+    },
+    {
+      "id":"RAIL_TURRET","displayName":"RailTurret","movement":"HOLD","weapon":"AIMED","ability":"RAIL_TURRET",
+      "stats":{"health":70,"speed":34,"radius":29,"shotInterval":4.8,"bulletSpeed":225,"damage":12,"lifetime":42,"frontArmor":true,"repairAmount":0},
+      "reward":{"score":285,"salvage":14}
+    },
+    {
+      "id":"ABYSS_GUARDIAN","displayName":"AbyssGuardian","movement":"SWEEP","weapon":"TRIPLE","ability":"ABYSS_GUARDIAN",
+      "stats":{"health":92,"speed":46,"radius":35,"shotInterval":4.2,"bulletSpeed":176,"damage":10,"lifetime":42,"frontArmor":true,"repairAmount":6},
+      "reward":{"score":315,"salvage":16}
+    }
+  ],
+  "wasteDefinitions": [
+    {"kind":"BOTTLE","radius":12,"cleanMultiplier":1,"drift":39,"salvage":1,"plastic":true},
+    {"kind":"BAG","radius":16,"cleanMultiplier":1.2,"drift":35,"salvage":1,"plastic":true},
+    {"kind":"METAL","radius":18,"cleanMultiplier":1.8,"drift":32,"salvage":4,"plastic":false},
+    {"kind":"NET","radius":31,"cleanMultiplier":2.4,"drift":28,"salvage":2,"plastic":false},
+    {"kind":"DIRTY_WATER","radius":62,"cleanMultiplier":4.4,"drift":23,"salvage":3,"plastic":false}
+  ],
+  "creatureDefinitions": [
+    {"kind":"RESEARCH_DIVER","radius":27,"rescueMultiplier":1.25,"drift":18,"timeoutSeconds":27},
+    {"kind":"FISH_SCHOOL","radius":26,"rescueMultiplier":0.9,"drift":22,"timeoutSeconds":25}
+  ],
+  "waves": [
+    {"time":15,"enemy":"PRESSURE_DRONE","count":3,"interval":5,"x":95,"spacing":175},
+    {"time":45,"enemy":"DEEP_MINER","count":2,"interval":7,"x":150,"spacing":240},
+    {"time":76,"enemy":"RAIL_TURRET","count":3,"interval":5,"x":95,"spacing":175},
+    {"time":108,"enemy":"ABYSS_GUARDIAN","count":2,"interval":7,"x":150,"spacing":240},
+    {"time":139,"enemy":"PRESSURE_DRONE","count":4,"interval":3,"x":75,"spacing":130},
+    {"time":172,"enemy":"DEEP_MINER","count":3,"interval":5,"x":90,"spacing":180},
+    {"time":205,"enemy":"RAIL_TURRET","count":4,"interval":3,"x":75,"spacing":130},
+    {"time":238,"enemy":"ABYSS_GUARDIAN","count":3,"interval":5,"x":90,"spacing":180},
+    {"time":271,"enemy":"PRESSURE_DRONE","count":4,"interval":3,"x":75,"spacing":130}
+  ],
+  "props": [
+    {"time":4,"kind":"MECHANIC","environment":"SAFE_PRESSURE_ZONE","x":390},
+    {"time":12,"kind":"MECHANIC","environment":"MINE_PATH","x":145},
+    {"time":23,"kind":"MECHANIC","environment":"ENERGY_STATION","x":315},
+    {"time":36,"kind":"CREATURE","creature":"RESEARCH_DIVER","x":420},
+    {"time":49,"kind":"MECHANIC","environment":"PRESSURE_ZONE","x":115},
+    {"time":62,"kind":"MECHANIC","environment":"DRILL_ARM","x":270},
+    {"time":76,"kind":"WASTE","waste":"METAL","x":400},
+    {"time":91,"kind":"MECHANIC","environment":"SAFE_PRESSURE_ZONE","x":150},
+    {"time":105,"kind":"MECHANIC","environment":"ENERGY_STATION","x":390},
+    {"time":120,"kind":"MECHANIC","environment":"MINE_PATH","x":225},
+    {"time":135,"kind":"CREATURE","creature":"FISH_SCHOOL","x":110},
+    {"time":150,"kind":"MECHANIC","environment":"PRESSURE_ZONE","x":410},
+    {"time":166,"kind":"MECHANIC","environment":"DRILL_ARM","x":270},
+    {"time":182,"kind":"MECHANIC","environment":"ENERGY_STATION","x":135},
+    {"time":198,"kind":"WASTE","waste":"DIRTY_WATER","x":330},
+    {"time":214,"kind":"MECHANIC","environment":"SAFE_PRESSURE_ZONE","x":430},
+    {"time":231,"kind":"CREATURE","creature":"RESEARCH_DIVER","x":220},
+    {"time":248,"kind":"MECHANIC","environment":"PRESSURE_ZONE","x":390},
+    {"time":265,"kind":"MECHANIC","environment":"DRILL_ARM","x":155},
+    {"time":282,"kind":"MECHANIC","environment":"ENERGY_STATION","x":300}
+  ]
+}

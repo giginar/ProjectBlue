@@ -141,4 +141,40 @@ class AuthoredMissionWorldTest {
         for (int i=0;i<150 && drill.active;i++) frozen.update(STEP,false,0,0);
         assertFalse(drill.active); assertEquals(1,frozen.drillPointsDisabled());
     }
+    @Test void abyssMineSonarRevealsMiningRoutesAndHarvesterUsesWorldRecoveryGate() {
+        GameWorld mine=world(8);
+        Entity path=mine.environments.obtain(); assertNotNull(path);
+        path.environment=MissionConfig.EnvironmentKind.MINE_PATH; path.concealed=true;
+        path.x=mine.player.x; path.y=mine.player.y+200; path.radius=46;
+        assertFalse(mine.environmentVisible(path)); assertTrue(mine.activateSonar()); assertTrue(mine.environmentVisible(path));
+        advance(mine,mine.mission().boss.start()+.1f);
+        TheHarvester boss=mine.theHarvester();
+        while (boss.state()!=TheHarvester.State.DRILL_ARMS) mine.update(STEP,false,0,0);
+        boss.hitCore(Integer.MAX_VALUE);
+        while (boss.state()!=TheHarvester.State.POWERED_ARMOR) mine.update(STEP,false,0,0);
+        boss.disableStation(true); boss.disableStation(false); boss.hitCore(Integer.MAX_VALUE);
+        mine.update(STEP,false,0,0);
+        assertTrue(mine.recovering());
+    }
+    @Test void plasticVortexAppliesDeterministicCurrentBuildsComboAndStartsEscapeAfterBoss() {
+        GameWorld first=world(9),second=world(9);
+        for (int i=0;i<120;i++) { first.update(STEP,false,0,0); second.update(STEP,false,0,0); }
+        assertEquals(first.player.x,second.player.x,0); assertEquals(first.player.y,second.player.y,0);
+        for (int i=0;i<2;i++) {
+            Entity waste=first.plastics.obtain(); assertNotNull(waste);
+            waste.x=first.player.x; waste.y=first.player.y; waste.radius=12;
+            waste.waste=first.mission().waste(i==0?MissionConfig.WasteKind.BOTTLE:MissionConfig.WasteKind.BAG);
+        }
+        for (int i=0;i<90;i++) first.update(STEP,false,0,0);
+        assertTrue(first.cleanupCombo()>=2);
+
+        advance(first,first.mission().boss.start()+.1f);
+        RecyclerLeviathan boss=first.recyclerLeviathan();
+        while (boss.state()!=RecyclerLeviathan.State.PLASTIC_ARMOR) first.update(STEP,false,0,0);
+        boss.hitArmor(true,Integer.MAX_VALUE); boss.hitArmor(false,Integer.MAX_VALUE);
+        boss.hitCore(Integer.MAX_VALUE);
+        for (int i=0;i<boss.wasteRequired();i++) boss.deliverWaste();
+        boss.hitCore(Integer.MAX_VALUE); first.update(STEP,false,0,0);
+        assertTrue(first.recovering()); assertTrue(first.escapingVortex());
+    }
 }

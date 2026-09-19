@@ -80,6 +80,25 @@ class MissionConfigTest {
         assertThrows(IllegalArgumentException.class,
             () -> MissionConfig.parse(json.replaceFirst("\\\"spacing\\\": 135","\\\"spacing\\\": 300")));
     }
+    @Test void sectorsEightAndNineValidatePressureVortexAndEnemyRosters() throws IOException {
+        MissionConfig mine=MissionConfig.ABYSS_MINE,vortex=MissionConfig.PLASTIC_VORTEX;
+        assertSame(mine,MissionConfig.forLevel(8)); assertSame(vortex,MissionConfig.forLevel(9));
+        assertEquals(MissionConfig.BossKind.THE_HARVESTER,mine.boss.kind());
+        assertEquals(MissionConfig.BossKind.RECYCLER_LEVIATHAN,vortex.boss.kind());
+        assertNotNull(mine.pressure); assertNotNull(mine.sonar); assertNotNull(vortex.vortex);
+        assertEquals(Set.of("DEEP_MINER","PRESSURE_DRONE","RAIL_TURRET","ABYSS_GUARDIAN"),
+            new HashSet<>(mine.enemies().stream().map(MissionConfig.Enemy::id).toList()));
+        assertEquals(Set.of("VORTEX_DRONE","TRASH_SWARM","MAGNETIC_COLLECTOR","CURRENT_DISRUPTOR"),
+            new HashSet<>(vortex.enemies().stream().map(MissionConfig.Enemy::id).toList()));
+        for (MissionConfig mission:List.of(mine,vortex)) {
+            assertTrue(mission.durationSeconds>=300 && mission.durationSeconds<=480);
+            assertTrue(mission.creatureCount>0); assertTrue(mission.mechanicCount>0);
+        }
+        assertThrows(IllegalArgumentException.class,() -> MissionConfig.parse(
+            source("/config/abyss-mine.json").replace("\"dangerThreshold\": 72","\"dangerThreshold\": 100")));
+        assertThrows(IllegalArgumentException.class,() -> MissionConfig.parse(
+            source("/config/plastic-vortex.json").replace("\"maxCombo\": 10","\"maxCombo\": 1")));
+    }
     @Test void invalidJsonLogsAndUsesSafePlayableFallback() throws Exception {
         ByteArrayOutputStream log=new ByteArrayOutputStream();
         MissionConfig fallback=MissionConfig.readOrFallback(
@@ -100,7 +119,8 @@ class MissionConfigTest {
     }
     @Test void authoredTimelinesScaleEnemyDensityWithoutDuplicatingEnvironmentProps() {
         for (MissionConfig mission : List.of(MissionConfig.CORAL_GARDENS,MissionConfig.GHOST_NETS,
-            MissionConfig.SUNKEN_CITY,MissionConfig.BLACK_TIDE,MissionConfig.SILENT_REEF,MissionConfig.FROZEN_DEPTHS)) {
+            MissionConfig.SUNKEN_CITY,MissionConfig.BLACK_TIDE,MissionConfig.SILENT_REEF,MissionConfig.FROZEN_DEPTHS,
+            MissionConfig.ABYSS_MINE,MissionConfig.PLASTIC_VORTEX)) {
             SpawnTimeline normal=new SpawnTimeline(mission,1), abyss=new SpawnTimeline(mission,2);
             assertTrue(abyss.size()>normal.size());
             int props=mission.props().size();

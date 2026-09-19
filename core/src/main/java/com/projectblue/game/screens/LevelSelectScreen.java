@@ -43,7 +43,7 @@ public final class LevelSelectScreen extends StageMenuScreen {
         Table summary = panel();
         summary.add(label(level.name(), 1.2f, Palette.AQUA)).row();
         MissionConfig mission = RunSpec.create(id, Difficulty.NORMAL, Loadout.standard()).mission();
-        summary.add(label(level.region() + (mission == null ? " / 180 seconds" : " / about 5 minutes"), .95f, Palette.TEXT)).row();
+        summary.add(label(level.region() + (mission == null ? " / 180 seconds" : " / 5-8 minutes"), .95f, Palette.TEXT)).row();
         summary.add(rating(record.bestStars)).height(36).row();
         summary.add(label("Best score " + record.bestScore, .95f, Palette.GOLD)).row();
         summary.add(label("Best difficulty: " + (record.bestDifficulty() == null ? "None" : record.bestDifficulty()), .88f, Palette.TEXT)).row();

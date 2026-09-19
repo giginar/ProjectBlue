@@ -70,7 +70,7 @@ class GameWorldTest {
     }
     @Test void legacyThreeMinuteSimulationStillFinishesOnce() {
         GameWorld w=new GameWorld(RandomProvider.seeded(LEVEL_SEED),
-            com.projectblue.game.config.RunSpec.create(8,com.projectblue.game.config.Difficulty.NORMAL,
+            com.projectblue.game.config.RunSpec.create(10,com.projectblue.game.config.Difficulty.NORMAL,
                 com.projectblue.game.config.Loadout.standard()));
         int[] finishedEvents={0};
         w.events.subscribe((type,x,y,value)->{if(type==GameEvents.Type.FINISHED)finishedEvents[0]++;});

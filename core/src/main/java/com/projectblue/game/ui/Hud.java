@@ -9,7 +9,7 @@ public final class Hud implements GameEvents.Listener {
     private final UiPainter ui;
     private final StringBuilder score = new StringBuilder(32), stats = new StringBuilder(64), time = new StringBuilder(24);
     private final StringBuilder health = new StringBuilder(24), ecology = new StringBuilder(32);
-    private final StringBuilder resource = new StringBuilder(32);
+    private final StringBuilder resource = new StringBuilder(32), secondary = new StringBuilder(32);
     private float refresh, noticeTime;
     private String notice = "DRAG TO MOVE / AUTO FIRE";
     private String mission;
@@ -32,8 +32,12 @@ public final class Hud implements GameEvents.Listener {
         time.append(seconds % 60);
         ecology.setLength(0); ecology.append("REEF +").append(Math.round(w.restoration() * 100)).append("%   SALVAGE ").append(w.salvageCount());
         resource.setLength(0);
+        secondary.setLength(0);
         if (w.hasSonar()) resource.append("SONAR ").append(Math.round(w.sonarEnergy()));
         else if (w.hasThermal()) resource.append("THERMAL ").append(Math.round(w.thermalHeat())).append('/').append(Math.round(w.thermalCapacity()));
+        else if (w.hasPressure()) resource.append("PRESSURE ").append(Math.round(w.pressureLoad())).append('/').append(Math.round(w.pressureCapacity()));
+        else if (w.hasVortex()) resource.append("CLEANUP COMBO x").append(w.cleanupCombo());
+        if (w.hasPressure()) secondary.append("PRESSURE ").append(Math.round(w.pressureLoad())).append('/').append(Math.round(w.pressureCapacity()));
     }
     public void draw(GameWorld w) {
         ui.beginShapes();
@@ -51,6 +55,15 @@ public final class Hud implements GameEvents.Listener {
             ui.rect(330,650,186,46,Palette.PANEL);
             ui.bar(340,660,166,7,heat,heat>=w.thermalThreshold()/w.thermalCapacity()?Palette.RED:Palette.GOLD);
         }
+        if (w.hasPressure()) {
+            float load=w.pressureLoad()/w.pressureCapacity();
+            ui.rect(330,598,186,42,Palette.PANEL);
+            ui.bar(340,608,166,7,load,w.pressureWarning()?Palette.RED:Palette.AQUA);
+        }
+        if (w.hasVortex()) {
+            ui.rect(330,650,186,46,Palette.PANEL);
+            ui.bar(340,660,166,7,w.comboRemaining()/w.comboWindow(),Palette.AQUA);
+        }
         ui.endShapes();
         ui.beginText();
         ui.text(mission, 24, 939, .65f, Palette.MUTED);
@@ -61,9 +74,12 @@ public final class Hud implements GameEvents.Listener {
         ui.centered(ecology, 29, .65f, Palette.AQUA);
         if (w.hasSonar()) { ui.text(resource,424,690,.62f,Palette.TEXT); ui.text("PULSE",438,673,.55f,Palette.AQUA); }
         else if (w.hasThermal()) ui.text(resource,344,688,.57f,w.thermalHeat()>=w.thermalThreshold()?Palette.RED:Palette.TEXT);
+        if (w.hasPressure()) ui.text(secondary,344,632,.54f,w.pressureWarning()?Palette.RED:Palette.TEXT);
+        else if (w.hasVortex()) ui.text(resource,344,688,.54f,Palette.TEXT);
         if (w.elapsed()<8 && w.mission()!=null) ui.centered(w.mission().introMessage,793,.62f,Palette.TEXT);
         else if (noticeTime > 0) ui.centered(notice, 793, .62f, Palette.TEXT);
         else if (w.midpointActive()) ui.centered(w.mission().midpointMessage,812,.58f,Palette.GOLD);
+        else if (w.escapingVortex()) ui.centered("VORTEX CORE COLLAPSING / RIDE THE CURRENT OUT",812,.58f,Palette.AQUA);
         else if (w.recovering()) ui.centered("HABITAT RECOVERING / COLOR RETURNING", 812, .58f, Palette.AQUA);
         else if (w.boss.active && w.mission() != null) {
             String objective = bossObjective(w);
@@ -132,6 +148,20 @@ public final class Hud implements GameEvents.Listener {
                 case COOLING_UNITS -> "DESTROY BOTH COOLING UNITS";
                 case CORE_EXPOSED -> "MAIN ENGINE EXPOSED / END THE DRILL";
                 default -> "BOREALIS DRILL / WATCH THE ICE";
+            };
+            case THE_HARVESTER -> switch (w.theHarvester().state()) {
+                case DRILL_ARMS -> "THE HARVESTER / TRACK THE DRILL ARMS";
+                case ARMOR_WARNING -> "ENERGY ARMOR CHARGING / STAND CLEAR";
+                case POWERED_ARMOR -> "HOLD NEAR BOTH ENERGY STATIONS TO DISABLE";
+                case CORE_EXPOSED -> "CORE EXPOSED / PRESSURE SURGE INCOMING";
+                default -> "THE HARVESTER / WATCH THE PRESSURE WARNINGS";
+            };
+            case RECYCLER_LEVIATHAN -> switch (w.recyclerLeviathan().state()) {
+                case PLASTIC_ARMOR -> "BREAK BOTH RECYCLED ARMOR PLATES";
+                case CURRENT_REVERSAL -> "CURRENTS REVERSING / STRIKE THE CORE";
+                case WASTE_WEAPON -> "COLLECT DEBRIS TO RETURN IT TO THE LEVIATHAN";
+                case CORE_EXPOSED -> "RECYCLER CORE OPEN / END THE VORTEX";
+                default -> "RECYCLER LEVIATHAN / READ THE CURRENT";
             };
         };
     }

@@ -9,7 +9,10 @@ import static com.projectblue.game.config.GameConfig.*;
 
 /** Immutable authored mission. All parsing and expansion occur before simulation begins. */
 public final class MissionConfig {
-    public enum MissionType { BLUE_COAST, CORAL_GARDENS, GHOST_NETS, SUNKEN_CITY, BLACK_TIDE, SILENT_REEF, FROZEN_DEPTHS }
+    public enum MissionType {
+        BLUE_COAST, CORAL_GARDENS, GHOST_NETS, SUNKEN_CITY, BLACK_TIDE, SILENT_REEF, FROZEN_DEPTHS,
+        ABYSS_MINE, PLASTIC_VORTEX
+    }
     public enum Movement { DESCEND, SWEEP, HOLD, HUNTER, BURROW }
     public enum WeaponPattern { SINGLE, TRIPLE, NET, AIMED, NONE }
     public enum EnemyAbility {
@@ -17,18 +20,21 @@ public final class MissionConfig {
         CHEMICAL_BOMBER, RUIN_TURRET, SALVAGE_MECH, AMBUSH_DRONE,
         OIL_SPREADER, IGNITION_DRONE, PRESSURE_TANKER, PIPELINE_GUARD,
         ECHO_HUNTER, SOUND_MINE, SILENT_STALKER, RESONANCE_DRONE,
-        ICE_DRILLER, CRYO_DRONE, THERMAL_MINE, HEAT_VENT_GUARD
+        ICE_DRILLER, CRYO_DRONE, THERMAL_MINE, HEAT_VENT_GUARD,
+        DEEP_MINER, PRESSURE_DRONE, RAIL_TURRET, ABYSS_GUARDIAN,
+        VORTEX_DRONE, TRASH_SWARM, MAGNETIC_COLLECTOR, CURRENT_DISRUPTOR
     }
     public enum WasteKind { BOTTLE, BAG, METAL, NET, DIRTY_WATER }
     public enum CreatureKind { TURTLE, SEAHORSE, MANTA, REEF_FISH, SEAL, FISH_SCHOOL, RESEARCH_DIVER, RESCUE_DIVER }
     public enum EnvironmentKind {
         CHEMICAL_BARREL, RUIN, COLLAPSIBLE, TOXIC_FIELD, OIL_FIELD, CLEANUP_CAPSULE, VALVE,
-        REEF_OBSTACLE, SONAR_CELL, ICE_FALL, THERMAL_VENT, COLD_ZONE, DRILL_POINT, ICE_WALL
+        REEF_OBSTACLE, SONAR_CELL, ICE_FALL, THERMAL_VENT, COLD_ZONE, DRILL_POINT, ICE_WALL,
+        SAFE_PRESSURE_ZONE, PRESSURE_ZONE, MINE_PATH, DRILL_ARM, ENERGY_STATION, TRASH_CLUSTER
     }
     public enum SpawnKind { ENEMY, WASTE, TURTLE, CREATURE, CORAL, MECHANIC }
     public enum BossKind {
         SHORELINE_COMPACTOR, REEF_BREAKER, GHOST_NET_HARVESTER, URBAN_SALVAGER, OIL_KRAKEN,
-        RESONANCE_ENGINE, BOREALIS_DRILL
+        RESONANCE_ENGINE, BOREALIS_DRILL, THE_HARVESTER, RECYCLER_LEVIATHAN
     }
     public record Stats(int health, float speed, float radius, float shotInterval, float bulletSpeed,
                         int damage, float lifetime, boolean frontArmor, int repairAmount) {}
@@ -45,6 +51,12 @@ public final class MissionConfig {
     public record Sonar(float maxEnergy, float pulseCost, float regenPerSecond, float revealSeconds, float pickupEnergy) {}
     public record Thermal(float maxHeat, float damageThreshold, float hotGainPerSecond,
                           float coldRecoveryPerSecond, float passiveRecoveryPerSecond, float damageInterval) {}
+    public record Pressure(float maxPressure, float dangerThreshold, float ambientGainPerSecond,
+                           float hazardGainPerSecond, float safeRecoveryPerSecond, float damageInterval,
+                           float warningSeconds) {}
+    public record Vortex(float currentStrength, float directionSeconds, float debrisAngularSpeed,
+                         float comboWindowSeconds, float comboDecaySeconds, int maxCombo,
+                         float escapeSeconds, float escapeBoost, int bossWasteRequired) {}
     public final String id, displayName, briefing, introMessage, midpointMessage;
     public final MissionType type;
     public final float durationSeconds, deadlineSeconds, recoverySeconds, cleaningSpeedMultiplier, netSeconds, netSpeedMultiplier;
@@ -53,6 +65,8 @@ public final class MissionConfig {
     public final Boss boss;
     public final Sonar sonar;
     public final Thermal thermal;
+    public final Pressure pressure;
+    public final Vortex vortex;
     private final Map<String,Enemy> enemies;
     private final EnumMap<WasteKind,Waste> wastes;
     private final EnumMap<CreatureKind,Creature> creatures;
@@ -86,6 +100,8 @@ public final class MissionConfig {
     public static final MissionConfig BLACK_TIDE = loadRequired("/config/black-tide.json");
     public static final MissionConfig SILENT_REEF = loadRequired("/config/silent-reef.json");
     public static final MissionConfig FROZEN_DEPTHS = loadRequired("/config/frozen-depths.json");
+    public static final MissionConfig ABYSS_MINE = loadRequired("/config/abyss-mine.json");
+    public static final MissionConfig PLASTIC_VORTEX = loadRequired("/config/plastic-vortex.json");
 
     private MissionConfig(JsonValue root) {
         uniqueKeys(root,0);
@@ -110,7 +126,8 @@ public final class MissionConfig {
             integer(b,"pipeHealth",30,300),integer(b,"droneBudget",0,12),number(b,"arrivalSeconds",1,5),
             number(b,"telegraphSeconds",.6f,3),number(b,"attackInterval",2,6),number(b,"pressInset",60,140),integer(b,"salvage",0,500));
         JsonValue sonarNode=root.get("sonar");
-        if (type==MissionType.SILENT_REEF) check(sonarNode!=null,"Silent Reef requires sonar tuning");
+        if (type==MissionType.SILENT_REEF || type==MissionType.ABYSS_MINE)
+            check(sonarNode!=null,"Sonar mission requires sonar tuning");
         sonar=sonarNode==null?null:new Sonar(number(sonarNode,"maxEnergy",20,200),
             number(sonarNode,"pulseCost",5,100),number(sonarNode,"regenPerSecond",.1f,20),
             number(sonarNode,"revealSeconds",.5f,8),number(sonarNode,"pickupEnergy",1,100));
@@ -123,6 +140,21 @@ public final class MissionConfig {
             number(thermalNode,"coldRecoveryPerSecond",1,100),number(thermalNode,"passiveRecoveryPerSecond",0,30),
             number(thermalNode,"damageInterval",.2f,3));
         if (thermal!=null) check(thermal.damageThreshold()<thermal.maxHeat(),"Thermal threshold must be below capacity");
+        JsonValue pressureNode=root.get("pressure");
+        if (type==MissionType.ABYSS_MINE) check(pressureNode!=null,"Abyss Mine requires pressure tuning");
+        pressure=pressureNode==null?null:new Pressure(number(pressureNode,"maxPressure",20,200),
+            number(pressureNode,"dangerThreshold",1,200),number(pressureNode,"ambientGainPerSecond",0,30),
+            number(pressureNode,"hazardGainPerSecond",1,100),number(pressureNode,"safeRecoveryPerSecond",1,100),
+            number(pressureNode,"damageInterval",.2f,3),number(pressureNode,"warningSeconds",.5f,4));
+        if (pressure!=null) check(pressure.dangerThreshold()<pressure.maxPressure(),
+            "Pressure threshold must be below capacity");
+        JsonValue vortexNode=root.get("vortex");
+        if (type==MissionType.PLASTIC_VORTEX) check(vortexNode!=null,"Plastic Vortex requires vortex tuning");
+        vortex=vortexNode==null?null:new Vortex(number(vortexNode,"currentStrength",10,180),
+            number(vortexNode,"directionSeconds",3,30),number(vortexNode,"debrisAngularSpeed",.1f,3),
+            number(vortexNode,"comboWindowSeconds",1,8),number(vortexNode,"comboDecaySeconds",.5f,6),
+            integer(vortexNode,"maxCombo",2,20),number(vortexNode,"escapeSeconds",4,20),
+            number(vortexNode,"escapeBoost",20,220),integer(vortexNode,"bossWasteRequired",2,12));
         Map<String,Enemy> definitions = new LinkedHashMap<>();
         for (JsonValue e : array(root,"enemies")) {
             String key = string(e,"id"); check(!definitions.containsKey(key),"Duplicate enemy id: " + key);
@@ -237,6 +269,8 @@ public final class MissionConfig {
             case 5 -> BLACK_TIDE;
             case 6 -> SILENT_REEF;
             case 7 -> FROZEN_DEPTHS;
+            case 8 -> ABYSS_MINE;
+            case 9 -> PLASTIC_VORTEX;
             default -> null;
         };
     }
@@ -285,7 +319,10 @@ public final class MissionConfig {
         float value=number(n,key,min,max); check(value==(int)value,"Expected integer: "+key); return (int)value;
     }
     private static boolean cleanupMechanic(EnvironmentKind kind) {
-        return kind!=EnvironmentKind.ICE_FALL && kind!=EnvironmentKind.THERMAL_VENT && kind!=EnvironmentKind.COLD_ZONE;
+        return kind!=EnvironmentKind.ICE_FALL && kind!=EnvironmentKind.THERMAL_VENT
+            && kind!=EnvironmentKind.COLD_ZONE && kind!=EnvironmentKind.SAFE_PRESSURE_ZONE
+            && kind!=EnvironmentKind.PRESSURE_ZONE && kind!=EnvironmentKind.MINE_PATH
+            && kind!=EnvironmentKind.DRILL_ARM;
     }
     private static void check(boolean valid,String message) { if (!valid) throw new IllegalArgumentException(message); }
 }
