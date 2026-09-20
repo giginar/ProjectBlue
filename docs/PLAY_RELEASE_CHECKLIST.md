@@ -1,5 +1,24 @@
 # Google Play release checklist
 
+## Technical release candidate update (2026-09-20)
+
+- [x] Fresh debug APK, R8/resource-shrunk QA APK and unsigned R8/resource-shrunk release AAB build.
+- [x] QA APK passes 16 KB ZIP alignment; every packaged `libgdx.so` LOAD segment is 16 KB aligned.
+- [x] Bundletool 1.18.1 reports `PAGE_ALIGNMENT_16K` for the release AAB.
+- [x] Forced-EEA UMP reject/accept/Privacy Options/restart/error fallback passed with transient debug-only settings.
+- [x] QA/release BuildConfig proves UMP debug geography and test-device fields are empty.
+- [x] Official rewarded test ad earned/dismissed correctly and returned to the one-time continue Pause flow.
+- [x] Compact 720x1280 menu spacing and independent HUD touch targets pass smoke/unit checks.
+- [ ] Run on API 26; no local image is installed.
+- [ ] Run on an Android 15+ 16 KB kernel; both available targets report 4096-byte pages.
+- [ ] Exercise a real interstitial at the policy-approved natural transition.
+- [ ] Supply owner upload signing and inspect Play-generated APKs. The current AAB is unsigned.
+- [ ] Complete the remaining human, tablet/foldable/multi-window and Play Console rows.
+
+Current decision: **READY FOR INTERNAL TESTING — SIGNING REQUIRED FOR CLOSED TESTING**.
+This describes a local technical candidate and does not authorize Play upload. See
+[16 KB evidence](ANDROID_16KB_COMPATIBILITY.md) and [current test report](FINAL_TEST_REPORT.md).
+
 Official documentation checked on **2026-09-19**. New mobile apps and updates must target
 **Android 16 / API 36** from **2026-08-31**, according to the
 [Play target API policy](https://support.google.com/googleplay/android-developer/answer/11926878).

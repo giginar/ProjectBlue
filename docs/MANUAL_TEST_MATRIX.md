@@ -1,5 +1,24 @@
 # Manual release acceptance matrix
 
+## Prompt 13 follow-up device record (2026-09-20)
+
+| Area | Current result |
+|---|---|
+| API 29 Huawei SNE-LX1 | Debug lifecycle, Blue Coast, save/profile reload, forced-EEA consent choices, Privacy Options and soak sampling passed. Physical simultaneous fingers, audible audio, recents-card dismissal and human clear remain manual. |
+| API 36 emulator | Debug lifecycle, forced-EEA error fallback, official rewarded test ad, earned callback, +60-second/full-hull one-time continue return and soak sampling passed. Emulator performance is not physical-device evidence. |
+| API 26 | **MANUAL VERIFICATION REQUIRED.** No API 26 system image/AVD is installed; no large SDK download was made. |
+| 16 KB runtime | **MANUAL VERIFICATION REQUIRED.** Both available targets use 4096-byte pages. Static APK/AAB/ELF checks pass; see `ANDROID_16KB_COMPATIBILITY.md`. |
+| UMP | PASS for forced EEA first form, reject, Privacy Options visibility/reopen, accept, persisted restart and offline request-error fallback. The hashed test-device ID was obtained from logcat and used only through a transient environment variable; it was not written to source or docs. |
+| Ads | PASS for official rewarded test creative and earned return. Policy unit tests pass for reward callback ordering, duplicate/stale callbacks, one continue, interstitial placement and failure navigation. A real interstitial display remains **MANUAL VERIFICATION REQUIRED**. |
+| 720x1280 UI | PASS in refreshed desktop and API 36 captures: compact spacing and a one-line build label keep Credits, Privacy, build, status and Exit distinct without shrinking fonts or reserving an empty ad area. Main actions and sonar hit height remain at least 48 dp at 360 dp width. |
+| 1080x2400 UI | PASS on the API 36 emulator; tall-screen spacing and cutout inset remain intact. |
+| 30-minute soak | PASS as a bounded controlled run on API 29 hardware and API 36 emulator: repeated gameplay/result, pause, Home/return, save reload, an ad success and an offline UMP failure were exercised; no crash/ANR or monotonic memory trend was found. Exact samples are in `FINAL_TEST_REPORT.md`. |
+
+The following user-observation rows remain open and must not be inferred from ADB automation:
+real simultaneous two-finger input, physical HUD feel, Android edge-back gesture, successful
+Blue Coast clear and next-level unlock, player-completed boss, audible pause/resume, physical
+Huawei recents-card dismissal, tablet, foldable and multi-window.
+
 Date: 2026-09-19. Android execution was completed on a Huawei SNE-LX1 (Android 10/API 29)
 and an x86_64 phone emulator (Android 16/API 36). ADB-driven checks are recorded as device
 evidence, not as human touch/audio evidence. Remaining items explicitly say

@@ -50,6 +50,13 @@ class PointerInputTest {
         assertEquals(world.player.x + 40, input.targetX());
     }
 
+    @Test void sonarTouchTargetExtendsBeyondItsVisualBounds() {
+        float energy = world.sonarEnergy();
+        assertTrue(input.touchDown(400, 316, 1, Input.Buttons.LEFT));
+        assertTrue(world.sonarEnergy() < energy);
+        assertFalse(input.moving());
+    }
+
     @Test void letterboxingAndNonPrimaryMouseButtonsCannotCaptureMovement() {
         assertFalse(input.touchDown(-1, 500, 0, Input.Buttons.LEFT));
         assertFalse(input.touchDown(541, 500, 0, Input.Buttons.LEFT));

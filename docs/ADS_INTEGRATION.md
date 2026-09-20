@@ -1,5 +1,31 @@
 # Ads integration
 
+## Prompt 13 follow-up verification (2026-09-20)
+
+Debug can now receive `PB_UMP_DEBUG_GEOGRAPHY` and `PB_UMP_TEST_DEVICE_ID` from the local
+environment. Geography accepts only `EEA`, `NOT_EEA`, `REGULATED_US_STATE` or `OTHER`; the
+optional device hash must be 32 hexadecimal characters. `BuildConfig.DEBUG` gates their use.
+QA and release hardcode both fields to empty, and `verifyDebugAdConfiguration` checks that
+separation. No `consentInformation.reset()` call exists in production source.
+
+The physical device's hash was read from UMP logcat and supplied transiently; it was not stored.
+Forced EEA showed the first-launch form. Rejecting kept the app usable and exposed Privacy
+Options; reopening it and accepting updated consent; a force-stop/cold restart did not show the
+first-launch form again. With networking disabled, UMP logged a request error and the game still
+reached the menu without ads. Before a decision, log review found no Mobile Ads request.
+
+With the final normal debug build offline, the SDK issued exactly the expected initial rewarded
+and interstitial test-unit loads; both returned error 0. No additional load failure appeared in
+the following 20-second observation window, consistent with the 30-second retry floor, and the
+menu remained usable. Airplane mode was disabled afterward.
+
+On the API 36 emulator, Google's official rewarded test creative completed, visibly reported
+`Reward granted`, dismissed to Pause and restored 100 hull plus 60 seconds. The existing
+`AdsIntegrationTest` still covers early close, show/load failure, stale and duplicate callbacks,
+save failure, single continue, and natural-boundary interstitial policy. A real interstitial was
+not forced around that policy and remains **MANUAL VERIFICATION REQUIRED**. Production AdMob
+identifiers remain absent and release ads remain disabled.
+
 Reviewed against official documentation on 2026-09-19. The implementation uses the Java
 Google Mobile Ads SDK (documented as Legacy), pinned to **25.5.0**, and **UMP 4.0.0**.
 These versions were verified in Google's [setup guide](https://developers.google.com/admob/android/quick-start),

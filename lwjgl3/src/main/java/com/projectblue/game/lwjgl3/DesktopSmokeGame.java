@@ -57,7 +57,16 @@ final class DesktopSmokeGame extends ProjectBlueGame {
                 verifyTextureRecovery();
                 require(!router().requestDive(2, Difficulty.NORMAL), "locked level rejected by router");
                 require(!router().requestDive(1, Difficulty.HARD), "locked difficulty rejected by router");
-                require(actor("privacy") != null, "privacy entry visible in menu hierarchy");
+                Actor privacy = actor("privacy"), build = actor("build-version"), status = actor("menu-status");
+                require(privacy != null, "privacy entry visible in menu hierarchy");
+                require(actor("settings").getHeight() >= 72, "compact menu preserves a 48 dp settings touch target");
+                require(privacy.getHeight() >= 72, "compact menu preserves a 48 dp privacy touch target");
+                require(actor("menu-status").getHeight() >= 28, "compact menu preserves the status row");
+                float privacyBottom = privacy.localToStageCoordinates(new Vector2()).y;
+                float buildBottom = build.localToStageCoordinates(new Vector2()).y;
+                float statusTop = status.localToStageCoordinates(new Vector2(0, status.getHeight())).y;
+                require(privacyBottom >= statusTop, "compact menu keeps information actions above the status row");
+                require(buildBottom >= statusTop, "compact menu keeps the abbreviated build label above the status row");
                 capture("01-menu"); clickActor("play"); next();
             }
             case 1 -> {

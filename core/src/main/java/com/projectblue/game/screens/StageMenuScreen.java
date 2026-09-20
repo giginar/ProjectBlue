@@ -25,6 +25,7 @@ public abstract class StageMenuScreen extends ScreenAdapter {
     private final Table root = new Table(), frame = new Table();
     private final Label status;
     private final ScrollPane scroll;
+    private final Cell<?> divisionCell, titleCell, subtitleCell, statusCell, backCell;
     private float time;
     private TextButton doubleReward, continueReward;
     protected void rewardActions(boolean failed) {
@@ -55,18 +56,19 @@ public abstract class StageMenuScreen extends ScreenAdapter {
         root.add(frame).width(492).growY();
         frame.padTop(22).padBottom(18);
         Label division = label("OCEAN RECOVERY DIVISION", .78f, Palette.AQUA);
-        frame.add(division).growX().minHeight(28).padBottom(14).row();
-        frame.add(label(title, 1.55f, Palette.TEXT)).growX().minHeight(52).padBottom(12).row();
-        frame.add(label(subtitle, .88f, Palette.MUTED)).growX().minHeight(48).padBottom(18).row();
+        divisionCell = frame.add(division).growX().minHeight(28).padBottom(14); frame.row();
+        titleCell = frame.add(label(title, 1.55f, Palette.TEXT)).growX().minHeight(52).padBottom(12); frame.row();
+        subtitleCell = frame.add(label(subtitle, .88f, Palette.MUTED)).growX().minHeight(48).padBottom(18); frame.row();
         body.top(); body.defaults().growX().spaceBottom(12);
         scroll = new ScrollPane(body, skin);
         scroll.setFadeScrollBars(false); scroll.setScrollingDisabled(true, false);
         scroll.setOverscroll(false, false); scroll.setSmoothScrolling(false);
         frame.add(scroll).grow().row();
         status = label("", .74f, Palette.GOLD);
-        frame.add(status).growX().minHeight(34).padTop(8).row();
+        status.setName("menu-status");
+        statusCell = frame.add(status).growX().minHeight(34).padTop(8); frame.row();
         TextButton back = button("back", "Back", this::back);
-        frame.add(back).growX().height(84).row();
+        backCell = frame.add(back).growX().height(84); frame.row();
         stage.addListener(new InputListener() {
             @Override public boolean keyDown(InputEvent event, int key) {
                 if (key == Input.Keys.ESCAPE || key == Input.Keys.BACK) { back(); return true; }
@@ -112,6 +114,7 @@ public abstract class StageMenuScreen extends ScreenAdapter {
     protected void route(String id, String text, ScreenRouter.Route route) { action(id, text, () -> game.router().request(route)); }
     protected void save() { game.saves().save(); }
     protected void back() { game.router().request(ScreenRouter.Route.MENU); }
+    protected void compactLayout(boolean compact) {}
     protected void scrollToTop() { scroll.setScrollY(0); }
     public Stage stage() { return stage; }
     public void show() { Gdx.input.setInputProcessor(stage); stage.setScrollFocus(scroll); }
@@ -127,6 +130,16 @@ public abstract class StageMenuScreen extends ScreenAdapter {
         float safeTop=Gdx.graphics.getSafeInsetTop()*scaleY, safeBottom=Gdx.graphics.getSafeInsetBottom()*scaleY;
         root.pad(safeTop,safeRight,safeBottom,safeLeft);
         root.getCell(frame).width(Math.min(640, stage.getViewport().getWorldWidth() - 48 - safeLeft - safeRight));
+        boolean compact = stage.getViewport().getWorldHeight() < 1050;
+        frame.padTop(compact ? 12 : 22).padBottom(compact ? 10 : 18);
+        divisionCell.minHeight(compact ? 22 : 28).padBottom(compact ? 8 : 14);
+        titleCell.minHeight(compact ? 46 : 52).padBottom(compact ? 7 : 12);
+        subtitleCell.minHeight(compact ? 40 : 48).padBottom(compact ? 10 : 18);
+        statusCell.minHeight(compact ? 28 : 34).padTop(compact ? 4 : 8);
+        backCell.height(compact ? 72 : 84);
+        for (Cell<?> cell : body.getCells()) cell.spaceBottom(compact ? 8 : 12);
+        compactLayout(compact);
+        root.invalidateHierarchy();
     }
     public void render(float delta) {
         updateRewardButton(doubleReward, com.projectblue.game.platform.RunRewards.Reward.DOUBLE_SALVAGE, "WATCH AD / DOUBLE SALVAGE");

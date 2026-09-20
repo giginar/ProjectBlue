@@ -29,6 +29,12 @@ public final class AndroidConsentService implements ConsentService {
             started = true; busy = true; gate.begin();
             ConsentRequestParameters.Builder parameters = new ConsentRequestParameters.Builder();
             if (BuildConfig.UMP_UNDER_AGE >= 0) parameters.setTagForUnderAgeOfConsent(BuildConfig.UMP_UNDER_AGE == 1);
+            if (BuildConfig.DEBUG && !BuildConfig.UMP_DEBUG_GEOGRAPHY.isEmpty()) {
+                ConsentDebugSettings.Builder debug = new ConsentDebugSettings.Builder(activity)
+                    .setDebugGeography(debugGeography(BuildConfig.UMP_DEBUG_GEOGRAPHY));
+                if (!BuildConfig.UMP_TEST_DEVICE_ID.isEmpty()) debug.addTestDeviceHashedId(BuildConfig.UMP_TEST_DEVICE_ID);
+                parameters.setConsentDebugSettings(debug.build());
+            }
             AtomicBoolean done = new AtomicBoolean();
             Runnable finish = () -> {
                 if (!done.compareAndSet(false, true) || destroyed) return;
@@ -66,5 +72,14 @@ public final class AndroidConsentService implements ConsentService {
         changed.run();
     }
     public void destroy() { destroyed = true; gate.begin(); changed = () -> {}; }
+    private static int debugGeography(String value) {
+        return switch (value) {
+            case "EEA" -> ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA;
+            case "NOT_EEA" -> ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_NOT_EEA;
+            case "REGULATED_US_STATE" -> ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_REGULATED_US_STATE;
+            case "OTHER" -> ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_OTHER;
+            default -> ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_DISABLED;
+        };
+    }
     private static void post(Runnable runnable) { if (Gdx.app != null) Gdx.app.postRunnable(runnable); }
 }

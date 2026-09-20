@@ -1,5 +1,108 @@
 # Project Blue final release candidate test report
 
+## Prompt 13 technical release candidate follow-up
+
+Date: 2026-09-20. Decision: **READY FOR INTERNAL TESTING — SIGNING REQUIRED FOR CLOSED
+TESTING**. This decision covers a local technical candidate. The release AAB is unsigned and is
+not Play-uploadable; API 26, a 16 KB runtime and the explicitly human-only rows remain open.
+
+The initial `git status --short` was empty at `de4d39c`; no user changes needed reconciliation.
+No destructive Git command, commit, production key, secret, production AdMob identifier,
+package/application ID change, dependency upgrade or copied game content was introduced.
+
+### Candidate configuration and variant separation
+
+| Item | Value |
+|---|---|
+| Android Gradle Plugin / Gradle | 8.13.2 / 8.13 |
+| Android SDK | compile 36, target 36, min 26 |
+| Build Tools | Not pinned; AGP default/minimum 35.0.0, installed with 37.0.0 |
+| libGDX / Java | 1.14.2 / source and target 17; host JDK 21 |
+| Google SDKs | Mobile Ads 25.5.0; UMP 4.0.0 |
+
+| Variant | Package | Signing | Shrinking | Ads / UMP debug settings |
+|---|---|---|---|---|
+| debug | `com.projectblue.game` | Android debug key | minify off; resources off | Ads on with official Google sample IDs; optional UMP test values accepted only from the local environment |
+| qa | `com.projectblue.game.qa` | Android debug key | R8 on; resources on | Ads off; IDs and UMP debug fields hardcoded empty |
+| release | `com.projectblue.game` | Unsigned without owner environment | R8 on; resources on | Ads off and IDs empty without explicit production environment; UMP debug fields hardcoded empty |
+
+The final normal rebuild also has empty debug UMP test fields; the physical test-device hash was
+used only through a transient environment variable and is not present in source, documentation
+or final artifacts. A source search confirms there is no `consentInformation.reset()` call.
+
+### Native and 16 KB verification
+
+Debug APK, QA APK and release AAB contain only `libgdx.so` for `arm64-v8a`, `armeabi-v7a` and
+`x86_64`; Gradle resolves each from `gdx-platform:1.14.2:natives-<abi>`. No Ads/UMP native
+library is packaged. Fresh QA passes Build Tools 35.0.0
+`zipalign -c -P 16 -v 4`. Bundletool 1.18.1 reports `PAGE_ALIGNMENT_16K`, and all three
+`libgdx.so` files have `PT_LOAD p_align=0x4000`. AGP 8.13.2 exceeds the documented AGP 8.5.1
+minimum for correct 16 KB packaging.
+
+Both available targets report a 4096-byte kernel page. There is no installed 16 KB AVD/image,
+so runtime installation is **MANUAL VERIFICATION REQUIRED**. See
+[ANDROID_16KB_COMPATIBILITY.md](ANDROID_16KB_COMPATIBILITY.md).
+
+### Device, consent, advertising and layout results
+
+| Check | Result |
+|---|---|
+| Huawei SNE-LX1 | Android 10/API 29, 1080x2340, 480 dpi, physical cutout; 4096-byte pages |
+| Pixel_8 AVD | Android 16/API 36, 1080x2400, 420 dpi, x86_64; 4096-byte pages |
+| API 26 | Not run: no API 26 image/AVD is installed. No large SDK download was made. **MANUAL VERIFICATION REQUIRED.** |
+| Forced EEA UMP | First-launch form, reject, Privacy Options visibility/reopen, accept and persisted cold restart passed on the physical device. Offline request error on API 36 reached the game without ads. No ad request was observed before a consent decision. |
+| Rewarded | Official Google test creative displayed and reported `Reward granted`; dismissal returned to Pause with hull restored to 100 and 60 seconds added. Callback/duplicate/one-time negative cases pass unit tests. |
+| Interstitial | Natural-boundary and failure behavior pass unit tests. A real display was not forced past the three-win/session policy; **MANUAL VERIFICATION REQUIRED**. |
+| Compact menu | The reproduced 720x1280 lower status/build collision is fixed through responsive spacing and a compact one-line build label; fonts are unchanged and no empty ad space is reserved. Main actions remain 72 logical units, exactly 48 dp at 360 dp width, and the status row remains 28 units. |
+| HUD touch | Pause visual is 64x58 logical with a 96x96 hit rectangle (64x64 dp at 360 dp width). Sonar visual is 108x56 with an independent 132x72 hit rectangle (88x48 dp). The new outside-visual regression passes. |
+
+### Controlled 30-minute sample
+
+The same debug processes were sampled at 0, 10 and 20 minutes while exercising Blue Coast,
+result screens, Pause, Home/return, forced-EEA choices, an offline UMP failure and an official
+rewarded success. Both processes were force-stopped and cold-started after the 20-minute sample;
+the 30-minute row therefore also verifies save reload and shows the expected post-restart reset.
+
+| Target / minute | Java heap KiB | Native heap KiB | Total PSS KiB | Graphics KiB | Battery temperature |
+|---|---:|---:|---:|---:|---:|
+| Huawei / 0 | 27,932 | 22,632 | Not captured by the Android 10 parser | 4,588 | 32.0 C |
+| Huawei / 10 | 27,136 | 22,184 | Not captured by the Android 10 parser | 4,916 | 32.0 C |
+| Huawei / 20 | 27,160 | 22,188 | Not captured by the Android 10 parser | 4,916 | 32.0 C |
+| Huawei / 30, after restart | 19,116 | 20,680 | 130,286 manual process sample | 4,584 | 32.0 C |
+| API 36 emulator / 0 | 18,200 | 29,140 | 157,401 | 0 | 25.0 C, emulated |
+| API 36 emulator / 10 | 16,572 | 23,028 | 162,729 | 0 | 25.0 C, emulated |
+| API 36 emulator / 20 | 17,540 | 19,344 | 162,556 | 0 | 25.0 C, emulated |
+| API 36 emulator / 30, after restart | 22,452 | 30,340 | 160,501 | 0 | 25.0 C, emulated |
+
+An independent Huawei process sample between the 10- and 20-minute marks reported 138,781 KiB
+total PSS. Pre-restart Java/native heap and emulator PSS do not show monotonic growth. Crash buffers are
+empty and no ANR was observed. The Huawei battery sensor briefly reported 33.0 C after restart
+and returned to 32.0 C. SurfaceView `gfxinfo` counted too few physical frames, and the emulator
+was sharing the host with Gradle/R8 work; neither stream is presented as trustworthy FPS or
+thermal-throttling evidence. No device-side texture/entity counters were available. The desktop
+managed-texture recreation/count smoke passed, but physical profiling remains a separate manual
+quality check.
+
+### Regression result
+
+The final normal configuration completed **255 tests in 34 suites**, zero failures/errors/skips;
+debug and QA lint (zero errors, four existing warnings each); debug APK; R8/resource-shrunk QA
+APK; R8/resource-shrunk unsigned release AAB and bundletool validation; desktop distributions;
+desktop OpenGL smoke; separate-process save reload; asset inventory and negative license gate;
+release-input scan; Android structure/signature/alignment scan; and `git diff --check`.
+
+Final artifacts:
+
+| Artifact | Bytes | SHA-256 |
+|---|---:|---|
+| `android-debug.apk` | 9,697,750 | `F01B65A3281169A2BB51DA4AF09F8AF3957C6914304138002E35CEBC1DA2F6C6` |
+| `android-qa.apk` | 3,588,641 | `9E3EAC6F72F05D3320D937F9943C1545B9E2C8AD609905365E2100CC16078D59` |
+| `android-release.aab` | 5,622,905 | `68D1A6C8F8E2D1F3D61E04B99737CD85857F4F68D15E2E1836718ED2D3587886` |
+
+The QA APK is debug-signed and the release AAB has zero signature blocks. Neither is a
+production artifact. The historical Prompt 13 report follows and remains useful context; its
+older hashes, test count and decision do not describe this follow-up candidate.
+
 Date: 2026-09-19. Decision: **NOT READY FOR RELEASE**.
 
 The automated candidate checks and the device checks described below pass after nine focused

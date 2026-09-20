@@ -1,5 +1,26 @@
 # Final release candidate known issues
 
+## Prompt 13 follow-up reclassification (2026-09-20)
+
+No previously recorded finding was deleted. The current technical candidate is **READY FOR
+INTERNAL TESTING — SIGNING REQUIRED FOR CLOSED TESTING**; this is not production or Play upload
+approval.
+
+| Existing ID | Current classification and evidence |
+|---|---|
+| RB-01 | Still a release blocker. The release AAB builds and validates but is unsigned; no owner upload key, Play package ownership check or Play version-code check was supplied. |
+| RB-02 | Narrowed, not closed. Static 16 KB packaging and all ELF LOAD alignments pass, and API 29/API 36 runtime checks pass. API 26 and an actual 16 KB kernel remain **MANUAL VERIFICATION REQUIRED**, as do tablet/foldable and human campaign coverage. |
+| RB-03 | Unchanged owner/Play Console blocker: privacy URL, audience decision, declarations, rating and account inputs remain absent. |
+| RB-04 | Unchanged owner/content blocker: approved store icon, feature graphic and final screenshots remain absent. |
+| HP-01 | Unchanged. Automated routes do not prove ordinary-input clears, boss completion or progression unlocks. |
+| HP-02 | Technical layout portion fixed. The compact menu now preserves its status/build rows at 720x1280 without shrinking fonts. The sonar visual remains 108x56 logical units, while its independent hit rectangle is now 132x72 logical units (88x48 dp at 360 dp width); the pause hit rectangle remains 96x96 logical units (64x64 dp). Human touch feel and simultaneous two-finger input remain manual. |
+| HP-03 | Narrowed. Forced-EEA first form, reject, Privacy Options reopen, accept, restart persistence, error fallback and a real rewarded test ad passed with Google's test mechanisms. A real interstitial at the production policy boundary, early ad dismissal and background/process death during forms/ads remain manual. Production ads remain disabled and unconfigured. |
+| MP-01 | A controlled 30-minute API 29/API 36 sample was added; no ANR or monotonic heap/PSS growth was observed. It is a bounded sample, not a minimum-device profiler campaign; trustworthy physical FPS/throttling and explicit texture/entity counters remain open. |
+| C-04 | Fixed for the observed 720x1280 lower-menu collision and covered by the desktop GL smoke. Real narrow-phone visual approval remains manual. |
+
+Detailed 16 KB evidence is in [ANDROID_16KB_COMPATIBILITY.md](ANDROID_16KB_COMPATIBILITY.md).
+The historical audit below is retained to show why each item existed.
+
 Audit date: 2026-09-19. Status: **NOT READY FOR RELEASE**.
 See [test evidence](FINAL_TEST_REPORT.md) and [device acceptance steps](MANUAL_TEST_MATRIX.md).
 These findings describe the inspected working tree, including pre-existing uncommitted work.

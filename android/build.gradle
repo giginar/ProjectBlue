@@ -7,8 +7,14 @@ def sampleRewardId = 'ca-app-pub-3940256099942544/5224354917'
 def sampleInterstitialId = 'ca-app-pub-3940256099942544/1033173712'
 def ageTreatment = envValue('PB_AD_AGE_TREATMENT')
 def umpUnderAge = envValue('PB_UMP_UNDER_AGE')
+def umpDebugGeography = envValue('PB_UMP_DEBUG_GEOGRAPHY')
+def umpTestDeviceId = envValue('PB_UMP_TEST_DEVICE_ID')
 if (ageTreatment && !(ageTreatment in ['UNSPECIFIED', 'CHILD', 'TEEN'])) throw new GradleException('Invalid PB_AD_AGE_TREATMENT')
 if (umpUnderAge && !(umpUnderAge in ['true', 'false'])) throw new GradleException('Invalid PB_UMP_UNDER_AGE')
+if (umpDebugGeography && !(umpDebugGeography in ['EEA', 'NOT_EEA', 'REGULATED_US_STATE', 'OTHER']))
+    throw new GradleException('Invalid PB_UMP_DEBUG_GEOGRAPHY')
+if (umpTestDeviceId && !(umpTestDeviceId ==~ /[0-9A-Fa-f]{32}/))
+    throw new GradleException('Invalid PB_UMP_TEST_DEVICE_ID')
 if (releaseAds) {
     ['PB_ADMOB_APP_ID', 'PB_REWARDED_AD_ID', 'PB_INTERSTITIAL_AD_ID'].each { key ->
         def separator = key == 'PB_ADMOB_APP_ID' ? '~' : '/'
@@ -50,6 +56,8 @@ android {
             buildConfigField 'boolean', 'ADS_ENABLED', 'true'
             buildConfigField 'String', 'REWARDED_AD_ID', '"' + sampleRewardId + '"'
             buildConfigField 'String', 'INTERSTITIAL_AD_ID', '"' + sampleInterstitialId + '"'
+            buildConfigField 'String', 'UMP_DEBUG_GEOGRAPHY', '"' + umpDebugGeography + '"'
+            buildConfigField 'String', 'UMP_TEST_DEVICE_ID', '"' + umpTestDeviceId.toUpperCase(Locale.ROOT) + '"'
             minifyEnabled false
             shrinkResources = false
         }
@@ -62,6 +70,8 @@ android {
             buildConfigField 'boolean', 'ADS_ENABLED', releaseAds.toString()
             buildConfigField 'String', 'REWARDED_AD_ID', '"' + (releaseAds ? envValue('PB_REWARDED_AD_ID') : '') + '"'
             buildConfigField 'String', 'INTERSTITIAL_AD_ID', '"' + (releaseAds ? envValue('PB_INTERSTITIAL_AD_ID') : '') + '"'
+            buildConfigField 'String', 'UMP_DEBUG_GEOGRAPHY', '""'
+            buildConfigField 'String', 'UMP_TEST_DEVICE_ID', '""'
             if (hasSigning) signingConfig signingConfigs.upload
         }
         qa {
@@ -118,7 +128,7 @@ tasks.named('preBuild') { dependsOn 'extractNatives', rootProject.tasks.named('v
 
 tasks.register('verifyDebugAdConfiguration') {
     group = 'verification'
-    dependsOn 'generateDebugBuildConfig', 'processDebugManifest'
+    dependsOn 'generateDebugBuildConfig', 'generateQaBuildConfig', 'generateReleaseBuildConfig', 'processDebugManifest'
     doLast {
         def generated = layout.buildDirectory.file('generated/source/buildConfig/debug/com/projectblue/game/BuildConfig.java').get().asFile.text
         if (!generated.contains('ADS_ENABLED = true') || !generated.contains(sampleRewardId) || !generated.contains(sampleInterstitialId))
@@ -126,7 +136,13 @@ tasks.register('verifyDebugAdConfiguration') {
         def manifest = layout.buildDirectory.file('intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml').get().asFile
         if (!manifest.exists()) manifest = layout.buildDirectory.file('intermediates/merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml').get().asFile
         if (!manifest.text.contains(sampleAppId)) throw new GradleException('Debug must use the official sample App ID')
+        ['qa', 'release'].each { variant ->
+            def production = layout.buildDirectory.file("generated/source/buildConfig/$variant/com/projectblue/game/BuildConfig.java").get().asFile.text
+            if (!production.contains('UMP_DEBUG_GEOGRAPHY = ""') || !production.contains('UMP_TEST_DEVICE_ID = ""'))
+                throw new GradleException("$variant must not contain UMP debug settings")
+        }
         logger.lifecycle('Debug ad configuration verified against the official sample IDs.')
+        logger.lifecycle('QA/release UMP debug settings verified empty.')
     }
 }
 tasks.named('check') { dependsOn 'verifyDebugAdConfiguration' }
@@ -138,6 +154,15 @@ tasks.register('verifyReleaseBundle', JavaExec) {
     classpath = buildscript.configurations.classpath
     mainClass = 'com.android.tools.build.bundletool.BundleToolMain'
     args 'validate', '--bundle=' + layout.buildDirectory.file('outputs/bundle/release/android-release.aab').get().asFile.absolutePath
+}
+
+tasks.register('dumpReleaseBundleConfig', JavaExec) {
+    group = 'verification'
+    description = 'Print the release AAB bundle configuration, including native library page alignment.'
+    dependsOn 'bundleRelease'
+    classpath = buildscript.configurations.classpath
+    mainClass = 'com.android.tools.build.bundletool.BundleToolMain'
+    args 'dump', 'config', '--bundle=' + layout.buildDirectory.file('outputs/bundle/release/android-release.aab').get().asFile.absolutePath
 }
 
 // Keep the AGP output unchanged; export a versioned, self-describing test package.
