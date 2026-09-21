@@ -1,4 +1,14 @@
-# Project Blue final release candidate test report
+# Project Blue: Ocean Guard final release candidate test report
+
+## Release identity update (2026-09-21)
+
+The final public identity is **Project Blue: Ocean Guard**, published under the public
+studio brand **Blueborn Games**, with support at **ykucukcinar@gmail.com**. The final Android
+application ID is `com.game.diver.oceanguard`; `com.projectblue.game` references in the dated
+test records below describe historical artifacts built before the release identity migration.
+The Java implementation namespace remains unchanged. GitHub Pages files are prepared for
+`https://giginar.github.io/ProjectBlue/`, but **GITHUB PAGES ACTIVATION/URL VERIFICATION REQUIRED**.
+The legal developer/controller identity remains **LEGAL NAME INPUT REQUIRED**.
 
 ## Prompt 13 technical release candidate follow-up
 

@@ -9,7 +9,7 @@ public final class DesktopLauncher {
         boolean reload = args.length > 0 && args[0].equals("--smoke-reload");
         boolean smoke = reload || (args.length > 0 && args[0].equals("--smoke"));
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
-        config.setTitle("Project Blue " + BuildInfo.VERSION_NAME);
+        config.setTitle("Project Blue: Ocean Guard " + BuildInfo.VERSION_NAME);
         config.setWindowedMode(486, 864);
         config.setWindowSizeLimits(270, 480, -1, -1);
         config.useVsync(true);

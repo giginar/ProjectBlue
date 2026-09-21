@@ -1,8 +1,8 @@
-# Project Blue store asset plan
+# Project Blue: Ocean Guard store asset plan
 
 ## Release positioning
 
-Store art should show ocean restoration, readable submarine silhouettes and the shift from polluted to living water. It must use Project Blue's own recovery-console identity and original world designs. Do not reference or visually imitate Sky Force or another game.
+Store art should show ocean restoration, readable submarine silhouettes and the shift from polluted to living water. It must use Project Blue: Ocean Guard's own recovery-console identity and original world designs. Do not reference or visually imitate Sky Force or another game.
 
 ## Required deliverables
 

@@ -13,8 +13,10 @@ of this QA procedure. Save the candidate revision, dirty state and artifact hash
 The audited tree was `main` at `07f65ef45ace3bd9ad52860befce5078e6af260b`, with existing
 uncommitted changes; version `0.1.16-g07f65ef45ace-dirty`, versionCode `16`.
 
-Confirm `com.projectblue.game` is the owner's intended Play package and that the next
-versionCode exceeds the highest code already uploaded. Git commit count is not proof of
+The final release package is `com.game.diver.oceanguard`. The historical unreleased package
+was `com.projectblue.game`; repository records contain no evidence of a Play app or uploaded
+bundle tied to it. Confirm that the next versionCode exceeds the highest code already uploaded.
+Git commit count is not proof of
 Play version availability. Resolve version management through the existing
 [versioning process](VERSIONING.md); do not silently change identity or rewrite history.
 
@@ -63,12 +65,22 @@ environment. Do not put production identifiers in tracked files. Audience settin
 match the approved product audience; there is no per-user age flow. Use
 [ADS_INTEGRATION.md](ADS_INTEGRATION.md) for supported values and callback guarantees.
 
-Publish an owner-approved public privacy policy and expose the link in-app and in the
+Activate the prepared GitHub Pages privacy policy, verify it live, and expose the link in the
 listing. Complete the audience, ads, content-rating and Data Safety declarations against
 the exact binary and dependencies. Do not claim that an offline game has no data handling
 solely because its own progression is local. See [privacy checklist](PRIVACY_CHECKLIST.md),
 [Data Safety notes](DATA_SAFETY_NOTES.md) and
 [Google's User Data policy](https://support.google.com/googleplay/android-developer/answer/10144311).
+
+Expected URLs derived from `origin`:
+
+- `https://giginar.github.io/ProjectBlue/`
+- `https://giginar.github.io/ProjectBlue/privacy.html`
+- `https://giginar.github.io/ProjectBlue/support.html`
+
+**GITHUB PAGES ACTIVATION/URL VERIFICATION REQUIRED.** Public publisher fields use
+**Blueborn Games** and support fields use **ykucukcinar@gmail.com**. Fields requiring the
+legal developer/controller identity remain **LEGAL NAME INPUT REQUIRED**.
 
 ## 4. Produce the signed AAB
 

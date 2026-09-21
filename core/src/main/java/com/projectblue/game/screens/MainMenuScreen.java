@@ -9,7 +9,7 @@ public final class MainMenuScreen extends StageMenuScreen {
     private final Table welcome, information;
     private final com.badlogic.gdx.scenes.scene2d.ui.Label build;
     public MainMenuScreen(ProjectBlueGame game) {
-        super(game, "Project Blue", "Leave a living ocean behind.");
+        super(game, "Project Blue: Ocean Guard", "Leave a living ocean behind.");
         welcome = panel();
         welcome.add(label("Surface operations", 1.1f, Palette.AQUA)).row();
         welcome.add(label("Chart a route. Prepare your crew.\nBring the ocean back to life.", .95f, Palette.TEXT)).row();

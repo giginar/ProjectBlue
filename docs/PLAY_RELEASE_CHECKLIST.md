@@ -1,5 +1,21 @@
 # Google Play release checklist
 
+## Final release identity (2026-09-21)
+
+- Game: **Project Blue: Ocean Guard**
+- Public publisher/studio: **Blueborn Games**
+- Support: **ykucukcinar@gmail.com**
+- Application ID: `com.game.diver.oceanguard`
+- Expected privacy URL: `https://giginar.github.io/ProjectBlue/privacy.html`
+- Expected support URL: `https://giginar.github.io/ProjectBlue/support.html`
+
+**GITHUB PAGES ACTIVATION/URL VERIFICATION REQUIRED.** The legal developer/controller identity
+remains **LEGAL NAME INPUT REQUIRED**. Target audience, publishing countries, store language,
+rewarded benefit, Data Safety and Content Rating decisions remain open. Production AdMob and
+signing configuration are deferred.
+**GITHUB PAGES MANUAL ACTIVATION REQUIRED:** select GitHub Actions as the Pages source in the
+repository settings if it is not already enabled.
+
 ## Technical release candidate update (2026-09-20)
 
 - [x] Fresh debug APK, R8/resource-shrunk QA APK and unsigned R8/resource-shrunk release AAB build.
@@ -76,7 +92,8 @@ documents Android packaging considerations.
 - [x] Install and launch the debug-signed local R8/resource-shrunk QA APK on API 29 and 36.
 - [ ] Install a signed minified APK generated from the final AAB; verify 16 KB runtime support.
 - [ ] Play internal track/pre-launch report: crashes, ANRs, devices, permissions, accessibility.
-- [ ] Public privacy policy, Data Safety, ads, target audience, app access and content-rating forms.
+- [ ] Verify the prepared public privacy policy live; complete Data Safety, ads, target audience,
+  app access and content-rating forms.
 - [ ] Confirm developer/account verification and testing requirements shown for this Play account.
 - [ ] Confirm original/licensed assets and store artwork against `assets/licenses/ASSET_LICENSES.md`.
 

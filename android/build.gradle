@@ -31,7 +31,7 @@ android {
     namespace = 'com.projectblue.game'
     compileSdk = 36
     defaultConfig {
-        applicationId = 'com.projectblue.game'
+        applicationId = 'com.game.diver.oceanguard'
         minSdk = 26
         targetSdk = 36
         versionCode = rootProject.buildVersion.versionCode
@@ -154,6 +154,35 @@ tasks.register('verifyReleaseBundle', JavaExec) {
     classpath = buildscript.configurations.classpath
     mainClass = 'com.android.tools.build.bundletool.BundleToolMain'
     args 'validate', '--bundle=' + layout.buildDirectory.file('outputs/bundle/release/android-release.aab').get().asFile.absolutePath
+}
+
+tasks.register('verifyReleaseArtifactApplicationId', JavaExec) {
+    group = 'verification'
+    description = 'Verify the final application ID directly in the release AAB.'
+    dependsOn 'bundleRelease'
+    classpath = buildscript.configurations.classpath
+    mainClass = 'com.android.tools.build.bundletool.BundleToolMain'
+    args 'dump', 'manifest', '--bundle=' + layout.buildDirectory.file('outputs/bundle/release/android-release.aab').get().asFile.absolutePath, '--module=base'
+    def manifestOutput = new ByteArrayOutputStream()
+    standardOutput = manifestOutput
+    doLast {
+        if (!(manifestOutput.toString('UTF-8') =~ /package="com\.game\.diver\.oceanguard"/))
+            throw new GradleException('Release AAB application ID must be com.game.diver.oceanguard')
+        logger.lifecycle('Release AAB application ID verified: com.game.diver.oceanguard')
+    }
+}
+
+tasks.register('verifyReleaseApplicationId') {
+    group = 'verification'
+    description = 'Verify the final release application ID in the merged manifest.'
+    dependsOn 'processReleaseMainManifest'
+    doLast {
+        def manifest = layout.buildDirectory.file('intermediates/merged_manifests/release/processReleaseManifest/AndroidManifest.xml').get().asFile
+        if (!manifest.exists()) manifest = layout.buildDirectory.file('intermediates/merged_manifest/release/processReleaseMainManifest/AndroidManifest.xml').get().asFile
+        if (!manifest.exists() || !(manifest.text =~ /package="com\.game\.diver\.oceanguard"/))
+            throw new GradleException('Release application ID must be com.game.diver.oceanguard')
+        logger.lifecycle('Release application ID verified: com.game.diver.oceanguard')
+    }
 }
 
 tasks.register('dumpReleaseBundleConfig', JavaExec) {

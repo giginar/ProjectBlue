@@ -1,8 +1,9 @@
-# Testing Project Blue on Android
+# Testing Project Blue: Ocean Guard on Android
 
 Build an APK with IntelliJ IDEA Community and JDK 17/21 without installing Android Studio.
 Use `android.bat` in the project root on Windows. The phone requires **Android 8.0 or newer**.
-Debug retains `com.projectblue.game` so existing development installs keep their profiles.
+Debug and release use `com.game.diver.oceanguard`. The Java implementation namespace remains
+`com.projectblue.game`; it is independent from the Android application ID.
 Debug and production signing certificates differ; do not install debug over a production install.
 Debug ads use Google's demo IDs only. See [ads integration](ADS_INTEGRATION.md) and
 [Play release checks](PLAY_RELEASE_CHECKLIST.md) before distributing a production build.

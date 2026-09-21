@@ -11,7 +11,9 @@ or determine the game's target audience.
 - [x] Existing ads and stale load callbacks are invalidated when privacy access changes.
 - [x] No guessed age, region, child-directed status, or custom consent cache.
 - [ ] Owner defines audience, under-age handling, distribution regions, and any mixed-age flow.
-- [ ] Publish a public privacy policy with developer identity/contact and accurate SDK disclosures.
+- [x] Prepare a public privacy policy with the Blueborn Games brand, support contact and accurate SDK disclosures.
+- [ ] Resolve the legal controller name (`LEGAL NAME INPUT REQUIRED`).
+- [ ] Activate GitHub Pages and verify `https://giginar.github.io/ProjectBlue/privacy.html` live.
 - [ ] Create/publish the applicable messages in AdMob Privacy & messaging for the registered app.
 
 Google's [European regulations guidance](https://developers.google.com/admob/android/privacy/gdpr)

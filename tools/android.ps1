@@ -170,7 +170,7 @@ try {
             $device = Get-Device
             & $script:adb -s $device install -r $script:apk
             if ($LASTEXITCODE -ne 0) { throw 'APK install failed. If signatures differ, manually uninstall the old app first (this removes its profile).' }
-            & $script:adb -s $device shell am start -W -n 'com.projectblue.game/com.projectblue.game.android.AndroidLauncher'
+            & $script:adb -s $device shell am start -W -n 'com.game.diver.oceanguard/com.projectblue.game.android.AndroidLauncher'
             if ($LASTEXITCODE -ne 0) { throw 'Android app launch failed.' }
         }
         'logs' {

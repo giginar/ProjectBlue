@@ -183,16 +183,16 @@ try {
         $images = Join-Path $staging 'images'
         $imagePath = Join-Path $images 'ProjectBlue'
         Write-Host "Packaging Windows x64 with Java $script:javaVersion..."
-        & $script:jpackage --type app-image --name ProjectBlue --app-version $windowsVersion --vendor 'Project Blue' --description "Project Blue $($version.versionName)" --input (Join-Path $projectRoot 'lwjgl3\build\windows-package-input') --main-jar "lwjgl3-$($version.versionName).jar" --main-class 'com.projectblue.game.lwjgl3.DesktopLauncher' --dest $images --icon $icon --add-modules 'java.base,java.desktop,java.logging,jdk.unsupported' --java-options '-Xmx256m'
+        & $script:jpackage --type app-image --name ProjectBlue --app-version $windowsVersion --vendor 'Blueborn Games' --description "Project Blue: Ocean Guard $($version.versionName)" --input (Join-Path $projectRoot 'lwjgl3\build\windows-package-input') --main-jar "lwjgl3-$($version.versionName).jar" --main-class 'com.projectblue.game.lwjgl3.DesktopLauncher' --dest $images --icon $icon --add-modules 'java.base,java.desktop,java.logging,jdk.unsupported' --java-options '-Xmx256m'
         if ($LASTEXITCODE -ne 0) { throw 'jpackage app-image failed.' }
         Copy-Item -LiteralPath (Join-Path $projectRoot 'build\version\version.json') -Destination (Join-Path $imagePath 'BUILD.json')
         Copy-Item -LiteralPath (Join-Path $projectRoot 'assets\licenses') -Destination (Join-Path $imagePath 'asset-licenses') -Recurse
-        Write-Utf8 (Join-Path $imagePath 'PLAY.txt') "Project Blue $($version.versionName)`r`nStart ProjectBlue.exe. Java is included in runtime/. Keep the entire folder together.`r`nDrag with the left mouse button. Esc / P pauses. Profile: %USERPROFILE%\.projectblue`r`n"
+        Write-Utf8 (Join-Path $imagePath 'PLAY.txt') "Project Blue: Ocean Guard $($version.versionName)`r`nPublished by Blueborn Games. Support: ykucukcinar@gmail.com`r`nStart ProjectBlue.exe. Java is included in runtime/. Keep the entire folder together.`r`nDrag with the left mouse button. Esc / P pauses. Profile: %USERPROFILE%\.projectblue`r`n"
         if ($SmokeTest) { Test-WindowsImage $imagePath }
 
         $installers = Join-Path $staging 'installers'
         # Stable upgrade identity: newer commits update the same per-user application.
-        & $script:jpackage --type exe --name ProjectBlue --app-version $windowsVersion --vendor 'Project Blue' --description "Project Blue $($version.versionName)" --app-image $imagePath --dest $installers --win-per-user-install --install-dir ProjectBlue --win-menu --win-menu-group 'Project Blue' --win-shortcut --win-dir-chooser --win-upgrade-uuid 'cbeb7e09-6b3a-47ee-8134-a86eaa6ad6f2'
+        & $script:jpackage --type exe --name ProjectBlue --app-version $windowsVersion --vendor 'Blueborn Games' --description "Project Blue: Ocean Guard $($version.versionName)" --app-image $imagePath --dest $installers --win-per-user-install --install-dir ProjectBlue --win-menu --win-menu-group 'Project Blue: Ocean Guard' --win-shortcut --win-dir-chooser --win-upgrade-uuid 'cbeb7e09-6b3a-47ee-8134-a86eaa6ad6f2'
         if ($LASTEXITCODE -ne 0) { throw 'jpackage Windows installer failed.' }
         $built = @(Get-ChildItem -LiteralPath $installers -Filter '*.exe' -File)
         if ($built.Count -ne 1) { throw 'Expected exactly one Windows installer.' }
@@ -227,7 +227,8 @@ try {
     Write-Utf8 (Join-Path $output 'BUILD.json') (($metadata | ConvertTo-Json -Depth 5) + "`n")
     Write-Utf8 (Join-Path $output 'SHA256SUMS.txt') (($files | ForEach-Object { "$($_.sha256)  $($_.name)" }) -join "`n")
     Write-Utf8 (Join-Path $output 'README.txt') @"
-Project Blue $($version.versionName)
+Project Blue: Ocean Guard $($version.versionName)
+Published by Blueborn Games. Support: ykucukcinar@gmail.com
 
 Android: send *-android.apk to your phone and open it. Requires Android 8.0+.
 If prompted, allow the app opening the file to install APKs from this source.

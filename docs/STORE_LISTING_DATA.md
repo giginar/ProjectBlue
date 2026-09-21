@@ -7,8 +7,8 @@ actual mobile acceptance remains pending. No store entry was submitted.
 
 | Field | Value / status |
 |---|---|
-| App title | Project Blue |
-| Application ID | `com.projectblue.game`; owner must confirm Play ownership |
+| App title | Project Blue: Ocean Guard |
+| Application ID | `com.game.diver.oceanguard`; final release identity |
 | Audited artifact version | `0.1.16-g07f65ef45ace-dirty` / code `16`; not confirmed available in Play |
 | Platform | Android, minimum API 26, target API 36 |
 | Orientation | Portrait gameplay; large-screen behavior requires device verification |
@@ -18,8 +18,12 @@ actual mobile acceptance remains pending. No store entry was submitted.
 | Connectivity | Core game designed for offline play; optional ads/consent need connectivity when enabled |
 | Purchases | No in-app billing integration; upgrades use earned salvage |
 | Ads declaration | Final owner decision pending; audited release has ads disabled, debug uses test ads |
-| Developer name / support email / website | Required owner inputs; not invented by QA |
-| Public privacy-policy URL | Missing; release blocker |
+| Public publisher/studio | Blueborn Games |
+| Support email | ykucukcinar@gmail.com |
+| Legal developer/controller name | LEGAL NAME INPUT REQUIRED |
+| Website | Expected: `https://giginar.github.io/ProjectBlue/`; activation/verification required |
+| Public privacy-policy URL | Expected: `https://giginar.github.io/ProjectBlue/privacy.html`; not verified live |
+| Public support URL | Expected: `https://giginar.github.io/ProjectBlue/support.html`; not verified live |
 | Audience / content rating / regions / price | Owner/Play Console decisions pending; no rating inferred from the ocean theme |
 | Data Safety | Pending final SDK/configuration review; see [notes](DATA_SAFETY_NOTES.md) |
 
@@ -36,7 +40,7 @@ Pilot a submarine through polluted coastal waters, damaged reefs, frozen depths 
 NEREID headquarters. Clear waste, free trapped wildlife and divers, and confront the
 machines harming the ocean.
 
-Project Blue combines automatic fire with drag movement and close-range cleanup and rescue.
+Project Blue: Ocean Guard combines automatic fire with drag movement and close-range cleanup and rescue.
 Protect coral as you fight: damage to the habitat affects your dive report. Each sector
 introduces different environmental challenges, from drifting fishing nets and oil leaks
 to sonar interference, thermal hazards and deep-water pressure.
@@ -79,6 +83,19 @@ performance on all devices. Do not describe the placeholders as finished product
 Do not compare artwork, characters or distinctive designs to another game.
 Keep all published claims aligned with the final enabled SDKs and verified behavior.
 
-Approval still needed for brand/trademark availability, developer contact, policy URL,
-audience/rating, ads, pricing/regions, screenshots and final copy. These inputs cannot be
+**GITHUB PAGES ACTIVATION/URL VERIFICATION REQUIRED.** Approval is still needed for
+brand/trademark availability, legal developer identity, audience/rating, ads, pricing/regions,
+screenshots and final copy. These inputs cannot be
 derived safely from source code. Their absence is tracked in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+
+**GITHUB PAGES MANUAL ACTIVATION REQUIRED:** select GitHub Actions as the Pages source in the
+repository settings if it is not already enabled.
+
+## Remaining product decisions
+
+- **TARGET AUDIENCE DECISION REQUIRED**
+- **PUBLISHING COUNTRIES DECISION REQUIRED**
+- **STORE LANGUAGE DECISION REQUIRED**
+- **REWARDED BENEFIT DECISION REQUIRED**
+
+Pricing, Data Safety, Content Rating and other Play Console forms also remain unresolved.

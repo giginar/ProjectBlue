@@ -34,7 +34,12 @@ ad ID, device hash, signing secret or ad error payload is logged by this integra
 logging is disabled in release; R8 removes verbose/debug/info Android logs. SDK behavior still
 requires inspection of the final build on a device.
 
-Owner checklist: public privacy-policy URL and developer contact, ads declaration, audience,
+Public publisher/studio: **Blueborn Games**. Support: **ykucukcinar@gmail.com**.
+Legal developer/controller identity remains **LEGAL NAME INPUT REQUIRED**.
+The expected privacy URL is `https://giginar.github.io/ProjectBlue/privacy.html`;
+**GITHUB PAGES ACTIVATION/URL VERIFICATION REQUIRED**.
+
+Owner checklist: live public privacy-policy URL, legal developer identity, ads declaration, audience,
 app access, content rating, data collection/sharing purposes, deletion/retention disclosures,
 regional consent messages, and store listing consistency. Google's
 [app review declarations guide](https://support.google.com/googleplay/android-developer/answer/9859455)

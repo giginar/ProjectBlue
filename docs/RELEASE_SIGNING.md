@@ -3,8 +3,10 @@
 The repository creates neither release keys nor passwords. A normal
 `gradlew.bat :android:bundleRelease` builds an **unsigned** verification AAB when no signing
 environment is supplied. It is useful for build/R8 validation but cannot be uploaded as a signed
-release. Debug uses Android development signing. The application ID stays unchanged to preserve
-existing development profiles; different signing certificates prevent overwriting production installs.
+release. Debug uses Android development signing. The final application ID is
+`com.game.diver.oceanguard`; the historical unreleased ID was `com.projectblue.game`.
+The migration changes Android's app sandbox, so old development installs do not upgrade in place.
+The internal Java namespace and desktop profile path remain unchanged.
 
 Supply these only through a local/CI secret environment, with the keystore outside the checkout:
 
@@ -39,6 +41,6 @@ The AAB is `android/build/outputs/bundle/release/android-release.aab`; preserve 
 deobfuscation. Use `jarsigner -verify` to inspect bundle signing, and Play's internal test track
 to validate generated device APKs. See the official [command-line build guide](https://developer.android.com/build/building-cmdline).
 
-Owner inputs still needed: Play package identity confirmation, upload signing configuration,
+Owner inputs still needed: upload signing configuration,
 highest uploaded versionCode, and the authorized Play App Signing/account setup. Do not send
 passwords or keystores through repository content or chat; provision them through secret storage.

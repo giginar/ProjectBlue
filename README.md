@@ -1,6 +1,6 @@
-# Project Blue
+# Project Blue: Ocean Guard
 
-An original, Android-first 2D underwater shooter prototype written in Java/libGDX
+An original, Android-first 2D underwater shooter by **Blueborn Games**, written in Java/libGDX
 and played in portrait orientation. Pilot a submarine through **Blue Coast**, **Coral Gardens**,
 **Ghost Nets**, **Sunken City**, **Black Tide**, **Silent Reef**, **Frozen Depths**, **Abyss Mine**, **Plastic Vortex**, and **NEREID Core** to stop NEREID extraction, protect habitats,
 clear industrial pollution, and rescue wildlife and divers. Cleanup and rescue visibly improve each habitat.
@@ -86,7 +86,7 @@ Checked against official sources on 2026-09-16:
 | Android Gradle Plugin | **8.13.2**, pinned for Java 17 and API 36 compatibility |
 | Android compile / target SDK | **36 / 36** |
 | Android minimum SDK | **26** (Android 8.0), a simple baseline for the standard Java APIs in use |
-| Android application ID | `com.projectblue.game` |
+| Android application ID | `com.game.diver.oceanguard` |
 | Android ABI | `arm64-v8a`, `armeabi-v7a`, `x86_64` |
 | JUnit | **5.13.4**, Jupiter / JUnit Platform |
 | Logical play area | **540 x 960**, FitViewport, portrait |
@@ -289,7 +289,7 @@ Verified in the Windows x64 development session on 2026-09-19:
 - Visuals/audio are original placeholders. Professional artwork, music production,
   localization, cross-device performance profiling, and comprehensive balancing are pending.
 - NEREID Core is authored and playable. Signed publication, real Android acceptance tests,
-  public privacy/store inputs and approved store exports remain outstanding.
+  GitHub Pages activation, Play Console inputs and approved store exports remain outstanding.
 
 **NOT READY FOR RELEASE.** See the [final test report](docs/FINAL_TEST_REPORT.md),
 [known issues](docs/KNOWN_ISSUES.md), [release steps](docs/RELEASE_STEPS.md),
@@ -298,6 +298,21 @@ Verified in the Windows x64 development session on 2026-09-19:
 
 Asset policy and source inventory: [ASSET_LICENSES.md](assets/licenses/ASSET_LICENSES.md).
 Unverified sources/licenses or changes to verified asset hashes stop packaging.
+
+## Release identity and support
+
+- Public game name: **Project Blue: Ocean Guard**
+- Publisher/studio brand: **Blueborn Games**
+- Support: **ykucukcinar@gmail.com**
+- Android application ID: `com.game.diver.oceanguard`
+- Expected GitHub Pages base URL: `https://giginar.github.io/ProjectBlue/`
+- Expected privacy policy: `https://giginar.github.io/ProjectBlue/privacy.html`
+- Expected support page: `https://giginar.github.io/ProjectBlue/support.html`
+
+**GITHUB PAGES ACTIVATION/URL VERIFICATION REQUIRED.** These URLs are expected from the
+repository remote and must not be treated as live until the Pages deployment succeeds.
+**GITHUB PAGES MANUAL ACTIVATION REQUIRED:** select GitHub Actions as the Pages source in the
+repository settings if it is not already enabled.
 
 ## Repository language
 

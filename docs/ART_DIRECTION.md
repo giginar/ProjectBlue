@@ -1,8 +1,8 @@
-# Project Blue art direction
+# Project Blue: Ocean Guard art direction
 
 ## Visual promise
 
-Project Blue is an optimistic underwater recovery game. Its visual identity combines dark ocean depth, luminous scientific instruments and the gradual return of living color. The interface should feel like an original civilian recovery console rather than a military aircraft HUD. It must not copy the composition, iconography, typography, ships, effects or progression presentation of Sky Force or another game.
+Project Blue: Ocean Guard is an optimistic underwater recovery game. Its visual identity combines dark ocean depth, luminous scientific instruments and the gradual return of living color. The interface should feel like an original civilian recovery console rather than a military aircraft HUD. It must not copy the composition, iconography, typography, ships, effects or progression presentation of Sky Force or another game.
 
 The current playable build uses original runtime geometry. This is a deliberate, legally safe prototype style: silhouettes stay readable on a phone, restoration can change color continuously, and no unverified raster art enters the package.
 

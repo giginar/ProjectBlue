@@ -5,6 +5,15 @@ $projectRoot = Split-Path $PSScriptRoot -Parent
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $apk = Join-Path $projectRoot 'android/build/outputs/apk/debug/android-debug.apk'
 $bundle = Join-Path $projectRoot 'android/build/outputs/bundle/release/android-release.aab'
+$expectedApplicationId = 'com.game.diver.oceanguard'
+$aapt = Join-Path $SdkPath 'build-tools/35.0.0/aapt.exe'
+$apkBadging = & $aapt dump badging $apk
+if ($LASTEXITCODE -ne 0 -or ($apkBadging -join "`n") -notmatch "package: name='$([regex]::Escape($expectedApplicationId))'") {
+    throw "Debug APK application ID is not $expectedApplicationId."
+}
+& (Join-Path $projectRoot 'gradlew.bat') :android:verifyReleaseArtifactApplicationId --console=plain
+if ($LASTEXITCODE -ne 0) { throw "Release AAB application ID is not $expectedApplicationId." }
+Write-Host "Android APK and AAB application IDs verified: $expectedApplicationId"
 & (Join-Path $SdkPath 'build-tools/35.0.0/apksigner.bat') verify $apk
 if ($LASTEXITCODE -ne 0) { throw 'Debug APK signature verification failed.' }
 & (Join-Path $SdkPath 'build-tools/35.0.0/zipalign.exe') -c -P 16 4 $apk
