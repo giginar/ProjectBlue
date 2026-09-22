@@ -12,7 +12,8 @@ public final class BootScreen extends ScreenAdapter {
             ready = true;
             game.ui().setFont(game.assets().font());
             game.audio().attach(game.assets());
-            game.router().request(ScreenRouter.Route.MENU);
+            game.router().request(game.saves().profile().language.isEmpty()
+                ? ScreenRouter.Route.LANGUAGE : ScreenRouter.Route.MENU);
         }
         game.ui().beginShapes();
         game.ui().rect(0, 0, 540, 960, Palette.INK);
@@ -20,7 +21,7 @@ public final class BootScreen extends ScreenAdapter {
         game.ui().endShapes();
         game.ui().beginText();
         game.ui().centered("PROJECT BLUE", 535, 1.25f, Palette.TEXT);
-        game.ui().centered("PREPARING THE DIVE", 495, .7f, Palette.AQUA);
+        game.ui().centered(game.i18n().text("boot.preparing"), 495, .7f, Palette.AQUA);
         game.ui().centered(Math.round(game.assets().progress()*100) + "%", 440, .65f, Palette.MUTED);
         game.ui().endText();
     }

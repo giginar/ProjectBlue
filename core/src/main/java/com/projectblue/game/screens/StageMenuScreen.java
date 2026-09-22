@@ -11,6 +11,7 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.projectblue.game.ProjectBlueGame;
 import com.projectblue.game.config.MissionConfig;
+import com.projectblue.game.config.ContentCatalog;
 import com.projectblue.game.ui.Palette;
 import com.projectblue.game.save.Profile;
 import java.util.Locale;
@@ -33,12 +34,12 @@ public abstract class StageMenuScreen extends ScreenAdapter {
         if (failed) {
             continueReward = button("reward-continue", "Watch ad / Continue once", () -> game.router().reward(com.projectblue.game.platform.RunRewards.Reward.CONTINUE));
             body.add(continueReward).height(84).row();
-            note("Optional: restore hull and add 60 seconds. One continue per dive.");
+            note(t("ad.continue_help"));
         } else {
             doubleReward = button("reward-double", "Watch ad / Double this dive's salvage", () -> game.router().reward(com.projectblue.game.platform.RunRewards.Reward.DOUBLE_SALVAGE));
             body.add(doubleReward).height(84).row();
         }
-        note("Rewards require a completed ad. You can always keep playing without ads.");
+        note(t("ad.help"));
     }
     private void updateRewardButton(TextButton button, com.projectblue.game.platform.RunRewards.Reward reward, String title) {
         if (button == null) return;
@@ -46,8 +47,8 @@ public abstract class StageMenuScreen extends ScreenAdapter {
         boolean eligible = rewards != null && rewards.eligible(reward);
         boolean ready = eligible && rewards.available(reward);
         button.setDisabled(!ready);
-        button.setText(ready ? title : rewards != null && rewards.busy() ? "AD IN PROGRESS"
-            : eligible ? "AD NOT READY / KEEP PLAYING" : "REWARD UNAVAILABLE OR ALREADY USED");
+        button.setText(ready ? title : rewards != null && rewards.busy() ? t("ad.progress")
+            : eligible ? t("ad.not_ready") : t("ad.unavailable"));
     }
 
     protected StageMenuScreen(ProjectBlueGame game, String title, String subtitle) {
@@ -55,7 +56,7 @@ public abstract class StageMenuScreen extends ScreenAdapter {
         root.setFillParent(true); stage.addActor(root);
         root.add(frame).width(492).growY();
         frame.padTop(22).padBottom(18);
-        Label division = label("OCEAN RECOVERY DIVISION", .78f, Palette.AQUA);
+        Label division = label(t("division.title"), .78f, Palette.AQUA);
         divisionCell = frame.add(division).growX().minHeight(28).padBottom(14); frame.row();
         titleCell = frame.add(label(title, 1.55f, Palette.TEXT)).growX().minHeight(52).padBottom(12); frame.row();
         subtitleCell = frame.add(label(subtitle, .88f, Palette.MUTED)).growX().minHeight(48).padBottom(18); frame.row();
@@ -67,7 +68,7 @@ public abstract class StageMenuScreen extends ScreenAdapter {
         status = label("", .74f, Palette.GOLD);
         status.setName("menu-status");
         statusCell = frame.add(status).growX().minHeight(34).padTop(8); frame.row();
-        TextButton back = button("back", "Back", this::back);
+        TextButton back = button("back", t("common.back"), this::back);
         backCell = frame.add(back).growX().height(84); frame.row();
         stage.addListener(new InputListener() {
             @Override public boolean keyDown(InputEvent event, int key) {
@@ -80,6 +81,12 @@ public abstract class StageMenuScreen extends ScreenAdapter {
         Label label = new Label(text.toUpperCase(Locale.ROOT), new Label.LabelStyle(skin.getFont("default-font"), color));
         label.setFontScale(scale * (profile.largeUi ? 1.12f : 1)); label.setWrap(true); label.setAlignment(Align.left);
         return label;
+    }
+    protected String t(String key, Object... arguments) { return game.i18n().text(key, arguments); }
+    protected String contentName(Enum<?> id) { return t("content." + id.name() + ".name"); }
+    protected String contentDescription(Enum<?> id) { return t("content." + id.name() + ".description"); }
+    protected String unlock(ContentCatalog.Unlock condition) {
+        return condition.metric() == ContentCatalog.UnlockMetric.ALWAYS ? t("unlock.ALWAYS") : t("unlock." + condition.metric(), condition.target());
     }
     protected void note(String text) { body.add(label(text, .92f, Palette.MUTED)).growX().padBottom(16).row(); }
     protected Table rating(int count) {
@@ -146,10 +153,10 @@ public abstract class StageMenuScreen extends ScreenAdapter {
         updateRewardButton(continueReward, com.projectblue.game.platform.RunRewards.Reward.CONTINUE, "WATCH AD / CONTINUE ONCE");
         if (!profile.reducedMotion) time += Math.min(Math.max(delta, 0), .1f);
         game.ocean().backdrop(time, backdropRestoration(), backdropType(), profile.reducedMotion);
-        if (game.saves().writeFailed()) status.setText("SAVE FAILED / RETRY IN SETTINGS");
-        else if (game.saves().recoveredBackup()) status.setText("PROFILE RESTORED FROM BACKUP");
-        else if (game.saves().recovered()) status.setText("DAMAGED PROFILE / DEFAULTS RESTORED");
-        else status.setText("SALVAGE " + profile.totalSalvage + "  /  DIVES " + profile.completedRuns);
+        if (game.saves().writeFailed()) status.setText(t("common.save_failed"));
+        else if (game.saves().recoveredBackup()) status.setText(t("common.backup_restored"));
+        else if (game.saves().recovered()) status.setText(t("common.defaults_restored"));
+        else status.setText(t("common.salvage", profile.totalSalvage, profile.completedRuns));
         stage.getViewport().apply();
         stage.act(Math.min(Math.max(delta, 0), .1f)); stage.draw();
     }

@@ -27,6 +27,7 @@ final class DesktopSmokeGame extends ProjectBlueGame {
     private float pausedElapsed, initialX;
     private final boolean reload;
     private boolean advancing;
+    private boolean turkishSettingsChecked;
     private final Vector2 point = new Vector2();
     DesktopSmokeGame(boolean reload) { super(new NoOpPlatformService(profilePath())); this.reload = reload; }
     private static String profilePath() { return System.getProperty("user.dir") + "/build/smoke/profile"; }
@@ -47,9 +48,14 @@ final class DesktopSmokeGame extends ProjectBlueGame {
         if (stepFrames < 5 || frame < 30) return;
         if (reload) {
             if (!(getScreen() instanceof MainMenuScreen)) return;
+            require("tr".equals(saves().profile().language), "persisted language skips first-launch choice");
             verifyPersisted(saves().profile()); capture("15-reloaded");
             Gdx.app.log("SMOKE", "PASS: separate application launch restored campaign, records, equipment, achievements and settings");
             Gdx.app.exit(); return;
+        }
+        if (getScreen() instanceof LanguageSelectScreen) {
+            require(saves().profile().language.isEmpty(), "first launch requires language choice");
+            clickActor("language-en"); return;
         }
         switch (step) {
             case 0 -> {
@@ -72,17 +78,13 @@ final class DesktopSmokeGame extends ProjectBlueGame {
             case 1 -> {
                 require(getScreen() instanceof LevelSelectScreen, "menu -> level select");
                 require(((Button) actor("level-2")).isDisabled(), "locked level visibly disabled");
+                require(((StageMenuScreen) getScreen()).stage().getRoot().findActor("launch") == null, "global PLAY button removed");
                 capture("02-levels"); clickActor("level-1"); next();
             }
             case 2 -> {
-                require(((Button) actor("difficulty-HARD")).isDisabled(), "hard locked initially");
-                require(((Button) actor("difficulty-NORMAL")).isChecked(), "normal selected");
-                capture("03-briefing"); clickActor("launch"); next();
-            }
-            case 3 -> {
-                require(getScreen() instanceof GameScreen, "briefing -> gameplay");
+                require(getScreen() instanceof GameScreen, "unlocked level card -> gameplay");
                 initialX = router().activeRun().world().player.x;
-                pointerDown(270, 170); pointerDrag(420, 370); next();
+                pointerDown(270, 170); pointerDrag(420, 370); step = 4; stepFrames = 0;
             }
             case 4 -> {
                 if (router().activeRun().world().player.x <= initialX + 90) return;
@@ -178,9 +180,14 @@ final class DesktopSmokeGame extends ProjectBlueGame {
                 require(actor("mute") != null && actor("haptic") != null && actor("shake") != null
                     && actor("contrast") != null && actor("flashes") != null && actor("ui-scale") != null,
                     "audio and accessibility controls exist");
-                clickActor("sound"); next();
+                clickActor("language"); next();
             }
             case 29 -> {
+                if (!turkishSettingsChecked) {
+                    require("tr".equals(saves().profile().language), "settings language switch persists");
+                    require(actor("language") != null, "localized language control remains available");
+                    capture("13-turkish-settings"); turkishSettingsChecked = true; clickActor("sound"); return;
+                }
                 require(!saves().profile().soundEnabled, "sound toggle fires once");
                 Gdx.graphics.setWindowedMode(320, 640); next();
             }

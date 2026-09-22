@@ -1,83 +1,81 @@
 package com.projectblue.game.screens;
 
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.projectblue.game.ProjectBlueGame;
 import com.projectblue.game.config.*;
 import com.projectblue.game.save.LevelRecord;
 import com.projectblue.game.ui.Palette;
 
+/** Sector cards are the launch action; difficulty remains selectable per open sector. */
 public final class LevelSelectScreen extends StageMenuScreen {
-    private boolean briefing;
+    private final Difficulty[] choices = new Difficulty[CampaignConfig.LEVEL_COUNT];
+    private int focusedLevel = 1;
     public LevelSelectScreen(ProjectBlueGame game) {
-        super(game, "Level Select", "Recovery chart / ten ocean sectors");
+        super(game, game.i18n().text("levels.title"), game.i18n().text("levels.subtitle"));
+        java.util.Arrays.fill(choices, Difficulty.NORMAL);
         showChart();
+        stage.addListener(new InputListener() {
+            @Override public boolean keyDown(InputEvent event, int keycode) {
+                if (keycode == Input.Keys.ENTER || keycode == Input.Keys.SPACE || keycode == Input.Keys.BUTTON_A) return start(focusedLevel);
+                return false;
+            }
+        });
     }
     private void showChart() {
-        briefing = false; body.clearChildren();
-        note("Earn one star to open the next sector.\nRevisit any open sector to improve records.");
+        body.clearChildren(); note(t("levels.help"));
         for (CampaignConfig.Level level : CampaignConfig.DEFAULT.levels()) {
-            LevelRecord record = profile.level(level.id());
-            boolean available = CampaignConfig.isAvailable(level.id());
+            int id = level.id(); LevelRecord record = profile.level(id);
+            boolean available = CampaignConfig.isAvailable(id), unlocked = LevelSelectPolicy.canStart(profile, id, Difficulty.NORMAL);
             Table card = panel();
-            String state = available ? record.unlocked ? "" : " / LOCKED" : " / COMING LATER";
-            TextButton choose = button("level-" + level.id(), String.format(java.util.Locale.ROOT, "%02d / %s%s", level.id(), level.name(), state), () -> {
-                if (game.router().selectLevel(level.id())) showBriefing();
+            String state = !available ? t("levels.coming") : !unlocked ? t("levels.locked") : "";
+            TextButton dive = button("level-" + id, t("levels.card", String.format(java.util.Locale.ROOT, "%02d", id), levelName(id), state), () -> start(id));
+            dive.setDisabled(!unlocked);
+            dive.addListener(new InputListener() {
+                @Override public void enter(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor from) { focusedLevel = id; }
             });
-            choose.setDisabled(!record.unlocked || !available);
-            card.add(choose).height(84).row();
-            String status = !available ? "PLANNED" : !record.unlocked ? "LOCKED" : record.bestStars > 0 ? "RESTORED" : "OPEN";
-            card.add(label(status + "  DIFFICULTY / " + (record.bestDifficulty() == null ? "NORMAL READY" : record.bestDifficulty() + " CLEARED"),
-                .78f, record.unlocked && available ? Palette.AQUA : Palette.MUTED)).row();
-            card.add(label(level.region(), 1, Palette.AQUA)).row();
+            card.add(dive).height(84).row();
+            String status = !available ? t("levels.planned") : !unlocked ? t("common.locked") : record.bestStars > 0 ? t("levels.restored") : t("levels.open");
+            String difficultyStatus = record.bestDifficulty() == null ? t("levels.normal_ready") : t("levels.difficulty_cleared", difficulty(record.bestDifficulty()));
+            card.add(label(t("levels.status", status, difficultyStatus), .78f, unlocked ? Palette.AQUA : Palette.MUTED)).row();
+            card.add(label(region(id), 1, Palette.AQUA)).row();
+            card.add(label(t("level." + id + ".description"), .82f, Palette.TEXT)).row();
             card.add(rating(record.bestStars)).height(36).row();
-            card.add(label("Best score " + record.bestScore, .92f, Palette.GOLD)).row();
-            card.add(label("Cleared: " + completed(record), .82f, Palette.TEXT)).row();
-            card.add(label("Cleanup " + Math.round(record.bestCleanup) + "% / Rescue " + Math.round(record.bestRescue) + "%", .82f, Palette.MUTED)).row();
-            if (!available) card.add(label("Planned for a later content pass", .82f, Palette.MUTED)).row();
-            else if (!record.unlocked) card.add(label("Complete sector " + (level.id() - 1) + " with 1+ star", .82f, Palette.MUTED)).row();
+            card.add(label(t("levels.best_score", record.bestScore), .92f, Palette.GOLD)).row();
+            card.add(label(t("levels.cleared", completed(record)), .82f, Palette.TEXT)).row();
+            card.add(label(t("levels.performance", Math.round(record.bestCleanup), Math.round(record.bestRescue)), .82f, Palette.MUTED)).row();
+            if (!available) card.add(label(t("levels.later"), .82f, Palette.MUTED)).row();
+            else if (!unlocked) card.add(label(t("levels.requirement", id - 1), .82f, Palette.MUTED)).row();
+            else {
+                card.add(label(t("levels.tap"), .78f, Palette.GOLD)).row();
+                TextButton difficultyButton = button("difficulty-" + id, difficulty(choices[id - 1]), () -> { choices[id - 1] = nextDifficulty(record, choices[id - 1]); showChart(); });
+                card.add(difficultyButton).height(62).row();
+            }
         }
         scrollToTop();
+        com.badlogic.gdx.scenes.scene2d.Actor focus = stage.getRoot().findActor("level-" + focusedLevel);
+        if (focus != null) stage.setKeyboardFocus(focus);
     }
-    private void showBriefing() {
-        briefing = true; body.clearChildren();
-        int id = game.router().selectedLevel();
-        CampaignConfig.Level level = CampaignConfig.DEFAULT.level(id);
-        LevelRecord record = profile.level(id);
-        Table summary = panel();
-        summary.add(label(level.name(), 1.2f, Palette.AQUA)).row();
-        MissionConfig mission = RunSpec.create(id, Difficulty.NORMAL, Loadout.standard()).mission();
-        summary.add(label(level.region() + (mission == null ? " / 180 seconds" : " / 5-8 minutes"), .95f, Palette.TEXT)).row();
-        summary.add(rating(record.bestStars)).height(36).row();
-        summary.add(label("Best score " + record.bestScore, .95f, Palette.GOLD)).row();
-        summary.add(label("Best difficulty: " + (record.bestDifficulty() == null ? "None" : record.bestDifficulty()), .88f, Palette.TEXT)).row();
-        note("Complete each difficulty to open the next.\nNormal > Hard > Expert > Abyss");
-        Table choices = new Table();
-        choices.defaults().growX().height(84).space(10);
-        for (Difficulty difficulty : Difficulty.values()) {
-            boolean open = record.canPlay(difficulty);
-            String state = !open ? "Locked" : record.completed(difficulty) ? "Cleared" : "Ready";
-            boolean selectedDifficulty = game.router().selectedDifficulty() == difficulty;
-            TextButton select = button("difficulty-" + difficulty, difficulty + " / " + (selectedDifficulty ? "SELECTED" : state), () -> {
-                game.router().selectDifficulty(difficulty); showBriefing();
-            });
-            select.setDisabled(!open); select.setChecked(selectedDifficulty);
-            choices.add(select).uniformX();
-            if (difficulty.ordinal() % 2 == 1) choices.row();
+    private boolean start(int id) {
+        focusedLevel = id;
+        return LevelSelectPolicy.canStart(profile, id, choices[id - 1]) && game.router().requestDive(id, choices[id - 1]);
+    }
+    private Difficulty nextDifficulty(LevelRecord record, Difficulty current) {
+        Difficulty[] all = Difficulty.values();
+        for (int offset = 1; offset <= all.length; offset++) {
+            Difficulty candidate = all[(current.ordinal() + offset) % all.length];
+            if (record.canPlay(candidate)) return candidate;
         }
-        body.add(choices).growX().row();
-        Difficulty selected = game.router().selectedDifficulty();
-        CampaignConfig.Tuning tuning = CampaignConfig.DEFAULT.tuning(selected);
-        note(String.format(java.util.Locale.ROOT, "%s: hull x%.2f / shots x%.2f\nDensity x%.2f / fire rate x%.2f", selected, tuning.health(), tuning.bulletSpeed(), tuning.spawnDensity(), tuning.fireRate()));
-        note(mission != null ? mission.briefing : level.boss() || selected != Difficulty.NORMAL
-            ? "Disable the Warden before the timer ends. Watch for its golden firing signal."
-            : "Survive, clean plastic and free turtles. Drag to steer; firing is automatic.");
-        action("launch", "Begin dive / " + selected, () -> game.router().request(ScreenRouter.Route.PLAY));
-        scrollToTop();
+        return Difficulty.NORMAL;
     }
-    private static String completed(LevelRecord record) {
+    private String completed(LevelRecord record) {
         StringBuilder text = new StringBuilder();
-        for (Difficulty d : Difficulty.values()) if (record.completed(d)) text.append(d).append(' ');
-        return text.length() == 0 ? "None" : text.toString().trim();
+        for (Difficulty d : Difficulty.values()) if (record.completed(d)) { if (text.length() > 0) text.append(" / "); text.append(difficulty(d)); }
+        return text.length() == 0 ? t("common.none") : text.toString();
     }
-    @Override protected void back() { if (briefing) showChart(); else super.back(); }
+    private String difficulty(Difficulty value) { return t("difficulty." + value.name()); }
+    private String levelName(int id) { return t("level." + id + ".name"); }
+    private String region(int id) { return t("level." + id + ".region"); }
 }

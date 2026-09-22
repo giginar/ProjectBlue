@@ -16,6 +16,10 @@ signing configuration are deferred.
 **GITHUB PAGES MANUAL ACTIVATION REQUIRED:** select GitHub Actions as the Pages source in the
 repository settings if it is not already enabled.
 
+The in-game UI now supports English and Turkish. The first launch requires an explicit choice,
+and Settings can switch language without an application restart. This does not decide the final
+Google Play store language or publishing countries; those owner decisions remain open.
+
 ## Technical release candidate update (2026-09-20)
 
 - [x] Fresh debug APK, R8/resource-shrunk QA APK and unsigned R8/resource-shrunk release AAB build.

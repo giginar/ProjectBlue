@@ -6,7 +6,7 @@ import com.projectblue.game.ui.Palette;
 
 public final class UpgradesScreen extends StageMenuScreen {
     private String message = "";
-    public UpgradesScreen(ProjectBlueGame game) { super(game,"Upgrades","Permanent improvements / paid with salvage"); rebuild(); }
+    public UpgradesScreen(ProjectBlueGame game) { super(game,game.i18n().text("upgrade.title"),game.i18n().text("upgrade.subtitle")); rebuild(); }
     private void rebuild() {
         body.clearChildren();
         if (!message.isEmpty()) note(message);
@@ -14,17 +14,17 @@ public final class UpgradesScreen extends StageMenuScreen {
             var def = profile.content().upgrade(upgrade.name());
             int level = profile.upgradeLevel(upgrade), cost = def.cost(level);
             Table card = panel();
-            card.add(label(def.displayName() + " / " + level + " of " + def.maxLevel(),1.05f,Palette.AQUA)).row();
-            card.add(label(def.description(),.95f,Palette.TEXT)).row();
-            String state=level == def.maxLevel() ? "MAXIMUM" : profile.totalSalvage < cost ? "NEED SALVAGE" : "AVAILABLE TO BUY";
+            card.add(label(t("upgrade.level", contentName(upgrade), level, def.maxLevel()),1.05f,Palette.AQUA)).row();
+            card.add(label(contentDescription(upgrade),.95f,Palette.TEXT)).row();
+            String state=level == def.maxLevel() ? t("upgrade.maximum") : profile.totalSalvage < cost ? t("upgrade.need") : t("upgrade.available");
             card.add(label(state,.82f,level == def.maxLevel()?Palette.AQUA:profile.totalSalvage < cost?Palette.MUTED:Palette.GOLD)).row();
-            TextButton buy = button("upgrade-" + upgrade,level == def.maxLevel() ? "Maximum level"
-                : profile.totalSalvage < cost ? "Need " + cost + " salvage" : "Buy upgrade / " + cost + " salvage",() -> {
+            TextButton buy = button("upgrade-" + upgrade,level == def.maxLevel() ? t("upgrade.max_button")
+                : profile.totalSalvage < cost ? t("upgrade.need_button", cost) : t("upgrade.buy", cost),() -> {
                     message = switch (game.saves().purchase(upgrade)) {
-                        case PURCHASED -> "Upgrade installed and saved.";
-                        case MAX_LEVEL -> "Already fully upgraded.";
-                        case INSUFFICIENT_SALVAGE -> "Not enough salvage.";
-                        case SAVE_FAILED -> "Purchase could not be saved. No salvage spent. Please retry.";
+                        case PURCHASED -> t("upgrade.purchased");
+                        case MAX_LEVEL -> t("upgrade.already_max");
+                        case INSUFFICIENT_SALVAGE -> t("upgrade.insufficient");
+                        case SAVE_FAILED -> t("upgrade.save_failed");
                     };
                     rebuild();
                 });

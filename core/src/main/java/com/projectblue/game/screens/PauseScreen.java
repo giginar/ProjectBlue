@@ -15,12 +15,12 @@ public final class PauseScreen extends BaseMenuScreen {
         ui.button(58, 279, 424, 56, false);
         ui.endShapes();
         ui.beginText();
-        ui.centered("HOLDING DEPTH", 653, 1.12f, Palette.TEXT);
-        ui.centered("YOUR OCEAN CAN WAIT.", 604, .65f, Palette.MUTED);
-        ui.centered("RESUME DIVE", 503, 1, Palette.INK);
-        ui.text(game.saves().profile().soundEnabled ? "SOUND ON" : "SOUND OFF", 75, 400, .73f, Palette.TEXT);
-        ui.text(game.saves().profile().musicEnabled ? "MUSIC ON" : "MUSIC OFF", 297, 400, .73f, Palette.TEXT);
-        ui.centered("END DIVE / MENU", 315, .78f, Palette.MUTED);
+        ui.centered(game.i18n().text("pause.title"), 653, 1.12f, Palette.TEXT);
+        ui.centered(game.i18n().text("pause.subtitle"), 604, .65f, Palette.MUTED);
+        ui.centered(game.i18n().text("pause.resume"), 503, 1, Palette.INK);
+        ui.text(game.i18n().text("pause.sound", game.i18n().text(game.saves().profile().soundEnabled ? "common.on" : "common.off")), 75, 400, .73f, Palette.TEXT);
+        ui.text(game.i18n().text("pause.music", game.i18n().text(game.saves().profile().musicEnabled ? "common.on" : "common.off")), 297, 400, .73f, Palette.TEXT);
+        ui.centered(game.i18n().text("pause.end"), 315, .78f, Palette.MUTED);
         ui.endText();
     }
     protected void click(float x, float y) {
@@ -31,4 +31,3 @@ public final class PauseScreen extends BaseMenuScreen {
     }
     protected void back() { game.router().request(ScreenRouter.Route.RESUME); }
 }
-

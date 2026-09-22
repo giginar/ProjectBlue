@@ -3,20 +3,23 @@ package com.projectblue.game.ui;
 import com.projectblue.game.logic.GameWorld;
 import com.projectblue.game.logic.LeviathanCore;
 import com.projectblue.game.events.GameEvents;
+import com.projectblue.game.i18n.Localization;
 import static com.projectblue.game.config.GameConfig.*;
 
 /** UI observes simulation, it never awards points or applies damage. */
 public final class Hud implements GameEvents.Listener {
     private final UiPainter ui;
+    private final Localization text;
     private final StringBuilder score = new StringBuilder(32), stats = new StringBuilder(64), time = new StringBuilder(24);
     private final StringBuilder health = new StringBuilder(24), ecology = new StringBuilder(32);
     private final StringBuilder resource = new StringBuilder(32), secondary = new StringBuilder(32);
     private final StringBuilder escapeObjective = new StringBuilder(80), restorationObjective = new StringBuilder(96);
     private final StringBuilder facilityObjective = new StringBuilder(72);
     private float refresh, noticeTime;
-    private String notice = "DRAG TO MOVE / AUTO FIRE";
+    private String notice;
     private String mission;
-    public Hud(UiPainter ui) { this.ui = ui; }
+    public Hud(UiPainter ui) { this(ui, new Localization("en")); }
+    public Hud(UiPainter ui, Localization text) { this.ui = ui; this.text = text; notice = text.text("hud.controls"); }
     public void update(float dt, GameWorld w) {
         noticeTime = Math.max(0, noticeTime - dt);
         refresh -= dt;
@@ -26,36 +29,32 @@ public final class Hud implements GameEvents.Listener {
     }
     /** Refresh cached labels after an out-of-band world mutation such as rewarded continue. */
     public void refresh(GameWorld w) {
-        score.setLength(0); score.append("SCORE ").append(w.score());
-        stats.setLength(0); stats.append("CLEAN ").append(w.cleanedCount()).append('/').append(w.wasteTotal())
-            .append("   RESCUE ").append(w.rescueCount()).append('/').append(w.turtleTotal());
-        health.setLength(0); health.append("HULL ").append(w.player.health).append('/').append(w.player.maxHealth);
+        score.setLength(0); score.append(text.text("hud.score", w.score()));
+        stats.setLength(0); stats.append(text.text("hud.objective", w.cleanedCount(), w.wasteTotal(), w.rescueCount(), w.turtleTotal()));
+        health.setLength(0); health.append(text.text("hud.hull", w.player.health + "/" + w.player.maxHealth));
         if (w.spec().loadout().shieldCapacity() > 0) health.append(" S").append(w.shield());
-        if (mission == null) mission = String.format(java.util.Locale.ROOT, "%02d / %s / %s", w.spec().level().id(), w.spec().level().name(), w.spec().difficulty());
+        if (mission == null) mission = String.format(java.util.Locale.ROOT, "%02d / %s / %s", w.spec().level().id(), text.text("level." + w.spec().level().id() + ".name"), text.text("difficulty." + w.spec().difficulty()));
         float limit = w.mission() == null ? LEVEL_SECONDS : w.mission().deadlineSeconds;
         int seconds = Math.max(0, (int) Math.ceil(limit - w.elapsed()));
         time.setLength(0); time.append(seconds / 60).append(':');
         if (seconds % 60 < 10) time.append('0');
         time.append(seconds % 60);
-        ecology.setLength(0); ecology.append("REEF +").append(Math.round(w.restoration() * 100)).append("%   SALVAGE ").append(w.salvageCount());
+        ecology.setLength(0); ecology.append(text.text("hud.ecology", Math.round(w.restoration() * 100), w.salvageCount()));
         resource.setLength(0);
         secondary.setLength(0);
-        if (w.hasSonar()) resource.append("SONAR ").append(Math.round(w.sonarEnergy()));
-        else if (w.hasThermal()) resource.append("THERMAL ").append(Math.round(w.thermalHeat())).append('/').append(Math.round(w.thermalCapacity()));
-        else if (w.hasPressure()) resource.append("PRESSURE ").append(Math.round(w.pressureLoad())).append('/').append(Math.round(w.pressureCapacity()));
-        else if (w.hasVortex()) resource.append("CLEANUP COMBO x").append(w.cleanupCombo());
-        if (w.hasPressure()) secondary.append("PRESSURE ").append(Math.round(w.pressureLoad())).append('/').append(Math.round(w.pressureCapacity()));
+        if (w.hasSonar()) resource.append(text.text("hud.sonar", Math.round(w.sonarEnergy())));
+        else if (w.hasThermal()) resource.append(text.text("hud.thermal", Math.round(w.thermalHeat()), Math.round(w.thermalCapacity())));
+        else if (w.hasPressure()) resource.append(text.text("hud.pressure", Math.round(w.pressureLoad()), Math.round(w.pressureCapacity())));
+        else if (w.hasVortex()) resource.append(text.text("hud.combo", w.cleanupCombo()));
+        if (w.hasPressure()) secondary.append(text.text("hud.pressure", Math.round(w.pressureLoad()), Math.round(w.pressureCapacity())));
         escapeObjective.setLength(0);
-        escapeObjective.append("CORE COLLAPSE / REACH AND HOLD THE UPPER EXIT / ")
-            .append(w.leviathanCore()==null?0:Math.max(0,(int)Math.ceil(w.leviathanCore().escapeRemaining())));
+        escapeObjective.append(text.text("hud.escape", w.leviathanCore()==null?0:Math.max(0,(int)Math.ceil(w.leviathanCore().escapeRemaining()))));
         restorationObjective.setLength(0);
-        if (w.leviathanCore()!=null) restorationObjective.append("CLEAN ").append(w.leviathanCore().cleanupProgress())
-            .append('/').append(w.leviathanCore().cleanupRequired()).append("  RESCUE ")
-            .append(w.leviathanCore().rescueProgress()).append('/').append(w.leviathanCore().rescueRequired())
-            .append("  SONAR ").append(w.leviathanCore().sonarProgress()).append('/').append(w.leviathanCore().sonarRequired());
+        if (w.leviathanCore()!=null) restorationObjective.append(text.text("hud.restoration",
+            w.leviathanCore().cleanupProgress(), w.leviathanCore().cleanupRequired(), w.leviathanCore().rescueProgress(),
+            w.leviathanCore().rescueRequired(), w.leviathanCore().sonarProgress(), w.leviathanCore().sonarRequired()));
         facilityObjective.setLength(0);
-        if (w.mission()!=null) facilityObjective.append("HEADQUARTERS ENTRY / DISABLE POWER CORES ")
-            .append(w.energyStationsDisabled()).append('/').append(w.mission().boss.powerCores());
+        if (w.mission()!=null) facilityObjective.append(text.text("hud.facility_cores", w.energyStationsDisabled(), w.mission().boss.powerCores()));
     }
     String healthText() { return health.toString(); }
     public void draw(GameWorld w) {
@@ -91,27 +90,28 @@ public final class Hud implements GameEvents.Listener {
         ui.text(time, 349, 939, .66f, Palette.AQUA);
         ui.text(stats, 24, 862, .64f, Palette.TEXT);
         ui.centered(ecology, 29, .65f, Palette.AQUA);
-        if (w.hasSonar()) { ui.text(resource,424,690,.62f,Palette.TEXT); ui.text("PULSE",438,673,.55f,Palette.AQUA); }
+        if (w.hasSonar()) { ui.text(resource,424,690,.62f,Palette.TEXT); ui.text(text.text("hud.pulse"),438,673,.55f,Palette.AQUA); }
         else if (w.hasThermal()) ui.text(resource,344,688,.57f,w.thermalHeat()>=w.thermalThreshold()?Palette.RED:Palette.TEXT);
         if (w.hasPressure()) ui.text(secondary,344,632,.54f,w.pressureWarning()?Palette.RED:Palette.TEXT);
         else if (w.hasVortex()) ui.text(resource,344,688,.54f,Palette.TEXT);
-        if (w.elapsed()<8 && w.mission()!=null) ui.centered(w.mission().introMessage,793,.62f,Palette.TEXT);
+        if (w.elapsed()<8 && w.mission()!=null) ui.centered(text.text("mission." + w.mission().type + ".intro"),793,.62f,Palette.TEXT);
         else if (noticeTime > 0) ui.centered(notice, 793, .62f, Palette.TEXT);
-        else if (w.midpointActive()) ui.centered(w.mission().midpointMessage,812,.58f,Palette.GOLD);
-        else if (w.escapingVortex()) ui.centered("VORTEX CORE COLLAPSING / RIDE THE CURRENT OUT",812,.58f,Palette.AQUA);
+        else if (w.midpointActive()) ui.centered(text.text("mission." + w.mission().type + ".midpoint"),812,.58f,Palette.GOLD);
+        else if (w.escapingVortex()) ui.centered(text.text("hud.vortex_escape"),812,.58f,Palette.AQUA);
         else if (w.escapingCore()) ui.centered(escapeObjective,812,.58f,Palette.RED);
-        else if (w.recovering()) ui.centered("HABITAT RECOVERING / COLOR RETURNING", 812, .58f, Palette.AQUA);
+        else if (w.recovering()) ui.centered(text.text("hud.recovering"), 812, .58f, Palette.AQUA);
         else if (w.boss.active && w.mission() != null) {
             CharSequence objective = bossObjective(w);
             ui.centered(objective, 812, .58f, Palette.GOLD);
-        } else if (w.boss.active) ui.centered("WARDEN / DISABLE BEFORE SURFACING", 812, .58f, Palette.GOLD);
+        } else if (w.boss.active) ui.centered(text.text("hud.warden"), 812, .58f, Palette.GOLD);
         else if (w.mission()!=null && w.mission().type==com.projectblue.game.config.MissionConfig.MissionType.NEREID_CORE)
             ui.centered(finalFacilityObjective(w),812,.58f,Palette.GOLD);
-        else if (w.slowed()) ui.centered("NETTED / THRUST REDUCED", 812, .58f, Palette.GOLD);
-        else if (w.cleaning()) ui.centered("CLEANUP BEAM / THRUST REDUCED", 812, .58f, Palette.AQUA);
+        else if (w.slowed()) ui.centered(text.text("hud.netted"), 812, .58f, Palette.GOLD);
+        else if (w.cleaning()) ui.centered(text.text("hud.cleaning"), 812, .58f, Palette.AQUA);
         ui.endText();
     }
     private CharSequence bossObjective(GameWorld w) {
+        if (text != null) return localizedBossObjective(w);
         return switch (w.mission().boss.kind()) {
             case SHORELINE_COMPACTOR -> switch (w.compactor().state()) {
                 case PRESS_WARNING -> "PRESS ARMS OPENING / MOVE TO THE CENTER";
@@ -200,6 +200,29 @@ public final class Hud implements GameEvents.Listener {
             };
         };
     }
+    private CharSequence localizedBossObjective(GameWorld w) {
+        var kind = w.mission().boss.kind();
+        String state = switch (kind) {
+            case SHORELINE_COMPACTOR -> w.compactor().state().name();
+            case REEF_BREAKER -> w.reefBreaker().state().name();
+            case GHOST_NET_HARVESTER -> w.harvester().state().name();
+            case URBAN_SALVAGER -> w.urbanSalvager().state().name();
+            case OIL_KRAKEN -> w.oilKraken().state().name();
+            case RESONANCE_ENGINE -> w.resonanceEngine().state().name();
+            case BOREALIS_DRILL -> w.borealisDrill().state().name();
+            case THE_HARVESTER -> w.theHarvester().state().name();
+            case RECYCLER_LEVIATHAN -> w.recyclerLeviathan().state().name();
+            case LEVIATHAN_CORE -> w.leviathanCore().state().name();
+        };
+        if (kind == com.projectblue.game.config.MissionConfig.BossKind.OIL_KRAKEN && state.equals("VALVES") && w.oilKraken().oilClearance() < .6f)
+            state = "VALVES_CLEAN";
+        if (kind == com.projectblue.game.config.MissionConfig.BossKind.LEVIATHAN_CORE) {
+            LeviathanCore.Attack attack = w.leviathanCore().warningAttack();
+            if (attack != null) return text.text("hud.attack." + attack);
+            if (state.equals("RESTORATION_SYSTEMS")) return restorationObjective;
+        }
+        return text.text("hud.boss." + kind + "." + state);
+    }
     private static String finalAttackWarning(GameWorld world,String fallback) {
         LeviathanCore.Attack attack=world.leviathanCore().warningAttack();
         if (attack==null) return fallback;
@@ -215,18 +238,18 @@ public final class Hud implements GameEvents.Listener {
         };
     }
     private CharSequence finalFacilityObjective(GameWorld world) {
-        if (world.elapsed()<70) return "FACILITY APPROACH / READ THE ALARM LANES";
-        if (world.elapsed()<155) return "DEFENSE GRID / BREAK THE DRONE FORMATIONS";
-        if (world.elapsed()<225) return "CAPTURED NEREID SYSTEMS / CONTROL THE COMBINATION";
-        if (world.elapsed()<275) return "CORE SENTINEL / CLEAR THE CENTRAL ACCESS";
+        if (world.elapsed()<70) return text.text("hud.facility.approach");
+        if (world.elapsed()<155) return text.text("hud.facility.defense");
+        if (world.elapsed()<225) return text.text("hud.facility.captured");
+        if (world.elapsed()<275) return text.text("hud.facility.sentinel");
         return facilityObjective;
     }
     public void onEvent(GameEvents.Type type, float x, float y, int value) {
         switch (type) {
-            case PLASTIC_COLLECTED -> { notice = "PLASTIC RECOVERED / WATER RESTORED"; noticeTime = 2; }
-            case TURTLE_RESCUED -> { notice = "WILDLIFE FREE / LIFE RETURNS"; noticeTime = 3; }
-            case PLAYER_HIT -> { notice = "HULL HIT / KEEP MOVING"; noticeTime = 1.5f; }
-            case SONAR_PULSE -> { notice = "SONAR PULSE / CONTACTS REVEALED"; noticeTime = 1.2f; }
+            case PLASTIC_COLLECTED -> { notice = text.text("hud.notice.plastic"); noticeTime = 2; }
+            case TURTLE_RESCUED -> { notice = text.text("hud.notice.rescue"); noticeTime = 3; }
+            case PLAYER_HIT -> { notice = text.text("hud.notice.hit"); noticeTime = 1.5f; }
+            case SONAR_PULSE -> { notice = text.text("hud.notice.sonar"); noticeTime = 1.2f; }
             default -> { }
         }
     }

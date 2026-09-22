@@ -1,5 +1,13 @@
 # Manual release acceptance matrix
 
+## English/Turkish UI follow-up (2026-09-21)
+
+Automated catalog completeness, persistence, fallback and Turkish bitmap-font glyph checks pass.
+Desktop smoke covers explicit first-launch selection, direct level-card launch, locked-card state,
+in-session Settings switching, narrow/wide layouts and a second launch that skips language choice.
+Physical Android review of every Turkish screen, clipping at large UI size, controller navigation
+and all gameplay telegraphs remains **MANUAL VERIFICATION REQUIRED**.
+
 ## Prompt 13 follow-up device record (2026-09-20)
 
 | Area | Current result |

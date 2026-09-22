@@ -286,8 +286,9 @@ Verified in the Windows x64 development session on 2026-09-19:
 - **No Android device/emulator was connected, so actual Android launch, touch input, and
   GPU context loss were not tested.** Building an APK does not replace device testing
   or establish readiness for Play Store publication.
-- Visuals/audio are original placeholders. Professional artwork, music production,
-  localization, cross-device performance profiling, and comprehensive balancing are pending.
+- Visuals/audio are original placeholders. The in-game UI supports English and Turkish with
+  an explicit first-launch choice and Settings switching. Professional artwork, music production,
+  additional languages, cross-device performance profiling, and comprehensive balancing are pending.
 - NEREID Core is authored and playable. Signed publication, real Android acceptance tests,
   GitHub Pages activation, Play Console inputs and approved store exports remain outstanding.
 

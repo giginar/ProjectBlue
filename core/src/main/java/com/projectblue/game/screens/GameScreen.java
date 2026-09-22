@@ -24,7 +24,7 @@ public final class GameScreen extends ScreenAdapter implements GameEvents.Listen
         world = new GameWorld(RandomProvider.seeded(spec.level().seed()), spec);
         world.setReducedEffects(game.saves().profile().reducedMotion);
         input = new PointerInput(game.ui().viewport, world, () -> game.router().request(ScreenRouter.Route.PAUSE));
-        hud = new Hud(game.ui());
+        hud = new Hud(game.ui(), game.i18n());
         world.events.subscribe(hud);
         world.events.subscribe(game.audio());
         world.events.subscribe(this);

@@ -4,6 +4,7 @@ import com.projectblue.game.logic.LevelResult;
 import com.projectblue.game.logic.Rules;
 import com.projectblue.game.config.*;
 import com.projectblue.game.config.Loadout.*;
+import com.projectblue.game.i18n.GameLanguage;
 import java.util.*;
 
 /** Profile owns local facts; catalog definitions decide their gameplay meaning. */
@@ -14,6 +15,8 @@ public final class Profile {
     public float soundVolume = DEFAULT_SOUND_VOLUME, musicVolume = DEFAULT_MUSIC_VOLUME;
     public int bestScore, bestStars, totalSalvage, completedRuns, totalPlastic, totalEnemies;
     public String rewardRun = "";
+    /** Stable language id. Empty means first-launch choice is still required. */
+    public String language = "";
     public boolean runResultRecorded, runCompleted, continueUsed, salvageDoubled;
     public int runSalvage, runPlastic, runEnemies, adSessions, adCompletions;
     public long lastInterstitialAt;
@@ -109,6 +112,7 @@ public final class Profile {
     private static int add(int a,int b) { return (int)Math.min(Integer.MAX_VALUE,(long)a + b); }
     public void normalize() {
         version = PROFILE_VERSION;
+        if (GameLanguage.fromId(language) == null) language = "";
         soundVolume = Rules.clamp(soundVolume,0,1); musicVolume = Rules.clamp(musicVolume,0,1);
         bestScore = Math.max(0,bestScore); bestStars = Math.max(0,Math.min(3,bestStars));
         totalSalvage = Math.max(0,totalSalvage); completedRuns = Math.max(0,completedRuns);
@@ -146,6 +150,7 @@ public final class Profile {
         runSalvage = p.runSalvage; runPlastic = p.runPlastic; runEnemies = p.runEnemies;
         adSessions = p.adSessions; adCompletions = p.adCompletions; lastInterstitialAt = p.lastInterstitialAt;
         version = p.version; soundEnabled = p.soundEnabled; musicEnabled = p.musicEnabled; muted = p.muted;
+        language = p.language;
         soundVolume = p.soundVolume; musicVolume = p.musicVolume; reducedMotion = p.reducedMotion;
         hapticEnabled = p.hapticEnabled; screenShakeEnabled = p.screenShakeEnabled;
         highContrastTelegraphs = p.highContrastTelegraphs; largeUi = p.largeUi; reducedFlashes = p.reducedFlashes;

@@ -13,7 +13,7 @@ actual mobile acceptance remains pending. No store entry was submitted.
 | Platform | Android, minimum API 26, target API 36 |
 | Orientation | Portrait gameplay; large-screen behavior requires device verification |
 | Proposed category | Game / Action; owner review pending |
-| Language of current UI/copy | English |
+| In-game UI languages | English and Turkish; explicit first-launch choice and in-game switching |
 | Player mode | Single player; local progression, no account/sign-in |
 | Connectivity | Core game designed for offline play; optional ads/consent need connectivity when enabled |
 | Purchases | No in-app billing integration; upgrades use earned salvage |

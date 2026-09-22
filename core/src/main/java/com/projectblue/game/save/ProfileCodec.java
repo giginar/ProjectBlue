@@ -27,6 +27,7 @@ public final class ProfileCodec {
         put(fields, "adSessions", p.adSessions); put(fields, "adCompletions", p.adCompletions);
         put(fields, "lastInterstitialAt", p.lastInterstitialAt);
         put(fields, "soundEnabled", p.soundEnabled); put(fields, "musicEnabled", p.musicEnabled);
+        put(fields, "language", p.language == null ? "" : p.language);
         put(fields, "muted", p.muted);
         put(fields, "soundVolume", p.soundVolume); put(fields, "musicVolume", p.musicVolume);
         put(fields, "bestScore", p.bestScore); put(fields, "bestStars", p.bestStars);
@@ -91,6 +92,7 @@ public final class ProfileCodec {
                 p.lastInterstitialAt = Math.max(0, Long.parseLong(fields.getProperty("lastInterstitialAt", "0")));
                 // These comfort fields were added as optional current-schema extensions so old v5 saves remain valid.
                 p.muted = optionalBool(fields, "muted", false);
+                p.language = fields.getProperty("language", "");
                 p.hapticEnabled = optionalBool(fields, "hapticEnabled", true);
                 p.screenShakeEnabled = optionalBool(fields, "screenShakeEnabled", true);
                 p.highContrastTelegraphs = optionalBool(fields, "highContrastTelegraphs", false);

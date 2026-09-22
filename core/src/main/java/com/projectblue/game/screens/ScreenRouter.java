@@ -11,7 +11,7 @@ import com.projectblue.game.platform.InterstitialPolicy;
 
 /** Transitions commit after render, so a screen can never dispose itself mid-frame. */
 public final class ScreenRouter {
-    public enum Route { MENU, LEVEL_SELECT, HANGAR, SUBMARINE_SELECT, PILOT_SELECT, WEAPON_SELECT, UPGRADES, ACHIEVEMENTS, SETTINGS, CREDITS, PRIVACY, FINALE, PLAY, PAUSE, RESUME, CONTINUE, RESULT, EXIT }
+    public enum Route { LANGUAGE, MENU, LEVEL_SELECT, HANGAR, SUBMARINE_SELECT, PILOT_SELECT, WEAPON_SELECT, UPGRADES, ACHIEVEMENTS, SETTINGS, CREDITS, PRIVACY, FINALE, PLAY, PAUSE, RESUME, CONTINUE, RESULT, EXIT }
     private final ProjectBlueGame game;
     private GameScreen run;
     private Route pending;
@@ -67,7 +67,7 @@ public final class ScreenRouter {
         Route route = pending; pending = null;
         if (lifecyclePaused && (route == Route.PLAY || route == Route.RESUME)) return;
         switch (route) {
-            case MENU, LEVEL_SELECT, HANGAR, SUBMARINE_SELECT, PILOT_SELECT, WEAPON_SELECT, UPGRADES, ACHIEVEMENTS, SETTINGS, CREDITS, PRIVACY, FINALE -> {
+            case LANGUAGE, MENU, LEVEL_SELECT, HANGAR, SUBMARINE_SELECT, PILOT_SELECT, WEAPON_SELECT, UPGRADES, ACHIEVEMENTS, SETTINGS, CREDITS, PRIVACY, FINALE -> {
                 game.audio().resume(); switchTo(menu(route)); disposeRun();
             }
             case PLAY -> {
@@ -109,11 +109,11 @@ public final class ScreenRouter {
                     game.platform().ads().preload();
                     String unlocked = "";
                     if (recordResult == com.projectblue.game.save.SaveService.RecordResult.SAVE_FAILED)
-                        unlocked += "Progress is retained in memory. Retry Save in Settings before exiting. ";
+                        unlocked += game.i18n().text("result.save_failed") + " ";
                     else if (recordResult == com.projectblue.game.save.SaveService.RecordResult.REJECTED)
-                        unlocked += "Result was rejected and progression was not changed. ";
-                    if (!levelWasOpen && profile.canPlay(nextLevel, Difficulty.NORMAL)) unlocked += "Sector " + nextLevel + " unlocked. ";
-                    if (!difficultyWasOpen && nextDifficulty != null && profile.canPlay(result.levelId, nextDifficulty)) unlocked += nextDifficulty + " unlocked for this sector.";
+                        unlocked += game.i18n().text("result.rejected") + " ";
+                    if (!levelWasOpen && profile.canPlay(nextLevel, Difficulty.NORMAL)) unlocked += game.i18n().text("result.sector_unlocked", nextLevel) + " ";
+                    if (!difficultyWasOpen && nextDifficulty != null && profile.canPlay(result.levelId, nextDifficulty)) unlocked += game.i18n().text("result.difficulty_unlocked", game.i18n().text("difficulty." + nextDifficulty));
                     if (result.completed && result.levelId==CampaignConfig.LEVEL_COUNT) switchTo(new FinaleScreen(game));
                     else switchTo(new ResultScreen(game, result, unlocked));
                     // Keep the frozen world until leaving the result, for one optional continue.
@@ -124,6 +124,7 @@ public final class ScreenRouter {
     }
     private Screen menu(Route route) {
         return switch (route) {
+            case LANGUAGE -> new LanguageSelectScreen(game);
             case MENU -> new MainMenuScreen(game);
             case LEVEL_SELECT -> new LevelSelectScreen(game);
             case HANGAR -> new HangarScreen(game);

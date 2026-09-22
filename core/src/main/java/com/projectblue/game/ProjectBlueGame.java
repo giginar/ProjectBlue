@@ -13,6 +13,7 @@ import com.projectblue.game.screens.*;
 import com.projectblue.game.ui.UiPainter;
 import com.projectblue.game.ui.MenuTheme;
 import com.projectblue.game.ui.AchievementToast;
+import com.projectblue.game.i18n.*;
 
 /** Composition root. Owns global services and GPU resources for the whole application lifetime. */
 public class ProjectBlueGame extends Game {
@@ -25,13 +26,15 @@ public class ProjectBlueGame extends Game {
     private ScreenRouter router;
     private MenuTheme menuTheme;
     private AchievementToast achievementToast;
+    private Localization localization;
     public ProjectBlueGame(PlatformService platform) { this.platform = platform; }
     public void create() {
         saves = new SaveService(new GdxSaveStore(Gdx.files.absolute(platform.saveDirectory())));
+        localization = new Localization(saves.profile().language);
         assets = new GameAssets();
         audio = new AudioService(saves.profile());
         ui = new UiPainter();
-        achievementToast = new AchievementToast(new LocalAchievementService(saves), ui);
+        achievementToast = new AchievementToast(new LocalAchievementService(saves), ui, localization);
         ocean = new OceanRenderer(ui);
         router = new ScreenRouter(this);
         Gdx.input.setCatchKey(Input.Keys.BACK, true);
@@ -76,4 +79,8 @@ public class ProjectBlueGame extends Game {
     public AudioService audio() { return audio; }
     public ScreenRouter router() { return router; }
     public PlatformService platform() { return platform; }
+    public Localization i18n() { return localization; }
+    public void chooseLanguage(GameLanguage language) {
+        localization.setLanguage(language); saves.profile().language = language.id(); saves.save();
+    }
 }
