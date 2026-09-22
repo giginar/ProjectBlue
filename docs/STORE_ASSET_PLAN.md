@@ -9,11 +9,11 @@ Store art should show ocean restoration, readable submarine silhouettes and the 
 | Deliverable | Specification | Status |
 |---|---|---|
 | Master app icon | 1024 by 1024 PNG, no transparency, simple original submarine/sonar mark, readable at 48 px | Placeholder specification only |
-| Google Play icon export | 512 by 512, 32-bit PNG with alpha, maximum 1024 KB; separate export from the master | Missing |
+| Google Play icon export | 512 by 512 PNG, maximum 1024 KB; separate export from the master | Ready at `store/assets/google-play/ocean-guard/app-icon-512.png` |
 | Android adaptive icon | 432 by 432 foreground safe within the central 264 px; separate solid/gradient background; monochrome vector | Missing; legacy `ic_blue.xml` is a prototype |
 | Android splash | Android 12 SplashScreen-compatible centered mark, deep-ink background, no small text | Missing; use the icon mark until approved |
-| Feature graphic | 1024 by 500 JPEG or 24-bit PNG without alpha, no store badges, minimal copy, restored/polluted ocean split | Missing |
-| Phone screenshots | At least six portrait captures, recommended 1080 by 1920 or higher | Smoke captures exist only for QA and are not store-ready |
+| Feature graphic | 1024 by 500 JPEG or 24-bit PNG without alpha, no store badges, minimal copy | Ready at `store/assets/google-play/ocean-guard/feature-graphic-1024x500.png` |
+| Phone screenshots | At least six portrait captures, recommended 1080 by 1920 or higher | Seven 1080 by 1920 exports ready under `store/assets/google-play/ocean-guard/screenshots/` |
 | Short description | One sentence about restoring ten ocean sectors | Copy review required |
 | Full description | Original feature list, accessibility settings, offline/privacy behavior and supported devices | Copy review required |
 | Privacy policy location | Public policy page matching the in-app Privacy screen before any public release | Missing external page |

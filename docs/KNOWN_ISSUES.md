@@ -11,7 +11,7 @@ approval.
 | RB-01 | Still a release blocker. The release AAB builds and validates but is unsigned; no owner upload key, Play package ownership check or Play version-code check was supplied. |
 | RB-02 | Narrowed, not closed. Static 16 KB packaging and all ELF LOAD alignments pass, and API 29/API 36 runtime checks pass. API 26 and an actual 16 KB kernel remain **MANUAL VERIFICATION REQUIRED**, as do tablet/foldable and human campaign coverage. |
 | RB-03 | Unchanged owner/Play Console blocker: privacy URL, audience decision, declarations, rating and account inputs remain absent. |
-| RB-04 | Unchanged owner/content blocker: approved store icon, feature graphic and final screenshots remain absent. |
+| RB-04 | Resolved: Play icon, feature graphic and seven final screenshots were exported under `store/assets/google-play/ocean-guard/`. |
 | HP-01 | Unchanged. Automated routes do not prove ordinary-input clears, boss completion or progression unlocks. |
 | HP-02 | Technical layout portion fixed. The compact menu now preserves its status/build rows at 720x1280 without shrinking fonts. The sonar visual remains 108x56 logical units, while its independent hit rectangle is now 132x72 logical units (88x48 dp at 360 dp width); the pause hit rectangle remains 96x96 logical units (64x64 dp). Human touch feel and simultaneous two-finger input remain manual. |
 | HP-03 | Narrowed. Forced-EEA first form, reject, Privacy Options reopen, accept, restart persistence, error fallback and a real rewarded test ad passed with Google's test mechanisms. A real interstitial at the production policy boundary, early ad dismissal and background/process death during forms/ads remain manual. Production ads remain disabled and unconfigured. |
@@ -32,7 +32,7 @@ These findings describe the inspected working tree, including pre-existing uncom
 | RB-01 | The generated release AAB is unsigned. No upload signing environment was provided; Play package ownership and highest uploaded versionCode are unverified. | Provision the owner's existing upload key through secret storage, confirm package/version, build and verify the signed AAB, and retain its matching R8 mapping. Do not create or commit a key during QA. |
 | RB-02 | Debug and local minified QA APKs ran on API 29 hardware and an API 36 emulator, but the minimum API 26, 16 KB page-size environment, tablet/foldable and full human campaign/boss routes remain unverified. | Pass the remaining mandatory rows using APKs generated from the final signed AAB, including API 26, 16 KB, full campaign/boss, context-loss and extended-soak coverage. |
 | RB-03 | Privacy/support Pages are prepared with Blueborn Games and ykucukcinar@gmail.com, but the URLs are not verified live. Legal developer identity, audience decision, content rating and the Play Data Safety declaration remain open. | Activate GitHub Pages, verify the expected URLs, resolve `LEGAL NAME INPUT REQUIRED`, reconcile declarations with the final binary and SDK configuration, and complete Play Console requirements. |
-| RB-04 | Required approved store exports are absent: Play icon, feature graphic and actual device screenshots. Existing smoke captures are QA evidence only. | Produce accurate original store assets, record their provenance, review the listing and upload accepted exports. See [listing data](STORE_LISTING_DATA.md). |
+| RB-04 | Resolved: required Play icon, feature graphic and seven accurate game screenshots are present. | Review the listing and upload the accepted exports. See [listing data](STORE_LISTING_DATA.md). |
 
 ## High priority
 

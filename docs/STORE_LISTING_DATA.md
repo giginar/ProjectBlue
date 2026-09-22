@@ -64,9 +64,9 @@ configuration. Do not publish this drafting instruction as store copy.
 
 | Export | Specification / plan | Current status |
 |---|---|---|
-| Play icon | 512 x 512, 32-bit PNG with alpha, at most 1024 KB | Missing approved export; launcher vector is not this file |
-| Feature graphic | 1024 x 500, JPEG or 24-bit PNG without alpha | Missing |
-| Phone screenshots | Accurate final Android captures; planned six: restoration gameplay, boss warning, sector selection, hangar, upgrades, results | Missing approved device captures |
+| Play icon | 512 x 512 PNG, at most 1024 KB | Ready at `store/assets/google-play/ocean-guard/app-icon-512.png` |
+| Feature graphic | 1024 x 500, JPEG or 24-bit PNG without alpha | Ready at `store/assets/google-play/ocean-guard/feature-graphic-1024x500.png` |
+| Phone screenshots | Seven accurate 1080 x 1920 game captures | Ready under `store/assets/google-play/ocean-guard/screenshots/` |
 | Master art source | Reproducible/layered source with provenance and export settings | Pending |
 
 Icon/feature specifications above follow the current

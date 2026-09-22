@@ -1,7 +1,7 @@
 # Asset audit
 
 Audit date: 2026-09-19. Custom packaged asset gate: **PASS**.
-Store asset readiness: **BLOCKED**; see RB-04 in [known issues](KNOWN_ISSUES.md).
+Store asset readiness: **READY FOR PLAY CONSOLE REVIEW**; exports are under `store/assets/google-play/ocean-guard/`.
 
 ## Scope and method
 
@@ -43,7 +43,7 @@ hash keys and missing documented paths fail `verifyAssetLicenses`.
 | Emergency fallback font | Embedded libGDX default font, used only if custom font loading fails | Dependency asset under libGDX Apache 2.0; recorded separately; not copied into `assets/` |
 | Android/AdMob/UMP library resources | Resolved Gradle dependencies | Dependency-owned resources, not authored game/store art. Their own distribution terms remain applicable; preserve notices. The five-file game allowlist does not replace a dependency license review. |
 | QA screenshots | Ignored `build/smoke/` | Actual desktop smoke output; not packaged and not approved for store use |
-| Store icon / feature graphic / phone screenshots / promotional audio | No approved export directory or exports present | Missing; do not list specifications or QA captures as delivered assets |
+| Store icon / feature graphic / phone screenshots | `store/assets/google-play/ocean-guard/` | Original generated icon and feature graphic plus seven final 1080 x 1920 game captures; provenance recorded |
 
 Source inspection found no evidence of copied Sky Force or other game content. The five
 reproducible asset hashes establish their local generator provenance; this is not a universal
