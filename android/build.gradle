@@ -216,7 +216,7 @@ def packageInternalGooglePlayBundle = tasks.register('packageInternalGooglePlayB
         new File(outputDirectory, bundleName + '.sha256').setText(checksum + '  ' + bundleName + '\n', 'UTF-8')
 
         def r8Directory = layout.buildDirectory.dir('outputs/mapping/release').get().asFile
-        ['mapping.txt', 'configuration.txt', 'seeds.txt', 'usage.txt'].each { reportName ->
+        ['mapping.txt', 'configuration.txt', 'resources.txt', 'seeds.txt', 'usage.txt'].each { reportName ->
             def report = new File(r8Directory, reportName)
             if (report.exists()) {
                 def destination = new File(outputDirectory,

@@ -88,7 +88,7 @@ Load the dedicated Ocean Guard upload key from the external DPAPI-protected stor
 `OCEANGUARD_UPLOAD_KEYSTORE`, `OCEANGUARD_UPLOAD_KEY_ALIAS`,
 `OCEANGUARD_UPLOAD_STORE_PASSWORD`, `OCEANGUARD_UPLOAD_KEY_PASSWORD`. All four are required
 together. Do not echo values, put passwords in commands, share keys in chat or commit signing
-material. Never use Project Blue: Deep Drift signing material for Ocean Guard.
+material. Do not reuse another application's signing material for Ocean Guard.
 See [signing instructions](RELEASE_SIGNING.md).
 
 Build `:android:packageInternalGooglePlayBundle` with the final environment. This task requires a

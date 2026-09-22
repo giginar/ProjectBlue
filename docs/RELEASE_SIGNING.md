@@ -36,8 +36,8 @@ signing/ad/secret property files, `.env` files, private keys and keystores. Run
 
 Google's [app signing guide](https://developer.android.com/studio/publish/app-signing) distinguishes
 the **upload key** from the **app signing key** managed by Play App Signing. Ocean Guard uses its
-own upload key and must never use Project Blue: Deep Drift signing material. Keep an independent,
-secure backup of the Ocean Guard key and recovery information before production publishing.
+own dedicated upload key. Keep an independent, secure backup of the Ocean Guard key and recovery
+information before production publishing.
 An AdMob ID is not a private credential, but this project still requires production identifiers
 to stay out of source/Git. Generated build outputs contain them when production ads are enabled.
 
