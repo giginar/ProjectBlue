@@ -75,7 +75,7 @@ android {
             buildConfigField 'String', 'INTERSTITIAL_AD_ID', '"' + (releaseAds ? envValue('PB_INTERSTITIAL_AD_ID') : '') + '"'
             buildConfigField 'String', 'UMP_DEBUG_GEOGRAPHY', '""'
             buildConfigField 'String', 'UMP_TEST_DEVICE_ID', '""'
-            if (hasSigning) signingConfig signingConfigs.upload
+            if (hasSigning) signingConfig = signingConfigs.upload
         }
         qa {
             initWith release
@@ -197,6 +197,7 @@ tasks.register('dumpReleaseBundleConfig', JavaExec) {
     args 'dump', 'config', '--bundle=' + layout.buildDirectory.file('outputs/bundle/release/android-release.aab').get().asFile.absolutePath
 }
 
+def versionInfo = rootProject.buildVersion
 def internalGooglePlayDirectory = rootProject.layout.buildDirectory.dir('store/google-play')
 def packageInternalGooglePlayBundle = tasks.register('packageInternalGooglePlayBundle') {
     group = 'distribution'
@@ -239,7 +240,6 @@ gradle.taskGraph.whenReady { graph ->
 }
 
 // Keep the AGP output unchanged; export a versioned, self-describing test package.
-def versionInfo = rootProject.buildVersion
 def exportDirectory = rootProject.layout.buildDirectory.dir("artifacts/${versionInfo.versionName}")
 tasks.register('packageDebugApk') {
     group = 'distribution'
