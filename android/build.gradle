@@ -23,9 +23,12 @@ if (releaseAds) {
     }
     if (!ageTreatment || !umpUnderAge) throw new GradleException('Release ads require explicit audience settings: PB_AD_AGE_TREATMENT and PB_UMP_UNDER_AGE')
 }
-def signingNames = ['PB_UPLOAD_KEYSTORE', 'PB_UPLOAD_KEY_ALIAS', 'PB_UPLOAD_STORE_PASSWORD', 'PB_UPLOAD_KEY_PASSWORD']
+def signingNames = ['OCEANGUARD_UPLOAD_KEYSTORE', 'OCEANGUARD_UPLOAD_KEY_ALIAS',
+                    'OCEANGUARD_UPLOAD_STORE_PASSWORD', 'OCEANGUARD_UPLOAD_KEY_PASSWORD']
 def hasSigning = signingNames.every { envValue(it) }
-if (signingNames.any { envValue(it) } && !hasSigning) throw new GradleException('Incomplete upload signing environment')
+if (signingNames.any { envValue(it) } && !hasSigning) {
+    throw new GradleException('Incomplete Ocean Guard upload signing environment; set all four OCEANGUARD_UPLOAD_* variables')
+}
 android {
     buildFeatures { buildConfig = true }
     namespace = 'com.projectblue.game'
@@ -43,10 +46,10 @@ android {
     signingConfigs {
         if (hasSigning) {
             upload {
-                storeFile = file(envValue('PB_UPLOAD_KEYSTORE'))
-                keyAlias = envValue('PB_UPLOAD_KEY_ALIAS')
-                storePassword = envValue('PB_UPLOAD_STORE_PASSWORD')
-                keyPassword = envValue('PB_UPLOAD_KEY_PASSWORD')
+                storeFile = file(envValue('OCEANGUARD_UPLOAD_KEYSTORE'))
+                keyAlias = envValue('OCEANGUARD_UPLOAD_KEY_ALIAS')
+                storePassword = envValue('OCEANGUARD_UPLOAD_STORE_PASSWORD')
+                keyPassword = envValue('OCEANGUARD_UPLOAD_KEY_PASSWORD')
             }
         }
     }
@@ -192,6 +195,47 @@ tasks.register('dumpReleaseBundleConfig', JavaExec) {
     classpath = buildscript.configurations.classpath
     mainClass = 'com.android.tools.build.bundletool.BundleToolMain'
     args 'dump', 'config', '--bundle=' + layout.buildDirectory.file('outputs/bundle/release/android-release.aab').get().asFile.absolutePath
+}
+
+def internalGooglePlayDirectory = rootProject.layout.buildDirectory.dir('store/google-play')
+def packageInternalGooglePlayBundle = tasks.register('packageInternalGooglePlayBundle') {
+    group = 'distribution'
+    description = 'Build and preserve the signed, test-ad Google Play internal-testing bundle and R8 artifacts.'
+    dependsOn 'verifyReleaseBundle', 'verifyReleaseArtifactApplicationId', rootProject.tasks.named('writeVersionInfo')
+    doLast {
+        def outputDirectory = internalGooglePlayDirectory.get().asFile
+        outputDirectory.mkdirs()
+        def sourceBundle = layout.buildDirectory.file('outputs/bundle/release/android-release.aab').get().asFile
+        def bundleName = "ProjectBlue-OceanGuard-${versionInfo.versionName}-internal-google-play.aab"
+        def outputBundle = new File(outputDirectory, bundleName)
+        java.nio.file.Files.copy(sourceBundle.toPath(), outputBundle.toPath(),
+            java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        def checksum = java.security.MessageDigest.getInstance('SHA-256')
+            .digest(outputBundle.bytes).encodeHex().toString()
+        new File(outputDirectory, bundleName + '.sha256').setText(checksum + '  ' + bundleName + '\n', 'UTF-8')
+
+        def r8Directory = layout.buildDirectory.dir('outputs/mapping/release').get().asFile
+        ['mapping.txt', 'configuration.txt', 'seeds.txt', 'usage.txt'].each { reportName ->
+            def report = new File(r8Directory, reportName)
+            if (report.exists()) {
+                def destination = new File(outputDirectory,
+                    "ProjectBlue-OceanGuard-${versionInfo.versionName}-${reportName}")
+                java.nio.file.Files.copy(report.toPath(), destination.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+            }
+        }
+        logger.lifecycle("Google Play internal-testing AAB ready: ${outputBundle}")
+    }
+}
+gradle.taskGraph.whenReady { graph ->
+    if (graph.hasTask(packageInternalGooglePlayBundle.get())) {
+        if (!hasSigning) {
+            throw new GradleException('Google Play internal packaging requires all four OCEANGUARD_UPLOAD_* signing variables')
+        }
+        if (releaseAds) {
+            throw new GradleException('Google Play internal packaging requires test/demo advertising configuration; unset PB_ADS_ENABLED')
+        }
+    }
 }
 
 // Keep the AGP output unchanged; export a versioned, self-describing test package.

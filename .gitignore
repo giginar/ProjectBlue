@@ -12,8 +12,13 @@ dist/
 *.jks
 *.keystore
 *.p12
+*.pfx
+*.pkcs12
 *.pem
 *.key
+*.dpapi.json
+credentials.dpapi.json
+load-signing-env.ps1
 keystore.properties
 signing.properties
 ads.properties
@@ -22,3 +27,4 @@ secrets.properties
 .env
 .env.*
 secrets/
+/signing/
