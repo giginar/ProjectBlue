@@ -5,7 +5,7 @@
 Debug can now receive `PB_UMP_DEBUG_GEOGRAPHY` and `PB_UMP_TEST_DEVICE_ID` from the local
 environment. Geography accepts only `EEA`, `NOT_EEA`, `REGULATED_US_STATE` or `OTHER`; the
 optional device hash must be 32 hexadecimal characters. `BuildConfig.DEBUG` gates their use.
-QA and release hardcode both fields to empty, and `verifyDebugAdConfiguration` checks that
+QA, internalTest and release hardcode both fields to empty, and `verifyAdConfigurations` checks that
 separation. No `consentInformation.reset()` call exists in production source.
 
 The physical device's hash was read from UMP logcat and supplied transiently; it was not stored.
@@ -90,7 +90,11 @@ guided by Google's [interstitial guidance](https://developers.google.com/admob/a
 
 Debug always uses the official sample App ID and rewarded/interstitial units from Google's
 [test IDs](https://developers.google.com/admob/android/test-ads); environment-provided production
-IDs cannot override debug. Production values must be supplied through environment variables:
+IDs cannot override debug. The separate `internalTest` build type inherits release optimization,
+resource shrinking, ProGuard rules, native packaging and signing, while fixing `ADS_MODE=TEST`,
+`ADS_ENABLED=true` and the same three exact official Google identifiers. It has no application ID
+suffix and is non-debuggable. QA and disabled release use No-Op services and do not construct UMP
+or Google Mobile Ads adapters. Production values must be supplied through environment variables:
 
 | Variable | Meaning |
 | --- | --- |
@@ -101,16 +105,26 @@ IDs cannot override debug. Production values must be supplied through environmen
 | `PB_AD_AGE_TREATMENT` | Explicit `UNSPECIFIED`, `CHILD`, or `TEEN` |
 | `PB_UMP_UNDER_AGE` | Explicit `true` or `false` for UMP's under-age setting |
 
-Release enabling requires all identifiers and both audience settings; no age is inferred.
+Release enabling requires all identifiers and both audience settings; no age is inferred. The
+production guard rejects the Google sample publisher and every allowlisted test identifier.
+The internalTest policy accepts only the exact App ID, rewarded ID and interstitial ID in its
+central allowlist; arbitrary or production-shaped values fail its policy test.
 Google's [targeting guide](https://developers.google.com/admob/android/targeting) documents
 `AgeRestrictedTreatment` as the replacement for deprecated TFCD/TFUA ad request flags. UMP's
 separate under-age setting is not inferred from it. The ad-content ceiling is G. Mixed-age
 products requiring per-user age decisions need an owner-approved age flow before enabling ads;
 the current configuration is app-wide. Unknown debug audience settings leave SDK defaults unset.
 
-With ads disabled, release does not request consent/ads or initialize MobileAds through app code.
-It retains the sample App ID for SDK manifest validation; no production IDs are generated.
-Do not publish the verification artifact as a configured advertising release.
+With ads disabled, release has empty ad identifiers, does not construct UMP/GMA adapters, request
+consent/ads, or initialize MobileAds through app code. It never falls back to test identifiers.
+Do not publish a disabled verification artifact as a configured advertising release.
+
+| Variant | Package | Signing | Ads |
+| --- | --- | --- | --- |
+| debug | `com.game.diver.oceanguard` | debug | TEST |
+| qa | `com.game.diver.oceanguard.qa` | debug | DISABLED |
+| internalTest | `com.game.diver.oceanguard` | Ocean Guard upload key | TEST |
+| release | `com.game.diver.oceanguard` | Ocean Guard upload key | DISABLED, or external production config |
 
 ## Google Play Games extension
 
@@ -128,7 +142,7 @@ achievement ID/type mappings, tester accounts, and an approved sign-in experienc
 
 `AdsIntegrationTest` covers earned/closed/failed/duplicate/stale callbacks, restart replay,
 save failures, one continue, incremental results, caps, consent permission, and desktop No-Op/offline logic.
-Run `gradlew.bat :core:test :android:verifyDebugAdConfiguration` and
+Run `gradlew.bat :core:test :android:verifyAdConfigurations :android:lintInternalTest` and
 `powershell -File tools/verify-release-inputs.ps1`.
 
 The 2026-09-19 local device pass used only Google's official sample identifiers. UMP ran on the
@@ -139,7 +153,10 @@ interstitial load error 0 without blocking menus or Blue Coast gameplay. A devic
 stale Pause HUD label after continue was fixed by immediately refreshing cached HUD text and is
 covered by `HudTest`.
 
-**MANUAL VERIFICATION REQUIRED:** forced EEA consent/denial/Privacy Options, early rewarded
+The distributed internalTest build contains no forced EEA geography or test-device hash. A sample
+App ID may not have a privacy message configured for every device/region. **MANUAL VERIFICATION
+REQUIRED:** actual internalTest UMP form visibility, Privacy Options visibility, forced EEA
+consent/denial in a local debug build, early rewarded
 dismissal through the real SDK, background/process death during the ad/form, and a real
 interstitial after the three-win/session cooldown. Production identifiers were not supplied or
 shown, and the minified QA build keeps ads disabled.

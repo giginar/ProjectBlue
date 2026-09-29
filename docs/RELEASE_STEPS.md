@@ -31,7 +31,7 @@ AGP/Gradle pair is 8.13.2/8.13. The target API must satisfy the current
 Run each command and check its exit status before proceeding:
 
 ```powershell
-.\gradlew.bat :check :lwjgl3:build :android:testDebugUnitTest :android:lintDebug :android:lintRelease :android:verifyDebugAdConfiguration :android:assembleDebug :android:bundleRelease :android:verifyReleaseBundle --rerun-tasks --warning-mode all
+.\gradlew.bat :check :lwjgl3:build :android:testDebugUnitTest :android:lintDebug :android:lintQa :android:lintInternalTest :android:lintRelease :android:verifyAdConfigurations :android:assembleDebug :android:assembleQa :android:bundleInternalTest --rerun-tasks --warning-mode all
 .\gradlew.bat :lwjgl3:run --args=--smoke
 .\gradlew.bat :lwjgl3:run --args=--smoke-reload
 powershell -NoProfile -File tools/test-asset-licenses.ps1
@@ -53,11 +53,11 @@ temporary Git commits and was deliberately omitted from this no-commit audit.
 
 ## 3. Select the final advertising/privacy configuration
 
-Debug uses official demo App ID and units, verified by the Gradle task. Never test by
+Debug and the non-debuggable `internalTest` variant use the exact official demo App ID and units,
+verified by the Gradle task. Never test by
 clicking live ads. See [Google test ads](https://developers.google.com/admob/android/test-ads).
-Release ads remain disabled unless the owner chooses and provisions them. The disabled
-build retains a sample App ID for SDK manifest validation and empty ad unit IDs; it is
-not a configured advertising release.
+Release ads remain disabled unless the owner chooses and provisions them. Disabled release and QA
+use empty identifiers and No-Op platform services. They are not configured advertising releases.
 
 For advertising, provide `PB_ADS_ENABLED`, `PB_ADMOB_APP_ID`, `PB_REWARDED_AD_ID`,
 `PB_INTERSTITIAL_AD_ID`, `PB_AD_AGE_TREATMENT` and `PB_UMP_UNDER_AGE` through the local/CI
@@ -91,12 +91,12 @@ together. Do not echo values, put passwords in commands, share keys in chat or c
 material. Do not reuse another application's signing material for Ocean Guard.
 See [signing instructions](RELEASE_SIGNING.md).
 
-Build `:android:packageInternalGooglePlayBundle` with the final environment. This task requires a
-signed release and rejects production ads for the internal-testing artifact.
+Build `:android:packageInternalGooglePlayBundle` with the final environment. This task builds the
+signed `internalTest` variant, whose fixed central allowlist rejects production or arbitrary IDs.
 Verify signing with `jarsigner -verify` and verify the expected certificate fingerprint
 against the owner's upload certificate. A successful `bundletool validate` does not check
 that the upload key is correct. Archive the AAB, SHA-256, version metadata and matching
-`android/build/outputs/mapping/release/mapping.txt` in controlled release storage.
+`android/build/outputs/mapping/internalTest/mapping.txt` in controlled release storage.
 
 The unsigned verification artifact currently lives at
 `android/build/outputs/bundle/release/android-release.aab`.

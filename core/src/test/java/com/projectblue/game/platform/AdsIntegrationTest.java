@@ -146,6 +146,14 @@ class AdsIntegrationTest {
         gate.update(false); gate.formOpen(false); assertFalse(gate.canRequestAds());
         gate.begin(); assertFalse(gate.canRequestAds());
     }
+    @Test void sdkInitializationIsSingleFlightAndRetriesOnlyAfterFailure() {
+        InitializationGate gate = new InitializationGate();
+        assertFalse(gate.ready()); assertTrue(gate.begin()); assertFalse(gate.begin());
+        gate.complete(false);
+        assertTrue(gate.begin()); assertFalse(gate.begin());
+        gate.complete(true);
+        assertTrue(gate.ready()); assertFalse(gate.begin());
+    }
     @Test void desktopNoOpAndOfflineBootNeedNoNetworkOrConsent() {
         NoOpPlatformService platform = new NoOpPlatformService(directory.toString());
         assertFalse(platform.ads().isRewardedAvailable()); assertFalse(platform.ads().isInterstitialAvailable());

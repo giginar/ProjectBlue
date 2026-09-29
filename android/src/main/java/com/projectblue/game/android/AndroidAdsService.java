@@ -9,6 +9,7 @@ import com.google.android.gms.ads.rewarded.*;
 import com.projectblue.game.BuildConfig;
 import com.projectblue.game.platform.AdsService;
 import com.projectblue.game.platform.ConsentService;
+import com.projectblue.game.platform.InitializationGate;
 import com.projectblue.game.platform.RewardedCompletion;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -22,7 +23,8 @@ public final class AndroidAdsService implements AdsService {
     private InterstitialAd interstitial;
     private volatile boolean rewardedReady, interstitialReady, showing, resumed, destroyed;
     private volatile long rewardedAt, interstitialAt;
-    private boolean initializing, initialized, loadingReward, loadingInterstitial;
+    private final InitializationGate initialization = new InitializationGate();
+    private boolean loadingReward, loadingInterstitial;
     private long nextRewardAttempt, nextInterstitialAttempt;
     private int consentGeneration;
     private boolean adsAllowed;
@@ -49,9 +51,8 @@ public final class AndroidAdsService implements AdsService {
     public void preload() { activity.runOnUiThread(this::load); }
     private void load() {
         if (!usable() || !BuildConfig.ADS_ENABLED) return;
-        if (!initialized) {
-            if (initializing) return;
-            initializing = true;
+        if (!initialization.ready()) {
+            if (!initialization.begin()) return;
             MobileAds.setRequestConfiguration(new RequestConfiguration.Builder()
                 .setAgeRestrictedTreatment(AgeRestrictedTreatment.valueOf(BuildConfig.AD_AGE_TREATMENT))
                 .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G).build());
@@ -59,9 +60,9 @@ public final class AndroidAdsService implements AdsService {
                 try {
                     MobileAds.initialize(activity.getApplicationContext(), status -> activity.runOnUiThread(() -> {
                         if (destroyed) return;
-                        initializing = false; initialized = true; load();
+                        initialization.complete(true); load();
                     }));
-                } catch (RuntimeException error) { activity.runOnUiThread(() -> initializing = false); }
+                } catch (RuntimeException error) { activity.runOnUiThread(() -> initialization.complete(false)); }
             }, "ads-initialization");
             initializer.start();
             return;

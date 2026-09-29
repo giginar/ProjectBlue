@@ -2,9 +2,12 @@ plugins { id 'com.android.application' version '8.13.2' }
 // Runtime identifiers are injected by the release environment, never stored in source files.
 def envValue = { String name -> providers.environmentVariable(name).getOrElse('') }
 def releaseAds = envValue('PB_ADS_ENABLED') == 'true'
-def sampleAppId = 'ca-app-pub-3940256099942544~3347511713'
-def sampleRewardId = 'ca-app-pub-3940256099942544/5224354917'
-def sampleInterstitialId = 'ca-app-pub-3940256099942544/1033173712'
+def googleTestAds = [
+    appId: 'ca-app-pub-3940256099942544~3347511713',
+    rewardedId: 'ca-app-pub-3940256099942544/5224354917',
+    interstitialId: 'ca-app-pub-3940256099942544/1033173712'
+].asImmutable()
+def samplePublisherId = '3940256099942544'
 def ageTreatment = envValue('PB_AD_AGE_TREATMENT')
 def umpUnderAge = envValue('PB_UMP_UNDER_AGE')
 def umpDebugGeography = envValue('PB_UMP_DEBUG_GEOGRAPHY')
@@ -15,14 +18,28 @@ if (umpDebugGeography && !(umpDebugGeography in ['EEA', 'NOT_EEA', 'REGULATED_US
     throw new GradleException('Invalid PB_UMP_DEBUG_GEOGRAPHY')
 if (umpTestDeviceId && !(umpTestDeviceId ==~ /[0-9A-Fa-f]{32}/))
     throw new GradleException('Invalid PB_UMP_TEST_DEVICE_ID')
-if (releaseAds) {
-    ['PB_ADMOB_APP_ID', 'PB_REWARDED_AD_ID', 'PB_INTERSTITIAL_AD_ID'].each { key ->
+def validateProductionAds = { boolean enabled, String appId, String rewardedId, String interstitialId ->
+    if (!enabled) return
+    def values = [PB_ADMOB_APP_ID: appId, PB_REWARDED_AD_ID: rewardedId, PB_INTERSTITIAL_AD_ID: interstitialId]
+    values.each { key, value ->
         def separator = key == 'PB_ADMOB_APP_ID' ? '~' : '/'
-        if (!(envValue(key) ==~ /ca-app-pub-[0-9]{16}${separator}[0-9]{10}/) || envValue(key).contains('3940256099942544'))
-            throw new GradleException("Missing or invalid production identifier: $key")
+        if (!(value ==~ /ca-app-pub-[0-9]{16}${separator}[0-9]{10}/) || value.contains(samplePublisherId)
+            || googleTestAds.values().contains(value)) {
+            throw new GradleException("Missing, invalid, or Google test production identifier: $key")
+        }
     }
+}
+def validateInternalTestAds = { String appId, String rewardedId, String interstitialId ->
+    def supplied = [appId: appId, rewardedId: rewardedId, interstitialId: interstitialId]
+    if (supplied != googleTestAds) {
+        throw new GradleException('internalTest accepts only the three exact official Google test identifiers')
+    }
+}
+if (releaseAds) {
+    validateProductionAds(true, envValue('PB_ADMOB_APP_ID'), envValue('PB_REWARDED_AD_ID'), envValue('PB_INTERSTITIAL_AD_ID'))
     if (!ageTreatment || !umpUnderAge) throw new GradleException('Release ads require explicit audience settings: PB_AD_AGE_TREATMENT and PB_UMP_UNDER_AGE')
 }
+validateInternalTestAds(googleTestAds.appId, googleTestAds.rewardedId, googleTestAds.interstitialId)
 def signingNames = ['OCEANGUARD_UPLOAD_KEYSTORE', 'OCEANGUARD_UPLOAD_KEY_ALIAS',
                     'OCEANGUARD_UPLOAD_STORE_PASSWORD', 'OCEANGUARD_UPLOAD_KEY_PASSWORD']
 def hasSigning = signingNames.every { envValue(it) }
@@ -55,10 +72,12 @@ android {
     }
     buildTypes {
         debug {
-            manifestPlaceholders = [admobAppId: sampleAppId]
+            manifestPlaceholders = [admobAppId: googleTestAds.appId]
             buildConfigField 'boolean', 'ADS_ENABLED', 'true'
-            buildConfigField 'String', 'REWARDED_AD_ID', '"' + sampleRewardId + '"'
-            buildConfigField 'String', 'INTERSTITIAL_AD_ID', '"' + sampleInterstitialId + '"'
+            buildConfigField 'String', 'ADS_MODE', '"TEST"'
+            buildConfigField 'String', 'ADMOB_APP_ID', '"' + googleTestAds.appId + '"'
+            buildConfigField 'String', 'REWARDED_AD_ID', '"' + googleTestAds.rewardedId + '"'
+            buildConfigField 'String', 'INTERSTITIAL_AD_ID', '"' + googleTestAds.interstitialId + '"'
             buildConfigField 'String', 'UMP_DEBUG_GEOGRAPHY', '"' + umpDebugGeography + '"'
             buildConfigField 'String', 'UMP_TEST_DEVICE_ID', '"' + umpTestDeviceId.toUpperCase(Locale.ROOT) + '"'
             minifyEnabled false
@@ -69,8 +88,10 @@ android {
             minifyEnabled true
             shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            manifestPlaceholders = [admobAppId: releaseAds ? envValue('PB_ADMOB_APP_ID') : sampleAppId]
+            manifestPlaceholders = [admobAppId: releaseAds ? envValue('PB_ADMOB_APP_ID') : '']
             buildConfigField 'boolean', 'ADS_ENABLED', releaseAds.toString()
+            buildConfigField 'String', 'ADS_MODE', '"' + (releaseAds ? 'PRODUCTION' : 'DISABLED') + '"'
+            buildConfigField 'String', 'ADMOB_APP_ID', '"' + (releaseAds ? envValue('PB_ADMOB_APP_ID') : '') + '"'
             buildConfigField 'String', 'REWARDED_AD_ID', '"' + (releaseAds ? envValue('PB_REWARDED_AD_ID') : '') + '"'
             buildConfigField 'String', 'INTERSTITIAL_AD_ID', '"' + (releaseAds ? envValue('PB_INTERSTITIAL_AD_ID') : '') + '"'
             buildConfigField 'String', 'UMP_DEBUG_GEOGRAPHY', '""'
@@ -82,10 +103,26 @@ android {
             applicationIdSuffix '.qa'
             versionNameSuffix '-qa'
             signingConfig = signingConfigs.debug
-            manifestPlaceholders = [admobAppId: sampleAppId]
+            manifestPlaceholders = [admobAppId: '']
             buildConfigField 'boolean', 'ADS_ENABLED', 'false'
+            buildConfigField 'String', 'ADS_MODE', '"DISABLED"'
+            buildConfigField 'String', 'ADMOB_APP_ID', '""'
             buildConfigField 'String', 'REWARDED_AD_ID', '""'
             buildConfigField 'String', 'INTERSTITIAL_AD_ID', '""'
+            matchingFallbacks = ['release']
+        }
+        internalTest {
+            initWith release
+            debuggable false
+            manifestPlaceholders = [admobAppId: googleTestAds.appId]
+            buildConfigField 'boolean', 'ADS_ENABLED', 'true'
+            buildConfigField 'String', 'ADS_MODE', '"TEST"'
+            buildConfigField 'String', 'ADMOB_APP_ID', '"' + googleTestAds.appId + '"'
+            buildConfigField 'String', 'REWARDED_AD_ID', '"' + googleTestAds.rewardedId + '"'
+            buildConfigField 'String', 'INTERSTITIAL_AD_ID', '"' + googleTestAds.interstitialId + '"'
+            buildConfigField 'String', 'UMP_DEBUG_GEOGRAPHY', '""'
+            buildConfigField 'String', 'UMP_TEST_DEVICE_ID', '""'
+            if (hasSigning) signingConfig = signingConfigs.upload
             matchingFallbacks = ['release']
         }
     }
@@ -129,32 +166,74 @@ tasks.register('extractNatives') {
 }
 tasks.named('preBuild') { dependsOn 'extractNatives', rootProject.tasks.named('verifyAssetLicenses') }
 
-tasks.register('verifyDebugAdConfiguration') {
+tasks.register('testAdConfigurationPolicy') {
     group = 'verification'
-    dependsOn 'generateDebugBuildConfig', 'generateQaBuildConfig', 'generateReleaseBuildConfig', 'processDebugManifest'
+    doLast {
+        validateInternalTestAds(googleTestAds.appId, googleTestAds.rewardedId, googleTestAds.interstitialId)
+        [[googleTestAds.appId, 'not-allowlisted', googleTestAds.interstitialId],
+         [googleTestAds.rewardedId, googleTestAds.rewardedId, googleTestAds.interstitialId]].each { invalid ->
+            try {
+                validateInternalTestAds(invalid[0], invalid[1], invalid[2])
+                throw new GradleException('internalTest policy accepted a non-allowlisted identifier')
+            } catch (GradleException expected) {
+                if (!expected.message.contains('accepts only')) throw expected
+            }
+        }
+        try {
+            validateProductionAds(true, googleTestAds.appId, googleTestAds.rewardedId, googleTestAds.interstitialId)
+            throw new GradleException('Release policy unexpectedly accepted identifiers')
+        } catch (GradleException expected) {
+            if (!expected.message.startsWith('Missing, invalid, or Google test production identifier:')) throw expected
+        }
+        validateProductionAds(false, '', '', '')
+        logger.lifecycle('Ad configuration policy tests passed.')
+    }
+}
+
+tasks.register('verifyAdConfigurations') {
+    group = 'verification'
+    dependsOn 'testAdConfigurationPolicy', 'generateDebugBuildConfig', 'generateQaBuildConfig',
+        'generateReleaseBuildConfig', 'generateInternalTestBuildConfig', 'processDebugManifest',
+        'processQaMainManifest', 'processReleaseMainManifest', 'processInternalTestMainManifest'
     doLast {
         def generated = layout.buildDirectory.file('generated/source/buildConfig/debug/com/projectblue/game/BuildConfig.java').get().asFile.text
-        if (!generated.contains('ADS_ENABLED = true') || !generated.contains(sampleRewardId) || !generated.contains(sampleInterstitialId))
+        if (!generated.contains('ADS_ENABLED = true') || !generated.contains('ADS_MODE = "TEST"')
+            || !generated.contains(googleTestAds.rewardedId) || !generated.contains(googleTestAds.interstitialId))
             throw new GradleException('Debug must use official Google demo ad units')
         def manifest = layout.buildDirectory.file('intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml').get().asFile
         if (!manifest.exists()) manifest = layout.buildDirectory.file('intermediates/merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml').get().asFile
-        if (!manifest.text.contains(sampleAppId)) throw new GradleException('Debug must use the official sample App ID')
-        ['qa', 'release'].each { variant ->
+        if (!manifest.text.contains(googleTestAds.appId)) throw new GradleException('Debug must use the official sample App ID')
+        ['qa', 'release', 'internalTest'].each { variant ->
             def production = layout.buildDirectory.file("generated/source/buildConfig/$variant/com/projectblue/game/BuildConfig.java").get().asFile.text
             if (!production.contains('UMP_DEBUG_GEOGRAPHY = ""') || !production.contains('UMP_TEST_DEVICE_ID = ""'))
                 throw new GradleException("$variant must not contain UMP debug settings")
             if (variant == 'qa' && (!production.contains('ADS_ENABLED = false')
+                || !production.contains('ADS_MODE = "DISABLED"') || !production.contains('ADMOB_APP_ID = ""')
                 || !production.contains('REWARDED_AD_ID = ""') || !production.contains('INTERSTITIAL_AD_ID = ""')))
                 throw new GradleException('QA must keep advertising disabled with empty ad units')
             if (variant == 'release' && !releaseAds && (!production.contains('ADS_ENABLED = false')
+                || !production.contains('ADS_MODE = "DISABLED"') || !production.contains('ADMOB_APP_ID = ""')
                 || !production.contains('REWARDED_AD_ID = ""') || !production.contains('INTERSTITIAL_AD_ID = ""')))
                 throw new GradleException('Disabled release must keep empty ad units')
+            if (variant == 'internalTest' && (!production.contains('ADS_ENABLED = true')
+                || !production.contains('ADS_MODE = "TEST"') || !production.contains(googleTestAds.appId)
+                || !production.contains(googleTestAds.rewardedId) || !production.contains(googleTestAds.interstitialId)))
+                throw new GradleException('internalTest must use the exact official Google test configuration')
+        }
+        def expectedPackages = [debug: 'com.game.diver.oceanguard', qa: 'com.game.diver.oceanguard.qa',
+            release: 'com.game.diver.oceanguard', internalTest: 'com.game.diver.oceanguard']
+        expectedPackages.each { variant, expected ->
+            def candidates = fileTree(layout.buildDirectory.dir('intermediates')).matching {
+                include "**/${variant}/**/AndroidManifest.xml"
+            }.files.findAll { it.text.contains('package="' + expected + '"') }
+            if (candidates.isEmpty()) throw new GradleException("$variant application ID must be $expected")
         }
         logger.lifecycle('Debug ad configuration verified against the official sample IDs.')
-        logger.lifecycle('QA/release disabled-mode and UMP debug separation verified.')
+        logger.lifecycle('QA/release/internalTest isolation, IDs, UMP settings, and application IDs verified.')
     }
 }
-tasks.named('check') { dependsOn 'verifyDebugAdConfiguration' }
+tasks.register('verifyDebugAdConfiguration') { dependsOn 'verifyAdConfigurations' }
+tasks.named('check') { dependsOn 'verifyAdConfigurations' }
 
 tasks.register('verifyReleaseBundle', JavaExec) {
     group = 'verification'
@@ -205,14 +284,44 @@ tasks.register('dumpReleaseBundleConfig', JavaExec) {
 
 def versionInfo = rootProject.buildVersion
 def internalGooglePlayDirectory = rootProject.layout.buildDirectory.dir('store/google-play')
+def internalTestBundle = { ->
+    def bundles = fileTree(layout.buildDirectory.dir('outputs/bundle/internalTest')).matching { include '*.aab' }.files
+    if (bundles.size() != 1) throw new GradleException("Expected one internalTest AAB, found ${bundles.size()}")
+    bundles.first()
+}
+def verifyInternalTestBundle = tasks.register('verifyInternalTestBundle', JavaExec) {
+    group = 'verification'
+    description = 'Validate the internalTest AAB with the bundletool version supplied by AGP.'
+    dependsOn 'bundleInternalTest'
+    classpath = buildscript.configurations.classpath
+    mainClass = 'com.android.tools.build.bundletool.BundleToolMain'
+    doFirst { args 'validate', '--bundle=' + internalTestBundle().absolutePath }
+}
+def verifyInternalTestArtifactApplicationId = tasks.register('verifyInternalTestArtifactApplicationId', JavaExec) {
+    group = 'verification'
+    dependsOn 'bundleInternalTest'
+    classpath = buildscript.configurations.classpath
+    mainClass = 'com.android.tools.build.bundletool.BundleToolMain'
+    def manifestOutput = new ByteArrayOutputStream()
+    standardOutput = manifestOutput
+    doFirst { args 'dump', 'manifest', '--bundle=' + internalTestBundle().absolutePath, '--module=base' }
+    doLast {
+        def text = manifestOutput.toString('UTF-8')
+        if (!(text =~ /package="com\.game\.diver\.oceanguard"/) || (text =~ /android:debuggable="true"/))
+            throw new GradleException('internalTest AAB must use the production application ID and be non-debuggable')
+    }
+}
 def packageInternalGooglePlayBundle = tasks.register('packageInternalGooglePlayBundle') {
     group = 'distribution'
     description = 'Build and preserve the signed, test-ad Google Play internal-testing bundle and R8 artifacts.'
-    dependsOn 'verifyReleaseBundle', 'verifyReleaseArtifactApplicationId', rootProject.tasks.named('writeVersionInfo')
+    dependsOn verifyInternalTestBundle, verifyInternalTestArtifactApplicationId, 'verifyAdConfigurations', rootProject.tasks.named('writeVersionInfo')
+    doFirst {
+        if (!hasSigning) throw new GradleException('Google Play internal packaging requires all four OCEANGUARD_UPLOAD_* signing variables')
+    }
     doLast {
         def outputDirectory = internalGooglePlayDirectory.get().asFile
         outputDirectory.mkdirs()
-        def sourceBundle = layout.buildDirectory.file('outputs/bundle/release/android-release.aab').get().asFile
+        def sourceBundle = internalTestBundle()
         def bundleName = "ProjectBlue-OceanGuard-${versionInfo.versionName}-internal-google-play.aab"
         def outputBundle = new File(outputDirectory, bundleName)
         java.nio.file.Files.copy(sourceBundle.toPath(), outputBundle.toPath(),
@@ -221,7 +330,7 @@ def packageInternalGooglePlayBundle = tasks.register('packageInternalGooglePlayB
             .digest(outputBundle.bytes).encodeHex().toString()
         new File(outputDirectory, bundleName + '.sha256').setText(checksum + '  ' + bundleName + '\n', 'UTF-8')
 
-        def r8Directory = layout.buildDirectory.dir('outputs/mapping/release').get().asFile
+        def r8Directory = layout.buildDirectory.dir('outputs/mapping/internalTest').get().asFile
         ['mapping.txt', 'configuration.txt', 'resources.txt', 'seeds.txt', 'usage.txt'].each { reportName ->
             def report = new File(r8Directory, reportName)
             if (report.exists()) {
@@ -232,16 +341,6 @@ def packageInternalGooglePlayBundle = tasks.register('packageInternalGooglePlayB
             }
         }
         logger.lifecycle("Google Play internal-testing AAB ready: ${outputBundle}")
-    }
-}
-gradle.taskGraph.whenReady { graph ->
-    if (graph.hasTask(packageInternalGooglePlayBundle.get())) {
-        if (!hasSigning) {
-            throw new GradleException('Google Play internal packaging requires all four OCEANGUARD_UPLOAD_* signing variables')
-        }
-        if (releaseAds) {
-            throw new GradleException('Google Play internal packaging requires test/demo advertising configuration; unset PB_ADS_ENABLED')
-        }
     }
 }
 

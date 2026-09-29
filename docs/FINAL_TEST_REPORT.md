@@ -438,3 +438,30 @@ audit's additional changes, not ownership of the entire working-tree diff.
 Detailed closure criteria are in [KNOWN_ISSUES.md](KNOWN_ISSUES.md). Until release blockers
 have evidence of closure, the decision remains **NOT READY FOR RELEASE**. No signing-key
 creation, store upload or publication was performed by this audit.
+## Build 27 internal-test advertising verification (2026-09-29)
+
+The Android build now includes a separate `internalTest` build type derived from `release`.
+It keeps `com.game.diver.oceanguard`, is non-debuggable, uses R8 and resource shrinking, and is
+signed only when the external Ocean Guard upload environment is present. Its central allowlist
+contains exactly Google's sample App ID, rewarded unit and interstitial unit. Production release
+remains disabled by default, uses empty identifiers in that state, and rejects Google's sample
+publisher whenever production ads are requested. QA is still disabled and uses the No-Op SDK path.
+
+Automated verification passed with 271 core tests, zero failures, zero errors and zero skipped.
+Root `check`, desktop build, desktop OpenGL smoke, separate-process save reload, Android debug APK,
+minified/resource-shrunk QA APK, debug/QA/internalTest lint, internalTest R8 AAB, bundletool
+validation, exact ad configuration tests, asset license/hash gates, release-input scans, Android
+artifact structure, signature presence and 64-bit ELF 16 KB alignment all passed. No long endurance
+test was run. The signed clean Build 27 artifact hash, certificate fingerprint and mapping hash are
+recorded in the task completion report generated after the single source commit.
+
+UMP is constructed only for ads-enabled builds. Each enabled Activity launch requests a consent
+information update; `canRequestAds()` gates initialization and loads. The initialization gate is
+single-flight and stays closed after success, while consent errors return control to the game.
+Privacy Options follows UMP's real requirement status. The distributed internalTest configuration
+contains no forced EEA geography or test-device ID.
+
+**MANUAL VERIFICATION REQUIRED:** the sample App ID may not have a privacy message configured for
+every test device or region. Verify real form and Privacy Options visibility, rewarded presentation
+and callback, the three-completion/ten-minute interstitial transition, background/process death
+during ads/forms, API 26, and an Android 15+ device with a 16 KB page-size kernel.

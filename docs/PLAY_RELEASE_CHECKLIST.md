@@ -22,6 +22,11 @@ Google Play store language or publishing countries; those owner decisions remain
 
 ## Technical release candidate update (2026-09-20)
 
+The Google Play Internal Testing artifact now has its own `internalTest` build type. It uses the
+production package and upload signing, inherits release R8/resource shrinking, and enables only
+Google's three exact official test identifiers. Production `release` remains disabled unless its
+external configuration is complete and rejects all sample identifiers.
+
 - [x] Fresh debug APK, R8/resource-shrunk QA APK and unsigned R8/resource-shrunk release AAB build.
 - [x] QA APK passes 16 KB ZIP alignment; every packaged `libgdx.so` LOAD segment is 16 KB aligned.
 - [x] Bundletool 1.18.1 reports `PAGE_ALIGNMENT_16K` for the release AAB.

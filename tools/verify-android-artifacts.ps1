@@ -4,15 +4,18 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $apk = Join-Path $projectRoot 'android/build/outputs/apk/debug/android-debug.apk'
-$bundle = Join-Path $projectRoot 'android/build/outputs/bundle/release/android-release.aab'
+$qaApk = Join-Path $projectRoot 'android/build/outputs/apk/qa/android-qa.apk'
+$bundles = @(Get-ChildItem -LiteralPath (Join-Path $projectRoot 'android/build/outputs/bundle/internalTest') -Filter '*.aab' -File)
+if ($bundles.Count -ne 1) { throw "Expected one internalTest AAB, found $($bundles.Count)." }
+$bundle = $bundles[0].FullName
 $expectedApplicationId = 'com.game.diver.oceanguard'
 $aapt = Join-Path $SdkPath 'build-tools/35.0.0/aapt.exe'
 $apkBadging = & $aapt dump badging $apk
 if ($LASTEXITCODE -ne 0 -or ($apkBadging -join "`n") -notmatch "package: name='$([regex]::Escape($expectedApplicationId))'") {
     throw "Debug APK application ID is not $expectedApplicationId."
 }
-& (Join-Path $projectRoot 'gradlew.bat') :android:verifyReleaseArtifactApplicationId --console=plain
-if ($LASTEXITCODE -ne 0) { throw "Release AAB application ID is not $expectedApplicationId." }
+& (Join-Path $projectRoot 'gradlew.bat') :android:verifyInternalTestArtifactApplicationId --console=plain
+if ($LASTEXITCODE -ne 0) { throw "internalTest AAB application ID is not $expectedApplicationId or is debuggable." }
 Write-Host "Android APK and AAB application IDs verified: $expectedApplicationId"
 & (Join-Path $SdkPath 'build-tools/35.0.0/apksigner.bat') verify $apk
 if ($LASTEXITCODE -ne 0) { throw 'Debug APK signature verification failed.' }
@@ -54,8 +57,12 @@ foreach ($archivePath in @($apk, $bundle)) {
                 if (-not $archive.GetEntry($required)) { throw "Bundle entry missing: $required" }
             }
             $signatures = @($archive.Entries | Where-Object { $_.FullName -match '^META-INF/.*\.(RSA|DSA|EC)$' })
-            Write-Host "Release AAB signature blocks: $($signatures.Count) (zero means unsigned verification artifact)."
+            if ($signatures.Count -eq 0) { throw 'internalTest AAB is unsigned.' }
+            Write-Host "internalTest AAB signature blocks: $($signatures.Count)."
         }
     } finally { $archive.Dispose() }
 }
-Write-Host 'Android artifact structure, debug signature, ZIP and 64-bit ELF alignment checks passed.'
+if (-not (Test-Path -LiteralPath $qaApk)) { throw "QA APK missing: $qaApk" }
+& (Join-Path $SdkPath 'build-tools/35.0.0/zipalign.exe') -c -P 16 4 $qaApk
+if ($LASTEXITCODE -ne 0) { throw 'QA APK 16 KB alignment verification failed.' }
+Write-Host 'Android artifact structure, signatures, ZIP and 64-bit ELF alignment checks passed.'
