@@ -40,7 +40,7 @@ public final class ScreenRouter {
         if (pending != null || transitionAd || rewards != null && rewards.busy()) return;
         boolean resultBoundary = game.getScreen() instanceof ResultScreen || game.getScreen() instanceof FinaleScreen;
         boolean menuDestination = route == Route.MENU || route == Route.LEVEL_SELECT || route == Route.HANGAR;
-        if (resultBoundary && menuDestination && !rewardedOnResult && !lifecyclePaused && rewards != null
+        if (InterstitialPolicy.allowedTransition(resultBoundary, menuDestination, rewardedOnResult, lifecyclePaused) && rewards != null
             && interstitials.reserve(game.saves().profile().runCompleted, game.platform().ads().isInterstitialAvailable())) {
             transitionAd = true;
             java.util.concurrent.atomic.AtomicBoolean once = new java.util.concurrent.atomic.AtomicBoolean();

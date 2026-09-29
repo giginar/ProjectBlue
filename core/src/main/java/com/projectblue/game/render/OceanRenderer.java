@@ -143,12 +143,8 @@ public final class OceanRenderer {
             if (!e.active) continue;
             if (e.progress > 0) {
                 s.setColor(Palette.AQUA); s.rectLine(world.player.x, world.player.y + 10, e.x, e.y, 2);
-                float multiplier = e.waste == null ? 1 : e.waste.cleanMultiplier();
-                float progress=e.waste!=null && e.waste.kind()==MissionConfig.WasteKind.NET
-                    && type==MissionConfig.MissionType.GHOST_NETS ? e.progress
-                    : e.progress/(world.spec().loadout().cleanupSeconds()*multiplier);
-                ring(e.x, e.y, Math.max(22, e.radius + 5), progress, Palette.AQUA);
             }
+            ring(e.x, e.y, Math.max(22, e.radius + 5), world.collectionProgress(e), Palette.AQUA);
             waste(e);
         }
         for (int i=0;i<world.hazards.capacity();i++) {
@@ -743,12 +739,22 @@ public final class OceanRenderer {
         ui.bar(pipe.x-25,pipe.y+40,50,4,(float)pipe.health/Math.max(1,pipe.maxHealth),Palette.RED);
     }
     private void ring(float x, float y, float r, float progress, Color color) {
-        int segments = 32;
+        int segments = 48;
+        float clamped=Rules.clamp(progress,0,1);
+        float step=(float)(Math.PI*2/segments);
         for (int i = 0; i < segments; i++) {
-            double a = i * Math.PI * 2 / segments, b = (i + .65) * Math.PI * 2 / segments;
-            s.setColor(i < progress * segments ? Palette.AQUA : color);
-            s.rectLine(x + (float)Math.cos(a)*r, y + (float)Math.sin(a)*r,
-                x + (float)Math.cos(b)*r, y + (float)Math.sin(b)*r, progress > 0 ? 2 : 1);
+            float a=(float)Math.PI*.5f-i*step, b=a-step*.7f;
+            s.setColor(color.r,color.g,color.b,.24f);
+            s.rectLine(x+(float)Math.cos(a)*r,y+(float)Math.sin(a)*r,
+                x+(float)Math.cos(b)*r,y+(float)Math.sin(b)*r,1);
+        }
+        float filled=clamped*segments;
+        for (int i=0;i<segments && i<filled;i++) {
+            float fraction=Math.min(1,filled-i);
+            float a=(float)Math.PI*.5f-i*step, b=a-step*.7f*fraction;
+            s.setColor(color);
+            s.rectLine(x+(float)Math.cos(a)*r,y+(float)Math.sin(a)*r,
+                x+(float)Math.cos(b)*r,y+(float)Math.sin(b)*r,3);
         }
     }
 }

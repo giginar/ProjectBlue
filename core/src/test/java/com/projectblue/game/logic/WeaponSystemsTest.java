@@ -81,7 +81,7 @@ class WeaponSystemsTest {
     }
     @Test void pilotBonusesAreSpecializedAndVesselsTradeSpeedForHull() {
         Profile p = prepared(); p.selectedPilot = Pilot.KAIA; Loadout kaia = Loadout.from(p);
-        assertEquals(100,kaia.health()); assertEquals(10,kaia.damage()); assertEquals(CLEAN_SECONDS/1.15f,kaia.cleanupSeconds(),.001);
+        assertEquals(100,kaia.health()); assertEquals(10,kaia.damage()); assertEquals(COLLECTION_SECONDS/1.15f,kaia.cleanupSeconds(),.001);
         p.selectedPilot = Pilot.ATLAS; assertEquals(115,Loadout.from(p).health());
         p.selectedPilot = Pilot.NERI; assertEquals(1.25,Loadout.from(p).rescueSeconds(),.001);
         p.selectedPilot = Pilot.ROOK; assertEquals(11,Loadout.from(p).damage());
@@ -99,8 +99,10 @@ class WeaponSystemsTest {
         GameWorld w = new GameWorld(() -> .1f,RunSpec.create(1,Difficulty.NORMAL,Loadout.from(saves.profile())));
         Entity plastic = w.plastics.obtain(); plastic.x = w.player.x; plastic.y = w.player.y;
         Entity turtle = w.turtles.obtain(); turtle.x = w.player.x; turtle.y = w.player.y;
-        step(w,14); assertEquals(1,w.plasticCount());
-        step(w,47); assertEquals(1,w.rescueCount());
+        assertTrue(w.spec().loadout().cleanupSeconds()<COLLECTION_SECONDS);
+        assertTrue(w.spec().loadout().rescueSeconds()<RESCUE_SECONDS);
+        step(w,(int)Math.ceil(w.spec().loadout().cleanupSeconds()/STEP)); assertEquals(1,w.plasticCount());
+        step(w,(int)Math.ceil(w.spec().loadout().rescueSeconds()/STEP)); assertEquals(1,w.rescueCount());
     }
     @ParameterizedTest @EnumSource(Weapon.class)
     void weaponsStayWithinPoolsAndRunSnapshotCannotChangeMidDive(Weapon weapon) {

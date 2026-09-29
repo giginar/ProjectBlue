@@ -143,9 +143,15 @@ tasks.register('verifyDebugAdConfiguration') {
             def production = layout.buildDirectory.file("generated/source/buildConfig/$variant/com/projectblue/game/BuildConfig.java").get().asFile.text
             if (!production.contains('UMP_DEBUG_GEOGRAPHY = ""') || !production.contains('UMP_TEST_DEVICE_ID = ""'))
                 throw new GradleException("$variant must not contain UMP debug settings")
+            if (variant == 'qa' && (!production.contains('ADS_ENABLED = false')
+                || !production.contains('REWARDED_AD_ID = ""') || !production.contains('INTERSTITIAL_AD_ID = ""')))
+                throw new GradleException('QA must keep advertising disabled with empty ad units')
+            if (variant == 'release' && !releaseAds && (!production.contains('ADS_ENABLED = false')
+                || !production.contains('REWARDED_AD_ID = ""') || !production.contains('INTERSTITIAL_AD_ID = ""')))
+                throw new GradleException('Disabled release must keep empty ad units')
         }
         logger.lifecycle('Debug ad configuration verified against the official sample IDs.')
-        logger.lifecycle('QA/release UMP debug settings verified empty.')
+        logger.lifecycle('QA/release disabled-mode and UMP debug separation verified.')
     }
 }
 tasks.named('check') { dependsOn 'verifyDebugAdConfiguration' }

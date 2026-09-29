@@ -2,6 +2,7 @@ package com.projectblue.game.logic;
 
 import com.projectblue.game.events.GameEvents;
 import org.junit.jupiter.api.Test;
+import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
 import static com.projectblue.game.config.GameConfig.*;
 
@@ -38,9 +39,53 @@ class GameWorldTest {
     @Test void cleaningRequiresProximityAndAwardsOnlyOnce() {
         GameWorld w=world();
         Entity plastic=w.plastics.obtain(); plastic.x=w.player.x; plastic.y=w.player.y;
-        steps(w,15); assertEquals(0,w.plasticCount());
+        steps(w,20); assertEquals(0,w.plasticCount());
+        steps(w,30); assertEquals(1,w.plasticCount());
         steps(w,20); assertEquals(1,w.plasticCount());
-        steps(w,20); assertEquals(1,w.plasticCount());
+    }
+    @Test void collectionProgressStartsAtZeroResetsPerEntityAndCompletesRewardsOnce() {
+        GameWorld w=world(); AtomicInteger collectedEvents=new AtomicInteger();
+        w.events.subscribe((type,x,y,value)->{ if (type==GameEvents.Type.PLASTIC_COLLECTED) collectedEvents.incrementAndGet(); });
+        Entity first=w.plastics.obtain(), second=w.plastics.obtain();
+        first.x=second.x=w.player.x; first.y=second.y=w.player.y;
+        assertEquals(0,first.progress); assertEquals(0,second.progress);
+        steps(w,20);
+        assertTrue(first.progress>0); assertTrue(second.progress>0);
+        assertEquals(0,w.plasticCount()); assertEquals(0,collectedEvents.get());
+        float secondBefore=second.progress;
+        first.x=0; steps(w,1);
+        assertEquals(0,first.progress); assertTrue(second.progress>secondBefore);
+        first.x=w.player.x; first.y=w.player.y;
+        while (first.active || second.active) steps(w,1);
+        assertEquals(2,w.plasticCount()); assertEquals(2,collectedEvents.get());
+        int score=w.score(); steps(w,30);
+        assertEquals(2,w.plasticCount()); assertEquals(2,collectedEvents.get()); assertEquals(score,w.score());
+    }
+    @Test void collectionProgressPausesAndClearsOnDeathOrScreenClose() {
+        GameWorld paused=world(); Entity item=paused.plastics.obtain();
+        item.x=paused.player.x; item.y=paused.player.y; steps(paused,10);
+        float partial=item.progress;
+        paused.update(0,false,0,0);
+        assertEquals(partial,item.progress);
+        paused.player.health=0; steps(paused,1);
+        assertTrue(paused.finished()); assertEquals(0,item.progress);
+
+        GameWorld closed=world(); Entity other=closed.plastics.obtain();
+        other.x=closed.player.x; other.y=closed.player.y; steps(closed,10);
+        assertTrue(other.progress>0); closed.close(); assertEquals(0,other.progress);
+    }
+    @Test void collectionDurationIsStableAcrossFixedAndHalfSteps() {
+        assertEquals(COLLECTION_SECONDS,collectionTime(STEP),STEP);
+        assertEquals(COLLECTION_SECONDS,collectionTime(STEP/2),STEP);
+        assertEquals(collectionTime(STEP),collectionTime(STEP/2),STEP);
+    }
+    private float collectionTime(float dt) {
+        GameWorld w=world(); Entity item=w.plastics.obtain();
+        item.x=w.player.x; item.y=w.player.y;
+        float time=0;
+        while (item.active && time<2) { w.update(dt,false,0,0); time+=dt; }
+        assertFalse(item.active); assertEquals(1,w.plasticCount());
+        return time;
     }
     @Test void rescueRequiresContinuousStayAndLetsTurtleSwimFree() {
         GameWorld w=world();

@@ -32,9 +32,9 @@ package/application ID change, dependency upgrade or copied game content was int
 
 | Variant | Package | Signing | Shrinking | Ads / UMP debug settings |
 |---|---|---|---|---|
-| debug | `com.projectblue.game` | Android debug key | minify off; resources off | Ads on with official Google sample IDs; optional UMP test values accepted only from the local environment |
-| qa | `com.projectblue.game.qa` | Android debug key | R8 on; resources on | Ads off; IDs and UMP debug fields hardcoded empty |
-| release | `com.projectblue.game` | Unsigned without owner environment | R8 on; resources on | Ads off and IDs empty without explicit production environment; UMP debug fields hardcoded empty |
+| debug | `com.game.diver.oceanguard` | Android debug key | minify off; resources off | Ads on with official Google sample IDs; optional UMP test values accepted only from the local environment |
+| qa | `com.game.diver.oceanguard.qa` | Android debug key | R8 on; resources on | Ads off; IDs and UMP debug fields hardcoded empty |
+| release | `com.game.diver.oceanguard` | Unsigned without owner environment | R8 on; resources on | Ads off and IDs empty without explicit production environment; UMP debug fields hardcoded empty |
 
 The final normal rebuild also has empty debug UMP test fields; the physical test-device hash was
 used only through a transient environment variable and is not present in source, documentation
@@ -131,8 +131,8 @@ environment. The initial working tree was clean. ADB 37.0.1 found both targets:
 | Huawei SNE-LX1 (`HVYDU19124010569`) | Android 10 / API 29 | 1080x2340, 480 dpi, physical top cutout 90 px |
 | `sdk_gphone64_x86_64` (`emulator-5554`) | Android 16 / API 36 | 1080x2400, 420 dpi, top cutout 132 px; also exercised at 720x1280 (16:9) |
 
-Installed variants were `android-debug.apk` (`com.projectblue.game`) and the local
-`android-qa.apk` (`com.projectblue.game.qa`). The QA variant is non-debuggable, R8/minified,
+Installed variants were `android-debug.apk` (`com.game.diver.oceanguard`) and the local
+`android-qa.apk` (`com.game.diver.oceanguard.qa`). The QA variant is non-debuggable, R8/minified,
 resource-shrunk, signed with the Android debug certificate and has ads disabled. It is not a
 production or Play-uploadable artifact. Debug advertising used only Google's official sample
 App ID and rewarded/interstitial units.
@@ -168,7 +168,7 @@ The complete captured crash stack is retained at
 
 ```text
 FATAL EXCEPTION: GLThread 7743
-Process: com.projectblue.game.qa, PID: 11274
+Process: com.game.diver.oceanguard.qa, PID: 11274
 java.lang.NullPointerException: Attempt to write to field 'boolean i4.l.d' on a null object reference
     at a1.i.onDrawFrame(r8-map-id-4ccb77c6178b42c18a3e9ebe35e1f2198e0a5617a476d1bea9085890e9690119:119)
     at a1.h.run(r8-map-id-4ccb77c6178b42c18a3e9ebe35e1f2198e0a5617a476d1bea9085890e9690119:30)

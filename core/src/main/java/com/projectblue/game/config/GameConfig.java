@@ -16,7 +16,8 @@ public final class GameConfig {
     public static final float INVULNERABILITY = .65f, BULLET_RADIUS = 5f;
     public static final float DRONE_RADIUS = 27f, DRONE_SPEED = 66f;
     public static final float DRONE_DRIFT = 16f, SHOT_OFFSET_Y = 34f;
-    public static final float CLEAN_RADIUS = 112f, CLEAN_SECONDS = .42f, PLASTIC_SPEED = 43f;
+    public static final float CLEAN_RADIUS = 112f, COLLECTION_SECONDS = .75f, PLASTIC_SPEED = 43f;
+    public static final float BOSS_DEFEAT_RESULTS_DELAY_SECONDS = 2f;
     public static final float RESCUE_RADIUS = 96f, RESCUE_SECONDS = 1.5f, TURTLE_SPEED = 27f;
     public static final float PLASTIC_RADIUS = 12f, TURTLE_RADIUS = 24f;
     public static final float FREED_TURTLE_SPEED_X = 130f, FREED_TURTLE_SPEED_Y = 65f;

@@ -3,10 +3,10 @@ package com.projectblue.game.platform;
 import com.projectblue.game.save.SaveService;
 import java.util.function.LongSupplier;
 
-/** Product limits, not SDK defaults: no first-session ads, three wins, three minutes. */
+/** Product limits, not SDK defaults: no first-session ads, three wins, ten minutes. */
 public final class InterstitialPolicy {
     public static final int COMPLETIONS = 3;
-    public static final long INTERVAL_MS = 180_000;
+    public static final long INTERVAL_MS = 600_000;
     private final SaveService saves;
     private final LongSupplier clock;
     private final long sessionStart;
@@ -28,5 +28,9 @@ public final class InterstitialPolicy {
     /** Reserve before showing; a failed show conservatively consumes the slot. */
     public boolean reserve(boolean successfulResult, boolean adReady) {
         return eligible(successfulResult, adReady) && saves.reserveInterstitial(clock.getAsLong());
+    }
+    public static boolean allowedTransition(boolean resultBoundary, boolean menuDestination,
+        boolean rewardedUsed, boolean lifecyclePaused) {
+        return resultBoundary && menuDestination && !rewardedUsed && !lifecyclePaused;
     }
 }

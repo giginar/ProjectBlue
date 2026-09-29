@@ -66,6 +66,7 @@ public final class GameScreen extends ScreenAdapter implements GameEvents.Listen
     public void dispose() {
         if (disposed) return;
         disposed = true;
+        world.close();
         world.events.unsubscribe(hud);
         world.events.unsubscribe(game.audio());
         world.events.unsubscribe(this);

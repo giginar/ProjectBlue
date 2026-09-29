@@ -6,8 +6,12 @@ import org.junit.jupiter.api.Test;
 
 import static com.projectblue.game.config.GameConfig.STEP;
 import static org.junit.jupiter.api.Assertions.*;
+import java.lang.reflect.Field;
 
 final class HudTest {
+    @Test void campaignHudHasNoVisibleTimeCounterState() {
+        for (Field field : Hud.class.getDeclaredFields()) assertNotEquals("time",field.getName());
+    }
     @Test void rewardedContinueRefreshesCachedHullLabel() {
         GameWorld world = new GameWorld(RandomProvider.seeded(7));
         Hud hud = new Hud(null);

@@ -61,7 +61,7 @@ mode and result for every run. Attach screenshots/logs without personal data.
 | 21 | Rewarded ad flow | PASS on API 36 emulator with official Google Test Ad: show, `Reward granted`, dismiss, one-time continue |
 | 22 | Interstitial ad flow | **MANUAL VERIFICATION REQUIRED**; three-win/later-session placement was not reached |
 | 23 | Ad-load failure fallback | PASS on both offline: both test ad loads returned error 0 and gameplay/navigation continued |
-| 24 | R8/minified QA APK launch | PASS on both using debug-signed `com.projectblue.game.qa`; an API 29 early-resume crash was fixed and the rebuilt APK passed locked-screen/repeated cold starts; ads disabled; not a production artifact |
+| 24 | R8/minified QA APK launch | PASS on both using debug-signed `com.game.diver.oceanguard.qa`; an API 29 early-resume crash was fixed and the rebuilt APK passed locked-screen/repeated cold starts; ads disabled; not a production artifact |
 | 25 | Boss and result screen | PARTIAL: failed Blue Coast result PASS on emulator; **MANUAL VERIFICATION REQUIRED** for on-device boss encounter/clear |
 | 26 | Audio pause/resume | Lifecycle/audio state path passed; **MANUAL VERIFICATION REQUIRED** for audible confirmation |
 | 27 | Texture/context recovery | Process/surface recreation and desktop managed-texture smoke passed; **MANUAL VERIFICATION REQUIRED** for forced Android EGL context loss |

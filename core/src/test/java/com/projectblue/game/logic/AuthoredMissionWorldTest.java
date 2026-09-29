@@ -1,7 +1,9 @@
 package com.projectblue.game.logic;
 
 import com.projectblue.game.config.*;
+import com.projectblue.game.events.GameEvents;
 import org.junit.jupiter.api.Test;
+import java.util.concurrent.atomic.AtomicInteger;
 import static com.projectblue.game.config.GameConfig.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -13,6 +15,9 @@ class AuthoredMissionWorldTest {
         while (world.elapsed()<target && !world.finished()) {
             world.player.health=world.player.maxHealth; world.update(STEP,false,0,0);
         }
+    }
+    private void step(GameWorld world) {
+        world.player.health=world.player.maxHealth; world.update(STEP,false,0,0);
     }
     @Test void playerFireDamagesCoralButPassesRescueCreaturesSafely() {
         GameWorld world=world(2);
@@ -79,6 +84,32 @@ class AuthoredMissionWorldTest {
         harvester.hitCore(Integer.MAX_VALUE); nets.update(STEP,false,0,0);
         assertTrue(nets.recovering()); advance(nets,nets.elapsed()+nets.mission().recoverySeconds+.1f);
         assertTrue(nets.result().completed);
+    }
+    @Test void bossDefeatOwnsCompletionStopsThreatsAndEmitsOneResultWithoutDeadlineWait() {
+        GameWorld world=world(1); advance(world,world.mission().boss.start()+.1f);
+        ShorelineCompactor boss=world.compactor();
+        while (boss.state()!=ShorelineCompactor.State.DISCHARGE) step(world);
+        boss.hitCore(Integer.MAX_VALUE);
+        while (boss.state()!=ShorelineCompactor.State.PRESS_ACTIVE) step(world);
+        boss.hitCore(Integer.MAX_VALUE);
+        while (boss.state()!=ShorelineCompactor.State.PIPES) step(world);
+        boss.hitPipe(true,Integer.MAX_VALUE); boss.hitPipe(false,Integer.MAX_VALUE);
+        assertEquals(ShorelineCompactor.State.CORE_EXPOSED,boss.state());
+        Entity hostile=world.bullets.obtain(); hostile.friendly=false;
+        Entity drone=world.drones.obtain(); drone.x=world.player.x; drone.y=world.player.y+300;
+        AtomicInteger finishedEvents=new AtomicInteger();
+        world.events.subscribe((type,x,y,value)->{ if (type==GameEvents.Type.FINISHED) finishedEvents.incrementAndGet(); });
+        float defeatedAt=world.elapsed();
+        boss.hitCore(Integer.MAX_VALUE); step(world);
+        assertTrue(world.recovering()); assertFalse(world.boss.active);
+        assertEquals(0,world.hostileBullets()); assertEquals(0,world.drones.activeCount());
+        assertFalse(world.finished());
+        while (!world.finished()) step(world);
+        assertTrue(world.result().completed); assertEquals(1,finishedEvents.get());
+        assertTrue(world.elapsed()-defeatedAt<3);
+        int score=world.result().score, salvage=world.result().salvage;
+        step(world);
+        assertEquals(1,finishedEvents.get()); assertEquals(score,world.result().score); assertEquals(salvage,world.result().salvage);
     }
     @Test void urbanSalvagerAndOilKrakenCompleteThroughTheirWorldDamageGates() {
         GameWorld city=world(4); advance(city,city.mission().boss.start()+.1f);

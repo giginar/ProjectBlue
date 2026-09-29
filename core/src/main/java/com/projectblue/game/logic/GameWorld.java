@@ -142,6 +142,11 @@ public final class GameWorld {
         player.y=Rules.clamp(player.y,PLAY_MIN_Y,PLAY_MAX_Y);
         if (mission == null) spawnScheduled();
         else if (!recovering) timeline.advance(elapsed, this::spawnMission);
+        if (recovering) {
+            updateParticles(dt);
+            updateMissionEnd(dt);
+            return;
+        }
         laser.timer = Math.max(0, laser.timer - dt);
         weapons.update(this, dt);
         updateDrones(dt);
@@ -162,19 +167,20 @@ public final class GameWorld {
     private float levelDeadline() { return (mission == null ? LEVEL_SECONDS : mission.deadlineSeconds) + continuationTime; }
     private void finishLegacy(boolean completed) {
         if (finished) return;
+        resetCollectionProgress();
         finished = true;
         result = new LevelResult(spec, completed, kills, plasticCount, rescueCount, salvageCount, player.health, damageTaken);
         events.emit(FINISHED, player.x, player.y, result.score);
     }
     private void updateMissionEnd(float dt) {
         if (recovering) {
-            if (vortex!=null && player.health<=0) { finishMission(false); return; }
             recoveryTimer += dt;
-            if (recoveryTimer >= mission.recoverySeconds) finishMission(true);
+            if (recoveryTimer >= bossCompletionDelay()) finishMission(true);
         } else if (player.health <= 0 || elapsed >= levelDeadline()) finishMission(false);
     }
     private void finishMission(boolean completed) {
         if (finished) return;
+        resetCollectionProgress();
         finished = true;
         MissionOutcome outcome = new MissionOutcome(kills, Math.max(1, enemiesEncountered), plasticCount, cleanedCount,
             rescueCount, salvageCount(), player.health, damageTaken, coralDamage, combatScore, restoration());
@@ -952,7 +958,11 @@ public final class GameWorld {
         kills++; combatScore+=500; salvageCount+=mission.boss.salvage();
         for (int i=0;i<bullets.capacity();i++) if (!bullets.at(i).friendly) bullets.at(i).active=false;
         for (int i=0;i<drones.capacity();i++) drones.at(i).active=false;
+        for (int i=0;i<hazards.capacity();i++) hazards.at(i).active=false;
         burst(boss.x,boss.y,1);
+    }
+    private float bossCompletionDelay() {
+        return Math.min(mission.recoverySeconds, BOSS_DEFEAT_RESULTS_DELAY_SECONDS);
     }
     public int bossPhase() {
         if (compactor!=null) return compactor.phase();
@@ -1175,15 +1185,15 @@ public final class GameWorld {
             if (net && Rules.overlaps(e.x,e.y,e.radius,player.x,player.y,player.radius)) slowTimer=Math.max(slowTimer,mission.netSeconds);
             if (near(e, spec.loadout().cleanupRadius())) {
                 float multiplier=e.waste==null?1:e.waste.cleanMultiplier();
-                if (net && mission.type==MissionConfig.MissionType.GHOST_NETS) {
-                    float power=CLEAN_SECONDS/spec.loadout().cleanupSeconds()/multiplier;
+                if (net && mission!=null && mission.type==MissionConfig.MissionType.GHOST_NETS) {
+                    float power=COLLECTION_SECONDS/spec.loadout().cleanupSeconds()/multiplier;
                     e.progress=NetCuttingSystem.cutter(e.progress,dt,power);
                     if (NetCuttingSystem.opened(e.progress)) collectWaste(e);
                 } else {
                     e.progress += dt;
-                    if (e.progress >= spec.loadout().cleanupSeconds()*multiplier) collectWaste(e);
+                    if (e.progress >= collectionSeconds(e)) collectWaste(e);
                 }
-            } else if (!(net && mission.type==MissionConfig.MissionType.GHOST_NETS)) e.progress = 0;
+            } else if (!(net && mission!=null && mission.type==MissionConfig.MissionType.GHOST_NETS)) e.progress = 0;
             if (e.y < -DESPAWN_MARGIN) e.active = false;
         }
     }
@@ -1199,6 +1209,23 @@ public final class GameWorld {
             if (recyclerLeviathan!=null && recyclerLeviathan.deliverWaste()) combatScore+=120;
         }
         burst(e.x,e.y,1); events.emit(PLASTIC_COLLECTED,e.x,e.y,PLASTIC_SCORE);
+    }
+    public float collectionSeconds(Entity e) {
+        float multiplier=e==null || e.waste==null?1:e.waste.cleanMultiplier();
+        return spec.loadout().cleanupSeconds()*multiplier;
+    }
+    public float collectionProgress(Entity e) {
+        if (e==null || !e.active) return 0;
+        if (mission!=null && e.waste!=null && e.waste.kind()==MissionConfig.WasteKind.NET
+            && mission.type==MissionConfig.MissionType.GHOST_NETS) return Rules.clamp(e.progress,0,1);
+        return Rules.clamp(e.progress/collectionSeconds(e),0,1);
+    }
+    private void resetCollectionProgress() {
+        resetProgress(plastics); resetProgress(turtles); resetProgress(hazards); resetProgress(environments);
+        bossLeftPipe.progress=bossRightPipe.progress=0;
+    }
+    private static void resetProgress(EntityPool pool) {
+        for (int i=0;i<pool.capacity();i++) pool.at(i).progress=0;
     }
     private void updateCorals(float dt) {
         for (int i=0;i<corals.capacity();i++) {
@@ -1515,14 +1542,13 @@ public final class GameWorld {
     public RecyclerLeviathan recyclerLeviathan() { return recyclerLeviathan; }
     public LeviathanCore leviathanCore() { return leviathanCore; }
     public int spawnedDrones() { return spawnedDrones; }
-    public float progress() { return elapsed / (mission==null?LEVEL_SECONDS:mission.durationSeconds); }
     public float restoration() {
         if (mission==null) return (Rules.cleanup(plasticCount)*CLEANUP_RESTORE_WEIGHT+Rules.rescue(rescueCount)*RESCUE_RESTORE_WEIGHT)/100f;
         float cleanup=Rules.percentage(cleanedCount,mission.cleanupCount())/100f;
         float rescue=Rules.percentage(rescueCount,mission.rescueCount())/100f;
         float coral=1-Rules.percentage(coralDamage,Math.max(1,mission.coralCount*30))/100f;
         float base=Rules.clamp(cleanup*.55f+rescue*.3f+coral*.15f,0,1);
-        return recovering ? base+(1-base)*Rules.clamp(recoveryTimer/mission.recoverySeconds,0,1) : base;
+        return recovering ? base+(1-base)*Rules.clamp(recoveryTimer/bossCompletionDelay(),0,1) : base;
     }
     public int kills() { return kills; }
     public int plasticCount() { return plasticCount; }
@@ -1600,7 +1626,8 @@ public final class GameWorld {
     public boolean recovering() { return recovering; }
     public void setReducedEffects(boolean reducedEffects) { this.reducedEffects = reducedEffects; }
     public boolean reducedEffects() { return reducedEffects; }
-    public float recoveryProgress() { return mission==null?0:Rules.clamp(recoveryTimer/mission.recoverySeconds,0,1); }
+    public float recoveryProgress() { return mission==null?0:Rules.clamp(recoveryTimer/bossCompletionDelay(),0,1); }
+    public void close() { resetCollectionProgress(); }
     public int hostileBullets() { return hostileBulletCount(); }
     public boolean invulnerable() { return invulnerability > 0; }
     public boolean finished() { return finished; }

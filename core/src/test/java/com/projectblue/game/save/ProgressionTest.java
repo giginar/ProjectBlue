@@ -5,6 +5,7 @@ import com.projectblue.game.config.Loadout.*;
 import com.projectblue.game.logic.LevelResult;
 import com.projectblue.game.logic.MissionOutcome;
 import org.junit.jupiter.api.Test;
+import static com.projectblue.game.config.GameConfig.COLLECTION_SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ProgressionTest {
@@ -115,7 +116,7 @@ class ProgressionTest {
         LevelResult result = new LevelResult(spec, true, 0, 0, 0, 0, 140);
         assertEquals(100, result.integrity);
         p.selectedPilot = Pilot.KAIA; p.selectedSubmarine = Submarine.MANTA;
-        assertTrue(Loadout.from(p).cleanupSeconds() < .42f / 1.2f); assertEquals(85, Loadout.from(p).health());
+        assertTrue(Loadout.from(p).cleanupSeconds() < COLLECTION_SECONDS / 1.2f); assertEquals(85, Loadout.from(p).health());
     }
     @Test void ecologyAndCombatDenominatorsAreIndependentOfDifficultyDensity() {
         RunSpec abyss = RunSpec.create(2, Difficulty.ABYSS, Loadout.standard());

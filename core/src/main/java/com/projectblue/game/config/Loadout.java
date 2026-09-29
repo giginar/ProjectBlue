@@ -24,7 +24,7 @@ public record Loadout(int health, int damage, float speed, float cleanupRadius, 
     /** Original simulation fixture, independent of pilot passives. */
     public static Loadout standard() {
         return new Loadout(PLAYER_HEALTH,PLAYER_DAMAGE,PLAYER_SPEED,CLEAN_RADIUS,RESCUE_SECONDS,SALVAGE_RADIUS,
-            SHOT_INTERVAL,CLEAN_SECONDS,0,0,Weapon.PULSE_CANNON.definition(),Weapon.SUPPORT_DRONE.definition());
+            SHOT_INTERVAL,COLLECTION_SECONDS,0,0,Weapon.PULSE_CANNON.definition(),Weapon.SUPPORT_DRONE.definition());
     }
     public static Loadout from(Profile p) {
         ContentCatalog c = p.content();
@@ -47,7 +47,7 @@ public record Loadout(int health, int damage, float speed, float cleanupRadius, 
             }
         }
         return new Loadout(Math.round(hull),Math.round(damage),sub.movementSpeed(),CLEAN_RADIUS + bonus[Stat.CLEANUP_RADIUS.ordinal()],
-            RESCUE_SECONDS / rescue,SALVAGE_RADIUS + p.legacyMagnetLevel * 12,1 / sub.fireRate(),CLEAN_SECONDS / cleanup,
+            RESCUE_SECONDS / rescue,SALVAGE_RADIUS + p.legacyMagnetLevel * 12,1 / sub.fireRate(),COLLECTION_SECONDS / cleanup,
             sub.shieldCapacity() + Math.round(bonus[Stat.SHIELD.ordinal()]),Math.round(bonus[Stat.DRONE_DAMAGE.ordinal()]),c.weapon(p.selectedWeapon.name()),c.weapon(Weapon.SUPPORT_DRONE.name()));
     }
 }

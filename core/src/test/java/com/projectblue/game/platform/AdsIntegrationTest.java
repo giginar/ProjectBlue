@@ -127,6 +127,15 @@ class AdsIntegrationTest {
         assertEquals(1_900_000 + InterstitialPolicy.INTERVAL_MS, reopened.profile().lastInterstitialAt);
         clock.set(1); assertFalse(new InterstitialPolicy(reopened, clock::get).eligible(true, true));
     }
+    @Test void interstitialPlacementIsOnlyACompletedResultMenuTransition() {
+        assertFalse(InterstitialPolicy.allowedTransition(false,true,false,false),"Boss death is not an ad boundary");
+        assertFalse(InterstitialPolicy.allowedTransition(false,false,false,false),"Gameplay is not an ad boundary");
+        assertFalse(InterstitialPolicy.allowedTransition(true,false,false,false),"Opening Results is not an ad boundary");
+        assertFalse(InterstitialPolicy.allowedTransition(true,true,true,false),"Rewarded use suppresses the opportunity");
+        assertFalse(InterstitialPolicy.allowedTransition(true,true,false,true),"Lifecycle pause suppresses the opportunity");
+        assertTrue(InterstitialPolicy.allowedTransition(true,true,false,false));
+        assertEquals(600_000,InterstitialPolicy.INTERVAL_MS);
+    }
     @Test void unknownFailedOrRevokedConsentNeverBecomesPermission() {
         ConsentGate gate = new ConsentGate(); assertFalse(gate.canRequestAds());
         gate.begin(); assertFalse(gate.canRequestAds());

@@ -10,7 +10,7 @@ import static com.projectblue.game.config.GameConfig.*;
 public final class Hud implements GameEvents.Listener {
     private final UiPainter ui;
     private final Localization text;
-    private final StringBuilder score = new StringBuilder(32), stats = new StringBuilder(64), time = new StringBuilder(24);
+    private final StringBuilder score = new StringBuilder(32), stats = new StringBuilder(64);
     private final StringBuilder health = new StringBuilder(24), ecology = new StringBuilder(32);
     private final StringBuilder resource = new StringBuilder(32), secondary = new StringBuilder(32);
     private final StringBuilder escapeObjective = new StringBuilder(80), restorationObjective = new StringBuilder(96);
@@ -34,11 +34,6 @@ public final class Hud implements GameEvents.Listener {
         health.setLength(0); health.append(text.text("hud.hull", w.player.health + "/" + w.player.maxHealth));
         if (w.spec().loadout().shieldCapacity() > 0) health.append(" S").append(w.shield());
         if (mission == null) mission = String.format(java.util.Locale.ROOT, "%02d / %s / %s", w.spec().level().id(), text.text("level." + w.spec().level().id() + ".name"), text.text("difficulty." + w.spec().difficulty()));
-        float limit = w.mission() == null ? LEVEL_SECONDS : w.mission().deadlineSeconds;
-        int seconds = Math.max(0, (int) Math.ceil(limit - w.elapsed()));
-        time.setLength(0); time.append(seconds / 60).append(':');
-        if (seconds % 60 < 10) time.append('0');
-        time.append(seconds % 60);
         ecology.setLength(0); ecology.append(text.text("hud.ecology", Math.round(w.restoration() * 100), w.salvageCount()));
         resource.setLength(0);
         secondary.setLength(0);
@@ -61,7 +56,6 @@ public final class Hud implements GameEvents.Listener {
         ui.beginShapes();
         ui.rect(0, 838, WIDTH, 122, Palette.INK);
         ui.bar(24, 868, 160, 6, (float) w.player.health / w.player.maxHealth, w.player.health > 30 ? Palette.AQUA : Palette.RED);
-        ui.bar(0, 838, WIDTH, 4, w.progress(), Palette.AQUA);
         ui.button(450, 874, 64, 58, false);
         ui.rect(474, 892, 5, 22, Palette.TEXT); ui.rect(485, 892, 5, 22, Palette.TEXT);
         ui.rect(0, 0, WIDTH, 44, Palette.INK);
@@ -87,7 +81,6 @@ public final class Hud implements GameEvents.Listener {
         ui.text(mission, 24, 939, .65f, Palette.MUTED);
         ui.text(health, 24, 907, .72f, Palette.TEXT);
         ui.text(score, 218, 907, .67f, Palette.GOLD);
-        ui.text(time, 349, 939, .66f, Palette.AQUA);
         ui.text(stats, 24, 862, .64f, Palette.TEXT);
         ui.centered(ecology, 29, .65f, Palette.AQUA);
         if (w.hasSonar()) { ui.text(resource,424,690,.62f,Palette.TEXT); ui.text(text.text("hud.pulse"),438,673,.55f,Palette.AQUA); }
@@ -97,9 +90,8 @@ public final class Hud implements GameEvents.Listener {
         if (w.elapsed()<8 && w.mission()!=null) ui.centered(text.text("mission." + w.mission().type + ".intro"),793,.62f,Palette.TEXT);
         else if (noticeTime > 0) ui.centered(notice, 793, .62f, Palette.TEXT);
         else if (w.midpointActive()) ui.centered(text.text("mission." + w.mission().type + ".midpoint"),812,.58f,Palette.GOLD);
-        else if (w.escapingVortex()) ui.centered(text.text("hud.vortex_escape"),812,.58f,Palette.AQUA);
+        else if (w.recovering()) ui.centered(text.text("hud.boss_defeated"), 812, .58f, Palette.AQUA);
         else if (w.escapingCore()) ui.centered(escapeObjective,812,.58f,Palette.RED);
-        else if (w.recovering()) ui.centered(text.text("hud.recovering"), 812, .58f, Palette.AQUA);
         else if (w.boss.active && w.mission() != null) {
             CharSequence objective = bossObjective(w);
             ui.centered(objective, 812, .58f, Palette.GOLD);

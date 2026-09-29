@@ -80,8 +80,8 @@ against deliberate save-file editing/rollback. No backend or SSV service was int
 Only leaving a successful result/finale for Main Menu, Level Select, or Hangar can show an
 interstitial. It never appears during gameplay, on failure, at app open, on replay, or after
 using a rewarded opportunity on that result. The first session is completely exempt.
-Later sessions need all of: three successful runs since the last reserved slot, three minutes
-since session start, and three minutes since the previous slot. Counts/time persist; clock
+Later sessions need all of: three successful runs since the last reserved slot, ten minutes
+since session start, and ten minutes since the previous slot. Counts/time persist; clock
 rollback suppresses eligibility. The slot is saved before showing; a failed show conservatively
 uses the slot. No-fill or show failure completes navigation normally. These are product choices,
 guided by Google's [interstitial guidance](https://developers.google.com/admob/android/interstitial).
