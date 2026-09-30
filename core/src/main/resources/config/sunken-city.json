@@ -57,7 +57,7 @@
     {"kind":"RESCUE_DIVER","radius":25,"rescueMultiplier":1,"drift":22,"timeoutSeconds":0}
   ],
   "waves": [
-    {"time":14,"enemy":"AMBUSH_DRONE","count":3,"interval":4,"x":100,"spacing":160},
+    {"time":2,"enemy":"AMBUSH_DRONE","count":3,"interval":4,"x":100,"spacing":160},
     {"time":42,"enemy":"CHEMICAL_BOMBER","count":2,"interval":6,"x":155,"spacing":230},
     {"time":70,"enemy":"RUIN_TURRET","count":2,"interval":7,"x":160,"spacing":220},
     {"time":98,"enemy":"SALVAGE_MECH","count":2,"interval":7,"x":150,"spacing":240},

@@ -60,7 +60,7 @@
     {"kind": "FISH_SCHOOL", "radius": 28, "rescueMultiplier": 0.9, "drift": 28, "timeoutSeconds": 20}
   ],
   "waves": [
-    {"time": 11, "enemy": "FAST_HUNTER_DRONE", "count": 3, "interval": 4, "x": 100, "spacing": 170},
+    {"time": 2, "enemy": "FAST_HUNTER_DRONE", "count": 3, "interval": 4, "x": 100, "spacing": 170},
     {"time": 42, "enemy": "NET_LAUNCHER", "count": 2, "interval": 6, "x": 155, "spacing": 230},
     {"time": 72, "enemy": "NET_RECYCLER", "count": 2, "interval": 7, "x": 165, "spacing": 210},
     {"time": 102, "enemy": "FAST_HUNTER_DRONE", "count": 4, "interval": 3, "x": 75, "spacing": 130},

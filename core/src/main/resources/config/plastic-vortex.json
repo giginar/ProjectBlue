@@ -68,7 +68,7 @@
     {"kind":"MANTA","radius":34,"rescueMultiplier":1.1,"drift":20,"timeoutSeconds":29}
   ],
   "waves": [
-    {"time":14,"enemy":"VORTEX_DRONE","count":3,"interval":5,"x":95,"spacing":175},
+    {"time":2,"enemy":"VORTEX_DRONE","count":3,"interval":5,"x":95,"spacing":175},
     {"time":44,"enemy":"TRASH_SWARM","count":3,"interval":5,"x":95,"spacing":175},
     {"time":75,"enemy":"MAGNETIC_COLLECTOR","count":2,"interval":7,"x":150,"spacing":240},
     {"time":106,"enemy":"CURRENT_DISRUPTOR","count":2,"interval":7,"x":150,"spacing":240},

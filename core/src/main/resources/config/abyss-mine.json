@@ -73,7 +73,7 @@
     {"kind":"FISH_SCHOOL","radius":26,"rescueMultiplier":0.9,"drift":22,"timeoutSeconds":25}
   ],
   "waves": [
-    {"time":15,"enemy":"PRESSURE_DRONE","count":3,"interval":5,"x":95,"spacing":175},
+    {"time":2,"enemy":"PRESSURE_DRONE","count":3,"interval":5,"x":95,"spacing":175},
     {"time":45,"enemy":"DEEP_MINER","count":2,"interval":7,"x":150,"spacing":240},
     {"time":76,"enemy":"RAIL_TURRET","count":3,"interval":5,"x":95,"spacing":175},
     {"time":108,"enemy":"ABYSS_GUARDIAN","count":2,"interval":7,"x":150,"spacing":240},

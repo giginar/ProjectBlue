@@ -60,7 +60,7 @@
     {"kind": "REEF_FISH", "radius": 27, "rescueMultiplier": 1, "drift": 28, "timeoutSeconds": 0}
   ],
   "waves": [
-    {"time": 12, "enemy": "BURROW_DRONE", "count": 3, "interval": 4, "x": 110, "spacing": 160},
+    {"time": 2, "enemy": "BURROW_DRONE", "count": 3, "interval": 4, "x": 110, "spacing": 160},
     {"time": 40, "enemy": "CORAL_CUTTER", "count": 2, "interval": 6, "x": 150, "spacing": 240},
     {"time": 70, "enemy": "SHIELD_CARRIER", "count": 2, "interval": 7, "x": 175, "spacing": 190},
     {"time": 99, "enemy": "BURROW_DRONE", "count": 4, "interval": 3, "x": 80, "spacing": 125},

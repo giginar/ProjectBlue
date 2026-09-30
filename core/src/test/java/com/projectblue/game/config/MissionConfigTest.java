@@ -192,4 +192,24 @@ class MissionConfigTest {
             .allMatch(e -> e.memberCount()<=com.projectblue.game.config.GameConfig.DRONE_CAPACITY));
         for (int i=1;i<abyss.size();i++) assertTrue(abyss.get(i).time()>=abyss.get(i-1).time());
     }
+    @Test void standardMissionsPresentAThreatWithinTwoAndAHalfSeconds() {
+        for(int level=1;level<CampaignConfig.LEVEL_COUNT;level++) {
+            MissionConfig mission=MissionConfig.forLevel(level);
+            assertTrue(mission.waves().get(0).time()<=2.5f,"Sector "+level+" first threat");
+        }
+        assertEquals(1.8f,MissionConfig.BLUE_COAST.waves().get(0).time(),.001f);
+        assertEquals(12f,MissionConfig.NEREID_CORE.waves().get(0).time(),.001f,
+            "The authored finale keeps its facility approach");
+    }
+    @Test void pauseDoesNotResetTimelineAndRestartBeginsFromTheStart() {
+        MissionConfig mission=MissionConfig.BLUE_COAST;
+        SpawnTimeline active=new SpawnTimeline(mission,1);
+        List<SpawnTimeline.Event> dispatched=new ArrayList<>();
+        active.advance(2,dispatched::add); int beforePause=active.dispatched();
+        active.advance(2,dispatched::add); assertEquals(beforePause,active.dispatched());
+        active.advance(3,dispatched::add); assertTrue(active.dispatched()>beforePause);
+        SpawnTimeline restarted=new SpawnTimeline(mission,1);
+        List<SpawnTimeline.Event> restartedEvents=new ArrayList<>(); restarted.advance(2,restartedEvents::add);
+        assertEquals(beforePause,restarted.dispatched()); assertEquals(dispatched.get(0),restartedEvents.get(0));
+    }
 }

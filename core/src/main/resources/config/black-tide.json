@@ -57,7 +57,7 @@
     {"kind":"RESCUE_DIVER","radius":25,"rescueMultiplier":1,"drift":21,"timeoutSeconds":0}
   ],
   "waves": [
-    {"time":15,"enemy":"OIL_SPREADER","count":2,"interval":6,"x":150,"spacing":240},
+    {"time":2,"enemy":"OIL_SPREADER","count":2,"interval":6,"x":150,"spacing":240},
     {"time":44,"enemy":"IGNITION_DRONE","count":3,"interval":4,"x":100,"spacing":160},
     {"time":74,"enemy":"PIPELINE_GUARD","count":2,"interval":7,"x":155,"spacing":230},
     {"time":104,"enemy":"PRESSURE_TANKER","count":2,"interval":8,"x":150,"spacing":240},

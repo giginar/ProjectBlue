@@ -195,7 +195,7 @@
   ],
   "waves": [
     {
-      "time": 8,
+      "time": 1.8,
       "enemy": "SCOUT",
       "count": 3,
       "interval": 3,

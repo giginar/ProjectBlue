@@ -65,7 +65,7 @@
     {"kind":"FISH_SCHOOL","radius":27,"rescueMultiplier":0.9,"drift":23,"timeoutSeconds":26}
   ],
   "waves": [
-    {"time":14,"enemy":"CRYO_DRONE","count":3,"interval":5,"x":95,"spacing":175},
+    {"time":2,"enemy":"CRYO_DRONE","count":3,"interval":5,"x":95,"spacing":175},
     {"time":43,"enemy":"ICE_DRILLER","count":2,"interval":7,"x":155,"spacing":230},
     {"time":75,"enemy":"THERMAL_MINE","count":3,"interval":5,"x":95,"spacing":175},
     {"time":108,"enemy":"HEAT_VENT_GUARD","count":2,"interval":7,"x":150,"spacing":240},

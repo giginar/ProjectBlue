@@ -64,7 +64,7 @@
     {"kind":"MANTA","radius":34,"rescueMultiplier":1.25,"drift":18,"timeoutSeconds":28}
   ],
   "waves": [
-    {"time":14,"enemy":"ECHO_HUNTER","count":2,"interval":6,"x":150,"spacing":240},
+    {"time":2,"enemy":"ECHO_HUNTER","count":2,"interval":6,"x":150,"spacing":240},
     {"time":42,"enemy":"SOUND_MINE","count":3,"interval":5,"x":95,"spacing":175},
     {"time":72,"enemy":"SILENT_STALKER","count":3,"interval":4,"x":100,"spacing":170},
     {"time":105,"enemy":"RESONANCE_DRONE","count":2,"interval":7,"x":155,"spacing":230},
