@@ -200,7 +200,8 @@
       "count": 3,
       "interval": 3,
       "x": 135,
-      "spacing": 135
+      "spacing": 135,
+      "formation": "FLEET_LEFT"
     },
     {
       "time": 26,
@@ -208,7 +209,8 @@
       "count": 3,
       "interval": 2.4,
       "x": 405,
-      "spacing": -135
+      "spacing": -135,
+      "formation": "FLEET_RIGHT"
     },
     {
       "time": 43,
@@ -216,7 +218,8 @@
       "count": 2,
       "interval": 4,
       "x": 140,
-      "spacing": 240
+      "spacing": 240,
+      "formation": "CROSS"
     },
     {
       "time": 62,
@@ -232,7 +235,8 @@
       "count": 3,
       "interval": 3,
       "x": 135,
-      "spacing": 135
+      "spacing": 135,
+      "formation": "V"
     },
     {
       "time": 85,
@@ -248,7 +252,8 @@
       "count": 2,
       "interval": 3,
       "x": 140,
-      "spacing": 240
+      "spacing": 240,
+      "formation": "ESCORT"
     },
     {
       "time": 113,
@@ -264,7 +269,8 @@
       "count": 3,
       "interval": 2,
       "x": 135,
-      "spacing": 135
+      "spacing": 135,
+      "formation": "WIDE"
     },
     {
       "time": 131,
@@ -272,7 +278,8 @@
       "count": 2,
       "interval": 3,
       "x": 140,
-      "spacing": 240
+      "spacing": 240,
+      "formation": "PRIORITY"
     },
     {
       "time": 150,
@@ -320,7 +327,10 @@
       "count": 4,
       "interval": 2,
       "x": 105,
-      "spacing": 110
+      "spacing": 110,
+      "formation": "BARRAGE_GAP",
+      "safeCorridorX": 270,
+      "safeCorridorWidth": 120
     },
     {
       "time": 215,

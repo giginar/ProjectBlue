@@ -51,7 +51,7 @@ public final class GameWorld {
     private int spawnedDrones, spawnedPlastic, spawnedTurtles, kills, plasticCount, rescueCount, salvageCount;
     private int oilSpawned, oilCleaned, valvesClosed, bossOilTotal, drillPointsDisabled, energyStationsDisabled;
     private int finalBossDronesLaunched;
-    private boolean finished, bossSpawned, cleaning, recovering, finalObjectivesSpawned;
+    private boolean finished, bossSpawned, cleaning, recovering, finalObjectivesSpawned, closed;
     private boolean reducedEffects;
     private LevelResult result;
     private boolean continued;
@@ -111,7 +111,7 @@ public final class GameWorld {
         player.health = player.maxHealth = spec.loadout().health();
     }
     public void update(float dt, boolean moving, float targetX, float targetY) {
-        if (finished || dt <= 0 || !Float.isFinite(dt)) return;
+        if (finished || closed || dt <= 0 || !Float.isFinite(dt)) return;
         dt = Math.min(dt, STEP); // Callers use a fixed-step accumulator; never simulate a resume-time jump.
         elapsed = Math.min(levelDeadline(), elapsed + dt);
         invulnerability = Math.max(0, invulnerability - dt);
@@ -190,7 +190,7 @@ public final class GameWorld {
     private float spawnX() { return SPAWN_MARGIN + random.nextFloat() * (WIDTH - 2 * SPAWN_MARGIN); }
     private void spawnMission(SpawnTimeline.Event event) {
         switch (event.kind()) {
-            case ENEMY -> spawnEnemy(event.enemy(), event.x(), SPAWN_Y);
+            case ENEMY -> spawnEnemy(event.enemy(), event.x(), event.y(), event.horizontalSpeed());
             case WASTE -> {
                 Entity e = plastics.obtain();
                 if (e != null) {
@@ -214,10 +214,11 @@ public final class GameWorld {
                 event.environment()==MissionConfig.EnvironmentKind.ICE_FALL?780:SPAWN_Y);
         }
     }
-    private void spawnEnemy(MissionConfig.Enemy definition,float x,float y) {
+    private void spawnEnemy(MissionConfig.Enemy definition,float x,float y) { spawnEnemy(definition,x,y,0); }
+    private void spawnEnemy(MissionConfig.Enemy definition,float x,float y,float horizontalSpeed) {
         Entity e=drones.obtain();
         if (e==null || definition==null) return;
-        e.enemy=definition; e.x=e.originX=x; e.y=y; e.radius=definition.stats().radius();
+        e.enemy=definition; e.x=e.originX=x; e.y=y; e.vx=horizontalSpeed; e.radius=definition.stats().radius();
         if (definition.movement()==MissionConfig.Movement.BURROW) {
             Entity coral=nearestCoral(x,y);
             if (coral!=null) { e.x=e.originX=coral.x; e.y=coral.y+18; }
@@ -1627,7 +1628,13 @@ public final class GameWorld {
     public void setReducedEffects(boolean reducedEffects) { this.reducedEffects = reducedEffects; }
     public boolean reducedEffects() { return reducedEffects; }
     public float recoveryProgress() { return mission==null?0:Rules.clamp(recoveryTimer/bossCompletionDelay(),0,1); }
-    public void close() { resetCollectionProgress(); }
+    public void close() {
+        if (closed) return;
+        closed=true; resetCollectionProgress();
+        if (timeline!=null) timeline.stop();
+        bullets.clear(); drones.clear(); plastics.clear(); turtles.clear(); salvage.clear(); particles.clear();
+        corals.clear(); environments.clear(); hazards.clear();
+    }
     public int hostileBullets() { return hostileBulletCount(); }
     public boolean invulnerable() { return invulnerability > 0; }
     public boolean finished() { return finished; }

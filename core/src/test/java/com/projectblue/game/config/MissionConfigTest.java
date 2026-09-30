@@ -163,4 +163,33 @@ class MissionConfigTest {
             assertTrue(events.stream().anyMatch(e -> e.kind()==MissionConfig.SpawnKind.CREATURE));
         }
     }
+    @Test void formationTimelinePreservesOrderDirectionsAndSafeCorridor() {
+        MissionConfig mission=MissionConfig.BLUE_COAST;
+        assertTrue(mission.waves().stream().map(MissionConfig.Wave::formation).collect(java.util.stream.Collectors.toSet())
+            .containsAll(Set.of(MissionConfig.Formation.FLEET_LEFT,MissionConfig.Formation.FLEET_RIGHT,
+                MissionConfig.Formation.V,MissionConfig.Formation.CROSS,MissionConfig.Formation.WIDE,
+                MissionConfig.Formation.ESCORT,MissionConfig.Formation.PRIORITY,
+                MissionConfig.Formation.BARRAGE_GAP)));
+        List<SpawnTimeline.Event> events=new ArrayList<>();
+        new SpawnTimeline(mission,1).advance(mission.boss.start(),events::add);
+        SpawnTimeline.Event left=events.stream().filter(e -> e.formation()==MissionConfig.Formation.FLEET_LEFT).findFirst().orElseThrow();
+        SpawnTimeline.Event right=events.stream().filter(e -> e.formation()==MissionConfig.Formation.FLEET_RIGHT).findFirst().orElseThrow();
+        assertTrue(left.horizontalSpeed()<0); assertTrue(right.horizontalSpeed()>0);
+        MissionConfig.Wave barrage=mission.waves().stream().filter(w -> w.formation()==MissionConfig.Formation.BARRAGE_GAP).findFirst().orElseThrow();
+        float gapLeft=barrage.safeCorridorX()-barrage.safeCorridorWidth()/2;
+        float gapRight=barrage.safeCorridorX()+barrage.safeCorridorWidth()/2;
+        events.stream().filter(e -> e.formation()==MissionConfig.Formation.BARRAGE_GAP)
+            .forEach(e -> assertTrue(e.x()<=gapLeft||e.x()>=gapRight));
+    }
+    @Test void formationExpansionIsDeterministicAndDifficultyBounded() {
+        MissionConfig mission=MissionConfig.BLUE_COAST;
+        List<SpawnTimeline.Event> first=new ArrayList<>(),second=new ArrayList<>(),abyss=new ArrayList<>();
+        new SpawnTimeline(mission,1).advance(mission.boss.start(),first::add);
+        new SpawnTimeline(mission,1).advance(mission.boss.start(),second::add);
+        new SpawnTimeline(mission,2).advance(mission.boss.start(),abyss::add);
+        assertEquals(first,second); assertTrue(abyss.size()>first.size());
+        assertTrue(abyss.stream().filter(e -> e.kind()==MissionConfig.SpawnKind.ENEMY)
+            .allMatch(e -> e.memberCount()<=com.projectblue.game.config.GameConfig.DRONE_CAPACITY));
+        for (int i=1;i<abyss.size();i++) assertTrue(abyss.get(i).time()>=abyss.get(i-1).time());
+    }
 }

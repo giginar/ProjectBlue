@@ -20,5 +20,7 @@ public final class EntityPool {
         for (int i = 0; i < items.length; i++) if (items[i].active) count++;
         return count;
     }
+    public void clear() {
+        for (Entity item : items) item.active=false;
+    }
 }
-

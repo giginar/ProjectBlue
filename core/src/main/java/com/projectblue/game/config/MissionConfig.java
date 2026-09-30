@@ -15,6 +15,7 @@ public final class MissionConfig {
     }
     public enum Movement { DESCEND, SWEEP, HOLD, HUNTER, BURROW }
     public enum WeaponPattern { SINGLE, TRIPLE, NET, AIMED, NONE }
+    public enum Formation { CHAIN, FLEET_LEFT, FLEET_RIGHT, V, CROSS, WIDE, ESCORT, PRIORITY, BARRAGE_GAP }
     public enum EnemyAbility {
         NONE, CORAL_CUTTER, SHIELD_CARRIER, NET_RECYCLER,
         CHEMICAL_BOMBER, RUIN_TURRET, SALVAGE_MECH, AMBUSH_DRONE,
@@ -43,7 +44,8 @@ public final class MissionConfig {
                         EnemyAbility ability, Stats stats, Reward reward) {}
     public record Waste(WasteKind kind, float radius, float cleanMultiplier, float drift, int salvage, boolean plastic) {}
     public record Creature(CreatureKind kind, float radius, float rescueMultiplier, float drift, float timeoutSeconds) {}
-    public record Wave(float time, String enemy, int count, float interval, float x, float spacing) {}
+    public record Wave(float time, String enemy, int count, float interval, float x, float spacing,
+                       Formation formation, float safeCorridorX, float safeCorridorWidth) {}
     public record Prop(float time, SpawnKind kind, WasteKind waste, CreatureKind creature,
                        EnvironmentKind environment, float x) {}
     public record Boss(BossKind kind, String name, float start, int coreHealth, int pipeHealth, int droneBudget,
@@ -208,11 +210,17 @@ public final class MissionConfig {
             String enemy = string(w,"enemy");
             int count = integer(w,"count",1,8);
             float interval = number(w,"interval",.5f,8), x = number(w,"x",55,485), spacing = number(w,"spacing",-300,300);
+            Formation formation=Formation.valueOf(optionalString(w,"formation","CHAIN"));
+            float safeCorridorX=optionalNumber(w,"safeCorridorX",270,70,470);
+            float safeCorridorWidth=optionalNumber(w,"safeCorridorWidth",100,80,180);
             check(enemies.containsKey(enemy),"Unknown wave enemy: " + enemy);
             check(time >= previous,"Waves must be time ordered"); previous = time;
             check(time + (Math.ceil(count*2.5)-1)*interval < boss.start(),"Wave can extend into boss encounter");
             check(x + (count-1)*spacing >= 40 && x + (count-1)*spacing <= 500,"Wave formation outside playfield");
-            authoredWaves.add(new Wave(time,enemy,count,interval,x,spacing));
+            if (formation==Formation.BARRAGE_GAP)
+                check(safeCorridorX-safeCorridorWidth/2>=40 && safeCorridorX+safeCorridorWidth/2<=500,
+                    "Barrage safe corridor outside playfield");
+            authoredWaves.add(new Wave(time,enemy,count,interval,x,spacing,formation,safeCorridorX,safeCorridorWidth));
         }
         check(!authoredWaves.isEmpty(),"Missing waves");
         waves = Collections.unmodifiableList(authoredWaves);
