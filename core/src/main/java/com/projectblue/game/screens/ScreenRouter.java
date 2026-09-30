@@ -50,6 +50,12 @@ public final class ScreenRouter {
     }
     public int selectedLevel() { return selectedLevel; }
     public Difficulty selectedDifficulty() { return selectedDifficulty; }
+    public boolean rememberLevelSelection(int id) {
+        if (!CampaignConfig.isAvailable(id)) return false;
+        selectedLevel=id;
+        if (!game.saves().profile().canPlay(id,selectedDifficulty)) selectedDifficulty=Difficulty.NORMAL;
+        return true;
+    }
     public boolean selectLevel(int id) {
         if (!CampaignConfig.isAvailable(id) || !game.saves().profile().canPlay(id, Difficulty.NORMAL)) return false;
         selectedLevel = id; selectedDifficulty = Difficulty.NORMAL; return true;

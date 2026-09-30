@@ -27,4 +27,16 @@ class LevelSelectPolicyTest {
         assertTrue(profile.record(new LevelResult(spec, true, spec.combatTargets(), 20, 2, 50, 100)));
         assertTrue(LevelSelectPolicy.canStart(profile, 2, Difficulty.NORMAL));
     }
+    @Test void oneSwipeMovesExactlyOnePageAndSmallMotionDoesNothing() {
+        assertEquals(6,LevelSelectPolicy.afterSwipe(5,LevelSelectPolicy.SWIPE_THRESHOLD+1));
+        assertEquals(4,LevelSelectPolicy.afterSwipe(5,-LevelSelectPolicy.SWIPE_THRESHOLD-1));
+        assertEquals(5,LevelSelectPolicy.afterSwipe(5,LevelSelectPolicy.SWIPE_THRESHOLD-1));
+        assertEquals(5,LevelSelectPolicy.afterSwipe(5,Float.NaN));
+    }
+    @Test void keyboardNavigationStopsAtFirstAndLastPage() {
+        assertEquals(1,LevelSelectPolicy.move(1,-1));
+        assertEquals(2,LevelSelectPolicy.move(1,1));
+        assertEquals(CampaignConfig.LEVEL_COUNT,LevelSelectPolicy.move(CampaignConfig.LEVEL_COUNT,1));
+        assertEquals(CampaignConfig.LEVEL_COUNT-1,LevelSelectPolicy.move(CampaignConfig.LEVEL_COUNT,-1));
+    }
 }
