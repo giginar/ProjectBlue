@@ -70,8 +70,16 @@ public final class EnemySystems {
         }
     }
     private static void aimed(GameWorld w,Entity e,float speed,float slow) {
-        float dx=e.aimX-e.x,dy=e.aimY-e.y,length=Math.max(1,(float)Math.sqrt(dx*dx+dy*dy));
-        w.hostileProjectile(e.x,e.y-20,dx/length*speed,dy/length*speed,e.enemy.stats().damage(),slow);
+        float spawnX=e.x,spawnY=e.y-20;
+        float dx=w.player.x-spawnX,dy=w.player.y-spawnY;
+        float lengthSquared=dx*dx+dy*dy;
+        if (!Float.isFinite(lengthSquared) || lengthSquared<.0001f) {
+            dx=0; dy=-1;
+        } else {
+            float inverseLength=1f/(float)Math.sqrt(lengthSquared);
+            dx*=inverseLength; dy*=inverseLength;
+        }
+        w.hostileProjectile(spawnX,spawnY,dx*speed,dy*speed,e.enemy.stats().damage(),slow);
     }
     public static boolean armoredHit(Entity enemy,float impactX,float sourceY) {
         return enemy.enemy!=null && enemy.enemy.stats().frontArmor() && sourceY<enemy.y

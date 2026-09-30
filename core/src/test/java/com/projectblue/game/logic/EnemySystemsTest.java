@@ -14,6 +14,13 @@ class EnemySystemsTest {
         entity.radius=entity.enemy.stats().radius(); entity.health=entity.maxHealth=entity.enemy.stats().health();
         entity.timer=0; entity.repairTimer=0; return entity;
     }
+    private Entity hostileShot(GameWorld world) {
+        for(int i=0;i<world.bullets.capacity();i++) {
+            Entity shot=world.bullets.at(i);
+            if(shot.active&&!shot.friendly) return shot;
+        }
+        fail("Expected a hostile projectile"); return null;
+    }
     @Test void movementAndWeaponPatternsComposeWithoutEnemySubclasses() {
         GameWorld singleWorld=world(); Entity scout=enemy(singleWorld,"SCOUT",270,600); float before=scout.y;
         EnemySystems.update(singleWorld,scout,.1f);
@@ -45,5 +52,43 @@ class EnemySystemsTest {
         EnemySystems.update(world,turret,.1f);
         assertTrue(turret.warned); assertEquals(world.player.x,turret.aimX);
         assertEquals(world.player.y,turret.aimY);
+    }
+    @Test void aimedVelocityUsesPlayerPositionAtFireTimeInEveryDirection() {
+        float[][] targets={{420,580},{80,580},{250,760},{250,340}};
+        for(float[] target:targets) {
+            GameWorld world=world(); Entity turret=enemy(world,"TURRET",250,600);
+            world.player.x=target[0]; world.player.y=target[1];
+            EnemySystems.update(world,turret,0);
+            Entity shot=hostileShot(world);
+            float dx=world.player.x-shot.x,dy=world.player.y-shot.y;
+            assertTrue(shot.vx*dx+shot.vy*dy>0,"Projectile must point toward the player");
+            assertEquals(0,shot.vx*dy-shot.vy*dx,.02f,"Velocity must be collinear with the muzzle-to-player vector");
+        }
+    }
+    @Test void aimedShotUsesMuzzleOffsetAndDoesNotBecomeHoming() {
+        GameWorld world=world(); Entity turret=enemy(world,"TURRET",210,610);
+        world.player.x=390; world.player.y=300;
+        EnemySystems.update(world,turret,0);
+        Entity shot=hostileShot(world);
+        assertEquals(turret.x,shot.x,.001f); assertEquals(turret.y-20,shot.y,.001f);
+        float vx=shot.vx,vy=shot.vy;
+        world.player.x=40; world.player.y=700;
+        world.update(1f/60f,false,0,0);
+        assertEquals(vx,shot.vx,.001f); assertEquals(vy,shot.vy,.001f); assertEquals(0,shot.tracking,.001f);
+    }
+    @Test void aimedShotAtMuzzlePositionHasFiniteStraightDownFallback() {
+        GameWorld world=world(); Entity turret=enemy(world,"TURRET",270,600);
+        world.player.x=turret.x; world.player.y=turret.y-20;
+        EnemySystems.update(world,turret,0);
+        Entity shot=hostileShot(world);
+        assertTrue(Float.isFinite(shot.vx)); assertTrue(Float.isFinite(shot.vy));
+        assertEquals(0,shot.vx,.001f); assertTrue(shot.vy<0);
+    }
+    @Test void explicitSinglePatternRemainsStraight() {
+        GameWorld world=world(); Entity scout=enemy(world,"SCOUT",270,600);
+        world.player.x=40; world.player.y=500;
+        EnemySystems.update(world,scout,0);
+        Entity shot=hostileShot(world);
+        assertEquals(0,shot.vx,.001f); assertTrue(shot.vy<0);
     }
 }
