@@ -64,3 +64,10 @@ remain generated evidence and are not themselves store assets.
 The original Blue Grid generator and atlas were extended in-project with all twelve Turkish
 glyphs required by the English/Turkish UI. No external font or artwork was introduced. The
 updated font descriptor and atlas hashes are recorded in `verified-assets.properties`.
+
+## 2026-09-30 readability pass
+
+The same original Blue Grid glyph matrix now generates overlapping 4-by-4 cells inside the existing
+18-pixel advance. This produces a fuller stroke without adding a font dependency or changing the
+catalog coverage. The generator remains deterministic and the updated descriptor and atlas hashes
+are recorded in `verified-assets.properties`.

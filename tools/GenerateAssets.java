@@ -67,26 +67,27 @@ public final class GenerateAssets {
         GLYPHS.put('Ö', "01010/00000/01110/10001/10001/10001/01110");
         GLYPHS.put('Ş', "01111/10000/01110/00001/00001/11110/00100/01000");
         GLYPHS.put('Ü', "01010/00000/10001/10001/10001/10001/01110");
+        GLYPHS.put('Â', "00100/01010/01110/10001/11111/10001/10001");
         for (char lower : new char[]{'ç','ğ','ı','i','ö','ş','ü'}) GLYPHS.put(lower, GLYPHS.get(Character.toUpperCase(lower)));
         Files.createDirectories(Path.of("assets/fonts"));
         Files.createDirectories(Path.of("assets/audio"));
         List<Character> characters = new ArrayList<>();
         for (char ch = 32; ch <= 126; ch++) characters.add(ch);
-        for (char ch : new char[]{'Ç','ç','Ğ','ğ','ı','İ','Ö','ö','Ş','ş','Ü','ü'}) characters.add(ch);
-        BufferedImage atlas = new BufferedImage(324, 162, BufferedImage.TYPE_INT_ARGB);
-        StringBuilder fnt = new StringBuilder("info face=\"Blue Grid\" size=21 bold=0 italic=0 charset=\"\" unicode=1 stretchH=100 smooth=0 aa=1 padding=0,0,0,0 spacing=1,1\n"
-            + "common lineHeight=27 base=21 scaleW=324 scaleH=162 pages=1 packed=0\npage id=0 file=\"blue.png\"\nchars count=" + characters.size() + "\n");
+        for (char ch : new char[]{'Ç','ç','Ğ','ğ','ı','İ','Ö','ö','Ş','ş','Ü','ü','Â','â'}) characters.add(ch);
+        BufferedImage atlas = new BufferedImage(324, 189, BufferedImage.TYPE_INT_ARGB);
+        StringBuilder fnt = new StringBuilder("info face=\"Blue Grid\" size=21 bold=1 italic=0 charset=\"\" unicode=1 stretchH=100 smooth=0 aa=1 padding=0,0,0,0 spacing=1,1\n"
+            + "common lineHeight=27 base=21 scaleW=324 scaleH=189 pages=1 packed=0\npage id=0 file=\"blue.png\"\nchars count=" + characters.size() + "\n");
         for (int i = 0; i < characters.size(); i++) {
             int ch = characters.get(i), x = (i % 18) * 18, y = (i / 18) * 27;
             String glyph = GLYPHS.getOrDefault(Character.toUpperCase((char) ch), GLYPHS.get('?'));
             String[] rows = glyph.split("/");
             for (int row = 0; row < rows.length; row++) for (int col = 0; col < 5; col++) {
-                if (rows[row].charAt(col) == '1') for (int dy = 0; dy < 3; dy++) for (int dx = 0; dx < 3; dx++) {
+                if (rows[row].charAt(col) == '1') for (int dy = 0; dy < 4; dy++) for (int dx = 0; dx < 4; dx++) {
                     atlas.setRGB(x + col * 3 + dx, y + row * 3 + dy, 0xffffffff);
                 }
             }
             fnt.append("char id=").append(ch).append(" x=").append(x).append(" y=").append(y)
-                .append(" width=15 height=").append(rows.length * 3).append(" xoffset=0 yoffset=0 xadvance=18 page=0 chnl=15\n");
+                .append(" width=16 height=").append(rows.length * 3 + 1).append(" xoffset=0 yoffset=0 xadvance=18 page=0 chnl=15\n");
         }
         ImageIO.write(atlas, "png", Path.of("assets/fonts/blue.png").toFile());
         Files.writeString(Path.of("assets/fonts/blue.fnt"), fnt, StandardCharsets.UTF_8);
