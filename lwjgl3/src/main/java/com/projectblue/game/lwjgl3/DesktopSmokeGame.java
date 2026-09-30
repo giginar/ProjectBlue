@@ -77,9 +77,14 @@ final class DesktopSmokeGame extends ProjectBlueGame {
             }
             case 1 -> {
                 require(getScreen() instanceof LevelSelectScreen, "menu -> level select");
-                require(((Button) actor("level-2")).isDisabled(), "locked level visibly disabled");
                 require(((StageMenuScreen) getScreen()).stage().getRoot().findActor("launch") == null, "global PLAY button removed");
-                capture("02-levels"); clickActor("level-1"); next();
+                require(actor("level-card-1") != null && actor("start-dive") != null,"single selected card and CTA");
+                Gdx.input.getInputProcessor().keyDown(Input.Keys.UP);
+                require(actor("level-card-2") != null && ((StageMenuScreen)getScreen()).stage().getRoot().findActor("start-dive")==null,
+                    "one key press selects locked next page without CTA");
+                Gdx.input.getInputProcessor().keyDown(Input.Keys.DOWN);
+                require(actor("level-card-1") != null,"previous page selection");
+                capture("02-levels"); clickActor("start-dive"); next();
             }
             case 2 -> {
                 require(getScreen() instanceof GameScreen, "unlocked level card -> gameplay");
@@ -177,7 +182,7 @@ final class DesktopSmokeGame extends ProjectBlueGame {
             case 28 -> {
                 require(getScreen() instanceof SettingsScreen, "settings");
                 require(((StageMenuScreen) getScreen()).stage().getRoot().findActor("reset") == null, "release platform hides reset");
-                require(actor("mute") != null && actor("haptic") != null && actor("shake") != null
+                require(actor("mute") != null && actor("vibration") != null && actor("shake") != null
                     && actor("contrast") != null && actor("flashes") != null && actor("ui-scale") != null,
                     "audio and accessibility controls exist");
                 clickActor("language"); next();
