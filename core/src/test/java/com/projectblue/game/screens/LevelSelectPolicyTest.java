@@ -4,6 +4,7 @@ import com.projectblue.game.config.*;
 import com.projectblue.game.logic.LevelResult;
 import com.projectblue.game.save.Profile;
 import org.junit.jupiter.api.Test;
+import java.nio.file.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class LevelSelectPolicyTest {
@@ -38,5 +39,25 @@ class LevelSelectPolicyTest {
         assertEquals(2,LevelSelectPolicy.move(1,1));
         assertEquals(CampaignConfig.LEVEL_COUNT,LevelSelectPolicy.move(CampaignConfig.LEVEL_COUNT,1));
         assertEquals(CampaignConfig.LEVEL_COUNT-1,LevelSelectPolicy.move(CampaignConfig.LEVEL_COUNT,-1));
+    }
+    @Test void leftAndRightSelectOnlyUnlockedDifficulties() {
+        Profile profile=new Profile();
+        assertEquals(Difficulty.NORMAL,LevelSelectPolicy.changeDifficulty(profile,1,Difficulty.NORMAL,1));
+        RunSpec normal=RunSpec.create(1,Difficulty.NORMAL,Loadout.standard());
+        profile.record(new LevelResult(normal,true,normal.combatTargets(),20,2,50,100));
+        assertEquals(Difficulty.HARD,LevelSelectPolicy.changeDifficulty(profile,1,Difficulty.NORMAL,1));
+        assertEquals(Difficulty.NORMAL,LevelSelectPolicy.changeDifficulty(profile,1,Difficulty.HARD,-1));
+        assertEquals(Difficulty.HARD,LevelSelectPolicy.changeDifficulty(profile,1,Difficulty.HARD,1));
+    }
+    @Test void cardAndCtaStartButDifficultyControlsNeverLaunch() {
+        assertEquals(LevelSelectPolicy.CardAction.START,LevelSelectPolicy.cardAction("start-dive",true));
+        assertEquals(LevelSelectPolicy.CardAction.START,LevelSelectPolicy.cardAction(null,true));
+        assertEquals(LevelSelectPolicy.CardAction.DIFFICULTY,LevelSelectPolicy.cardAction("difficulty-next",true));
+        assertEquals(LevelSelectPolicy.CardAction.NONE,LevelSelectPolicy.cardAction("start-dive",false));
+    }
+    @Test void levelSelectKeepsCardActionAndDoesNotRestoreAGlobalPlayButton() throws Exception {
+        String source=Files.readString(Path.of("src/main/java/com/projectblue/game/screens/LevelSelectScreen.java"));
+        assertTrue(source.contains("\"start-dive\""));
+        assertFalse(source.contains("\"play\""));
     }
 }

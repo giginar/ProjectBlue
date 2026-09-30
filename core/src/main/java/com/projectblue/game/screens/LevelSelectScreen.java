@@ -25,11 +25,13 @@ public final class LevelSelectScreen extends StageMenuScreen {
             @Override public boolean keyDown(InputEvent event,int keycode) {
                 if (keycode==Input.Keys.UP) { select(1); return true; }
                 if (keycode==Input.Keys.DOWN) { select(-1); return true; }
+                if (keycode==Input.Keys.LEFT) { changeDifficulty(-1); return true; }
+                if (keycode==Input.Keys.RIGHT) { changeDifficulty(1); return true; }
                 if (keycode==Input.Keys.ENTER||keycode==Input.Keys.SPACE||keycode==Input.Keys.BUTTON_A) return start();
                 return false;
             }
             @Override public boolean touchDown(InputEvent event,float x,float y,int pointer,int button) {
-                if (pointer!=0) return false; touchStartY=y; trackingSwipe=true; return false;
+                if (pointer!=0) return false; touchStartY=y; trackingSwipe=true; return true;
             }
             @Override public void touchUp(InputEvent event,float x,float y,int pointer,int button) {
                 if (!trackingSwipe||pointer!=0) return;
@@ -53,8 +55,8 @@ public final class LevelSelectScreen extends StageMenuScreen {
         boolean unlocked=LevelSelectPolicy.canStart(profile,selectedLevel,Difficulty.NORMAL);
         Table card=panel(); card.setName("level-card-"+selectedLevel);
         String state=!available?t("levels.coming"):!unlocked?t("levels.locked"):"";
-        TextButton dive=button("level-"+selectedLevel,t("levels.card",String.format(java.util.Locale.ROOT,"%02d",selectedLevel),levelName(selectedLevel),state),this::start);
-        dive.setDisabled(!unlocked); card.add(dive).height(84).row();
+        Label heading=label(t("levels.card",String.format(java.util.Locale.ROOT,"%02d",selectedLevel),levelName(selectedLevel),state),1.08f,unlocked?Palette.TEXT:Palette.MUTED);
+        card.add(heading).minHeight(64).row();
         String status=!available?t("levels.planned"):!unlocked?t("common.locked"):record.bestStars>0?t("levels.restored"):t("levels.open");
         String difficultyStatus=record.bestDifficulty()==null?t("levels.normal_ready"):t("levels.difficulty_cleared",difficulty(record.bestDifficulty()));
         card.add(label(t("levels.status",status,difficultyStatus),.78f,unlocked?Palette.AQUA:Palette.MUTED)).row();
@@ -64,28 +66,48 @@ public final class LevelSelectScreen extends StageMenuScreen {
         card.add(label(t("levels.best_score",record.bestScore),.92f,Palette.GOLD)).row();
         card.add(label(t("levels.cleared",completed(record)),.82f,Palette.TEXT)).row();
         card.add(label(t("levels.performance",Math.round(record.bestCleanup),Math.round(record.bestRescue)),.82f,Palette.MUTED)).row();
-        if(!unlocked) card.add(label(t("levels.requirement",selectedLevel-1),.82f,Palette.MUTED)).row();
+        TextButton focusTarget=null;
+        if(!unlocked) card.add(label(t("levels.requirement",selectedLevel-1),.82f,Palette.MUTED)).minHeight(70).row();
         else {
-            card.add(label(t("levels.tap"),.78f,Palette.GOLD)).row();
-            TextButton difficultyButton=button("difficulty-"+selectedLevel,difficulty(choices[selectedLevel-1]),() -> {
-                choices[selectedLevel-1]=nextDifficulty(record,choices[selectedLevel-1]); showCard(false);
+            Table selector=new Table(); selector.setName("difficulty-control");
+            selector.add(label(t("levels.difficulty"),.72f,Palette.MUTED)).colspan(3).padBottom(5).row();
+            Difficulty current=choices[selectedLevel-1];
+            TextButton previous=button("difficulty-previous",t("levels.previous"),() -> changeDifficulty(-1));
+            TextButton next=button("difficulty-next",t("levels.next"),() -> changeDifficulty(1));
+            previous.setDisabled(LevelSelectPolicy.changeDifficulty(profile,selectedLevel,current,-1)==current);
+            next.setDisabled(LevelSelectPolicy.changeDifficulty(profile,selectedLevel,current,1)==current);
+            Label value=label(difficulty(current),.92f,Palette.AQUA); value.setAlignment(com.badlogic.gdx.utils.Align.center);
+            selector.add(previous).width(82).height(68); selector.add(value).growX().minWidth(180); selector.add(next).width(82).height(68);
+            card.add(selector).growX().minHeight(100).row();
+            if(next.isDisabled()&&current!=Difficulty.ABYSS)
+                card.add(label(t("levels.difficulty_locked"),.7f,Palette.MUTED)).row();
+            focusTarget=button("start-dive",t("levels.start"),this::start);
+            card.add(focusTarget).height(84).padTop(8).row();
+            card.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
+                @Override public void clicked(InputEvent event,float x,float y) {
+                    Actor target=event.getTarget();
+                    while(target!=null&&target!=card) {
+                        if(LevelSelectPolicy.cardAction(target.getName(),true)==LevelSelectPolicy.CardAction.DIFFICULTY
+                            ||"start-dive".equals(target.getName())) return;
+                        target=target.getParent();
+                    }
+                    start();
+                }
             });
-            card.add(difficultyButton).height(62).row();
         }
         if(animate&&!profile.reducedMotion) card.addAction(Actions.sequence(Actions.alpha(.55f),Actions.fadeIn(.16f)));
-        stage.setKeyboardFocus(dive); scrollToTop();
+        if(focusTarget!=null) stage.setKeyboardFocus(focusTarget); else stage.setKeyboardFocus(card);
+        scrollToTop();
     }
     private boolean start() {
         return LevelSelectPolicy.canStart(profile,selectedLevel,choices[selectedLevel-1])
             &&game.router().requestDive(selectedLevel,choices[selectedLevel-1]);
     }
-    private Difficulty nextDifficulty(LevelRecord record,Difficulty current) {
-        Difficulty[] all=Difficulty.values();
-        for(int offset=1;offset<=all.length;offset++) {
-            Difficulty candidate=all[(current.ordinal()+offset)%all.length];
-            if(record.canPlay(candidate)) return candidate;
-        }
-        return Difficulty.NORMAL;
+    private void changeDifficulty(int direction) {
+        Difficulty current=choices[selectedLevel-1];
+        Difficulty next=LevelSelectPolicy.changeDifficulty(profile,selectedLevel,current,direction);
+        if(next==current) return;
+        choices[selectedLevel-1]=next; game.router().selectDifficulty(next); showCard(false);
     }
     private String completed(LevelRecord record) {
         StringBuilder text=new StringBuilder();

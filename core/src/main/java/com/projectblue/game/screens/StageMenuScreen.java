@@ -136,14 +136,14 @@ public abstract class StageMenuScreen extends ScreenAdapter {
         float safeLeft=Gdx.graphics.getSafeInsetLeft()*scaleX, safeRight=Gdx.graphics.getSafeInsetRight()*scaleX;
         float safeTop=Gdx.graphics.getSafeInsetTop()*scaleY, safeBottom=Gdx.graphics.getSafeInsetBottom()*scaleY;
         root.pad(safeTop,safeRight,safeBottom,safeLeft);
-        root.getCell(frame).width(Math.min(640, stage.getViewport().getWorldWidth() - 48 - safeLeft - safeRight));
-        boolean compact = stage.getViewport().getWorldHeight() < 1050;
+        root.getCell(frame).width(MenuLayoutPolicy.frameWidth(stage.getViewport().getWorldWidth(),safeLeft,safeRight));
+        boolean compact = MenuLayoutPolicy.compact(stage.getViewport().getWorldHeight());
         frame.padTop(compact ? 12 : 22).padBottom(compact ? 10 : 18);
         divisionCell.minHeight(compact ? 22 : 28).padBottom(compact ? 8 : 14);
         titleCell.minHeight(compact ? 46 : 52).padBottom(compact ? 7 : 12);
         subtitleCell.minHeight(compact ? 40 : 48).padBottom(compact ? 10 : 18);
         statusCell.minHeight(compact ? 28 : 34).padTop(compact ? 4 : 8);
-        backCell.height(compact ? 72 : 84);
+        backCell.height(MenuLayoutPolicy.actionHeight(compact));
         for (Cell<?> cell : body.getCells()) cell.spaceBottom(compact ? 8 : 12);
         compactLayout(compact);
         root.invalidateHierarchy();
