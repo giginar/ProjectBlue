@@ -51,6 +51,7 @@ public final class GameWorld {
     private int spawnedDrones, spawnedPlastic, spawnedTurtles, kills, plasticCount, rescueCount, salvageCount;
     private int oilSpawned, oilCleaned, valvesClosed, bossOilTotal, drillPointsDisabled, energyStationsDisabled;
     private int finalBossDronesLaunched;
+    private int bossBurstStage;
     private boolean finished, bossSpawned, cleaning, recovering, finalObjectivesSpawned, closed;
     private boolean reducedEffects;
     private LevelResult result;
@@ -143,6 +144,7 @@ public final class GameWorld {
         if (mission == null) spawnScheduled();
         else if (!recovering) timeline.advance(elapsed, this::spawnMission);
         if (recovering) {
+            updateBossDefeatSequence();
             updateParticles(dt);
             updateMissionEnd(dt);
             return;
@@ -960,11 +962,20 @@ public final class GameWorld {
         for (int i=0;i<bullets.capacity();i++) if (!bullets.at(i).friendly) bullets.at(i).active=false;
         for (int i=0;i<drones.capacity();i++) drones.at(i).active=false;
         for (int i=0;i<hazards.capacity();i++) hazards.at(i).active=false;
-        burst(boss.x,boss.y,1);
+        bossBurst(boss.x,boss.y,1.8f);
+        bossBurstStage=1;
         events.emit(BOSS_DEFEATED,boss.x,boss.y,500);
     }
     private float bossCompletionDelay() {
         return Math.min(mission.recoverySeconds, BOSS_DEFEAT_RESULTS_DELAY_SECONDS);
+    }
+    private void updateBossDefeatSequence() {
+        float[] times={0,.28f,.62f,1.05f};
+        while (bossBurstStage<times.length&&recoveryTimer>=times[bossBurstStage]) {
+            float side=bossBurstStage%2==0?1:-1;
+            bossBurst(boss.x+side*boss.radius*.45f,boss.y+(bossBurstStage-2)*boss.radius*.28f,1.25f);
+            bossBurstStage++;
+        }
     }
     public int bossPhase() {
         if (compactor!=null) return compactor.phase();
@@ -1412,15 +1423,21 @@ public final class GameWorld {
         e.y+=vortex.forceY(e.x,e.y)*dt*scale;
         e.x=Rules.clamp(e.x,-DESPAWN_MARGIN,WIDTH+DESPAWN_MARGIN);
     }
-    private void burst(float x, float y, int color) {
-        int count = reducedEffects ? Math.max(1, PARTICLES_PER_BURST / 3) : PARTICLES_PER_BURST;
+    private void burst(float x, float y, int color) { burst(x,y,color,PARTICLES_PER_BURST,1); }
+    private void enemyBurst(Entity enemy) {
+        int count=Math.min(8,4+Math.round(enemy.radius/16));
+        burst(enemy.x,enemy.y,0,count,Rules.clamp(enemy.radius/22,.8f,1.6f));
+    }
+    private void bossBurst(float x,float y,float scale) { burst(x,y,2,10,scale); }
+    private void burst(float x,float y,int color,int requested,float scale) {
+        int count = reducedEffects ? Math.max(1, requested / 3) : requested;
         for (int i = 0; i < count; i++) {
             Entity e = particles.obtain();
             if (e == null) return;
             double angle = effects.nextFloat() * Math.PI * 2;
-            float speed = PARTICLE_SPEED * (.4f + effects.nextFloat());
+            float speed = PARTICLE_SPEED * scale * (.4f + effects.nextFloat());
             e.x = x; e.y = y; e.vx = (float) Math.cos(angle) * speed;
-            e.vy = (float) Math.sin(angle) * speed; e.timer = PARTICLE_LIFE; e.value = color;
+            e.vy = (float) Math.sin(angle) * speed; e.timer = PARTICLE_LIFE; e.value = color; e.progress=scale;
         }
     }
     private void updateParticles(float dt) {
@@ -1523,7 +1540,7 @@ public final class GameWorld {
             && e.enemy.ability()!=MissionConfig.EnemyAbility.SHIELD_CARRIER) damage=Math.max(1,damage/3);
         e.health = Rules.damage(e.health, damage);
         if (e.health != 0) return;
-        e.active = false; kills++; burst(e.x, e.y, 0);
+        e.active = false; kills++; enemyBurst(e);
         Entity drop = salvage.obtain();
         int reward=e.enemy==null?SALVAGE_PER_KILL*(e==boss?5:1):e.enemy.reward().salvage();
         int points=e.enemy==null?KILL_SCORE:e.enemy.reward().score();

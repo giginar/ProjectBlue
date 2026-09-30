@@ -47,8 +47,12 @@ class BlueCoastWorldTest {
         assertFalse(world.finished()); boss.hitPipe(true,Integer.MAX_VALUE); boss.hitPipe(false,Integer.MAX_VALUE);
         boss.hitCore(Integer.MAX_VALUE); world.update(STEP,false,0,0);
         assertTrue(world.recovering()); assertEquals(0,world.hostileBullets());
+        assertTrue(java.util.stream.IntStream.range(0,world.particles.capacity())
+            .anyMatch(i -> world.particles.at(i).active&&world.particles.at(i).value==2));
+        float defeatTime=world.elapsed();
         int spawned=world.spawnedDrones(); keepAlive(world,world.elapsed()+world.mission().recoverySeconds+.1f);
         assertTrue(world.finished()); assertTrue(world.result().completed); assertTrue(world.result().stars>=1);
+        assertTrue(world.elapsed()-defeatTime<=BOSS_DEFEAT_RESULTS_DELAY_SECONDS+STEP);
         assertEquals(spawned,world.spawnedDrones()); assertTrue(world.result().salvage>=world.mission().boss.salvage());
     }
     @Test void coralDamageReducesCleanupAndIntegrityScores() {

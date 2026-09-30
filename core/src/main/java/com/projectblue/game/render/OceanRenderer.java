@@ -228,8 +228,9 @@ public final class OceanRenderer {
         for (int i = 0; i < world.particles.capacity(); i++) {
             Entity e = world.particles.at(i);
             if (e.active) {
-                s.setColor(e.value == 0 ? Palette.GOLD : Palette.AQUA);
-                s.circle(e.x, e.y, 4 * e.timer / PARTICLE_LIFE, 8);
+                s.setColor(e.value == 0 ? Palette.GOLD : e.value == 2 ? Palette.RED : Palette.AQUA);
+                float size=(e.value==2?7:4)*Math.max(.7f,e.progress)*e.timer/PARTICLE_LIFE;
+                s.circle(e.x, e.y, size, 8);
             }
         }
         obscure(world,type);
