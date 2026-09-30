@@ -29,7 +29,11 @@ public final class SpawnTimeline {
     }
     private static Event enemyEvent(MissionConfig config,MissionConfig.Wave wave,int index,int count) {
         float time=wave.time()+index*wave.interval(),x=wave.x()+(index%wave.count())*wave.spacing();
-        float y=com.projectblue.game.config.GameConfig.SPAWN_Y,horizontalSpeed=0;
+        // Enemy formations enter just above the combat band. SPAWN_Y is appropriate for
+        // slowly drifting scenery, but it can leave side-entry enemies hidden behind the HUD
+        // until they cross the entire screen and despawn.
+        float y=com.projectblue.game.config.GameConfig.PLAY_MAX_Y+config.enemy(wave.enemy()).stats().radius()+12;
+        float horizontalSpeed=0;
         switch (wave.formation()) {
             case FLEET_LEFT -> { time=wave.time()+index*Math.min(.35f,wave.interval()); x=575; y-=index*34; horizontalSpeed=-85; }
             case FLEET_RIGHT -> { time=wave.time()+index*Math.min(.35f,wave.interval()); x=-35; y-=index*34; horizontalSpeed=85; }

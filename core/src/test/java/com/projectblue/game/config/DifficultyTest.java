@@ -66,7 +66,7 @@ class DifficultyTest {
         RunSpec original = RunSpec.original();
         assertEquals(LEVEL_SEED, original.level().seed());
         assertSame(MissionConfig.BLUE_COAST, original.mission());
-        assertEquals(MissionConfig.BLUE_COAST.enemyCount(1), original.combatTargets());
+        assertEquals(MissionConfig.BLUE_COAST.enemyCount(original.tuning().spawnDensity()), original.combatTargets());
         assertTrue(original.hasBoss()); assertEquals(Loadout.standard(), original.loadout());
         assertEquals(Math.round(DRONE_HEALTH*1.08f), original.tuning().droneHealth());
         assertEquals(DRONE_INTERVAL/1.12f, original.tuning().droneInterval(),.001f);

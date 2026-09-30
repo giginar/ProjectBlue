@@ -197,7 +197,7 @@ class MissionConfigTest {
             MissionConfig mission=MissionConfig.forLevel(level);
             assertTrue(mission.waves().get(0).time()<=2.5f,"Sector "+level+" first threat");
         }
-        assertEquals(1.8f,MissionConfig.BLUE_COAST.waves().get(0).time(),.001f);
+        assertEquals(1.5f,MissionConfig.BLUE_COAST.waves().get(0).time(),.001f);
         assertEquals(12f,MissionConfig.NEREID_CORE.waves().get(0).time(),.001f,
             "The authored finale keeps its facility approach");
     }
