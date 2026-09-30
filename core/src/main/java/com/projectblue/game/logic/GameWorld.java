@@ -961,6 +961,7 @@ public final class GameWorld {
         for (int i=0;i<drones.capacity();i++) drones.at(i).active=false;
         for (int i=0;i<hazards.capacity();i++) hazards.at(i).active=false;
         burst(boss.x,boss.y,1);
+        events.emit(BOSS_DEFEATED,boss.x,boss.y,500);
     }
     private float bossCompletionDelay() {
         return Math.min(mission.recoverySeconds, BOSS_DEFEAT_RESULTS_DELAY_SECONDS);

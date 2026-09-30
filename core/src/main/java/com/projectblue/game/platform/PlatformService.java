@@ -1,6 +1,6 @@
 package com.projectblue.game.platform;
 public interface PlatformService {
-    enum Haptic { LIGHT, DAMAGE, SUCCESS }
+    enum Haptic { LIGHT, HEAVY, DAMAGE, SUCCESS, BOSS }
     AdsService ads();
     ConsentService consent();
     AchievementService achievements();

@@ -16,6 +16,7 @@ public final class GameScreen extends ScreenAdapter implements GameEvents.Listen
     private final GameWorld world;
     private final PointerInput input;
     private final Hud hud;
+    private final com.projectblue.game.platform.CombatHaptics haptics;
     private float accumulator, shakeTime, shakeClock;
     private boolean disposed;
     public GameScreen(ProjectBlueGame game, RunSpec spec) {
@@ -25,12 +26,14 @@ public final class GameScreen extends ScreenAdapter implements GameEvents.Listen
         world.setReducedEffects(game.saves().profile().reducedMotion);
         input = new PointerInput(game.ui().viewport, world, () -> game.router().request(ScreenRouter.Route.PAUSE));
         hud = new Hud(game.ui(), game.i18n());
+        haptics = new com.projectblue.game.platform.CombatHaptics(game.platform(),game.saves().profile());
         world.events.subscribe(hud);
         world.events.subscribe(game.audio());
+        world.events.subscribe(haptics);
         world.events.subscribe(this);
         hud.update(0, world);
     }
-    public void show() { resetInput(); Gdx.input.setInputProcessor(input); }
+    public void show() { resetInput(); haptics.setActive(true); Gdx.input.setInputProcessor(input); }
     public void render(float delta) {
         accumulator += Math.min(Math.max(delta, 0), MAX_FRAME_TIME);
         while (accumulator >= STEP && !world.finished()) {
@@ -60,8 +63,8 @@ public final class GameScreen extends ScreenAdapter implements GameEvents.Listen
     void refreshHud() { hud.refresh(world); }
     public GameWorld world() { return world; }
     public void resetInput() { input.reset(); accumulator = 0; }
-    public void hide() { resetInput(); Gdx.input.setInputProcessor(null); }
-    public void pause() { resetInput(); }
+    public void hide() { resetInput(); haptics.setActive(false); Gdx.input.setInputProcessor(null); }
+    public void pause() { resetInput(); haptics.setActive(false); }
     public void resize(int width, int height) { game.ui().resize(width, height); resetInput(); }
     public void dispose() {
         if (disposed) return;
@@ -69,17 +72,12 @@ public final class GameScreen extends ScreenAdapter implements GameEvents.Listen
         world.close();
         world.events.unsubscribe(hud);
         world.events.unsubscribe(game.audio());
+        world.events.unsubscribe(haptics);
         world.events.unsubscribe(this);
     }
     @Override public void onEvent(GameEvents.Type type, float x, float y, int value) {
-        var profile = game.saves().profile();
         if (type == GameEvents.Type.PLAYER_HIT) {
             shakeTime = .22f;
-            if (profile.hapticEnabled) game.platform().haptic(PlatformService.Haptic.DAMAGE);
-        } else if (profile.hapticEnabled && type == GameEvents.Type.TURTLE_RESCUED) {
-            game.platform().haptic(PlatformService.Haptic.SUCCESS);
-        } else if (profile.hapticEnabled && type == GameEvents.Type.SONAR_PULSE) {
-            game.platform().haptic(PlatformService.Haptic.LIGHT);
         }
     }
 }

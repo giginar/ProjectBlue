@@ -33,7 +33,7 @@ public final class SettingsScreen extends StageMenuScreen {
             profile.reducedMotion = !profile.reducedMotion; save(); rebuild();
         });
         note(t("settings.motion_help"));
-        action("haptic", t("settings.haptic", profile.hapticEnabled ? t("common.on") : t("common.off")), () -> {
+        action("vibration", t("settings.vibration", profile.hapticEnabled ? t("common.on") : t("common.off")), () -> {
             profile.hapticEnabled = !profile.hapticEnabled; save(); rebuild();
         });
         action("shake", t("settings.shake", profile.screenShakeEnabled ? t("common.on") : t("common.off")), () -> {
