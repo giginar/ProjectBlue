@@ -6,21 +6,38 @@ import com.projectblue.game.events.GameEvents;
 
 /** Settings are persisted by SaveService; AssetManager owns the audio resources. */
 public final class AudioService implements GameEvents.Listener {
+    interface MusicControl {
+        void setLooping(boolean looping);
+        void setVolume(float volume);
+        boolean isPlaying();
+        void play();
+        void pause();
+    }
     private final Profile profile;
     private GameAssets assets;
+    private MusicControl music;
     private boolean suspended;
     public AudioService(Profile profile) { this.profile = profile; }
     public void attach(GameAssets assets) {
         this.assets = assets;
-        if (assets.ocean() != null) assets.ocean().setLooping(true);
+        var track=assets.ocean();
+        music=track==null?null:new MusicControl() {
+            public void setLooping(boolean looping) { track.setLooping(looping); }
+            public void setVolume(float volume) { track.setVolume(volume); }
+            public boolean isPlaying() { return track.isPlaying(); }
+            public void play() { track.play(); }
+            public void pause() { track.pause(); }
+        };
+        if (music!=null) music.setLooping(true);
         apply();
     }
+    void attach(MusicControl music) { this.music=music; if(music!=null) music.setLooping(true); apply(); }
     public void apply() {
-        if (assets == null) return;
-        if (assets.ocean() == null) return;
-        assets.ocean().setVolume(profile.muted ? 0 : profile.musicVolume);
-        if (!profile.muted && profile.musicEnabled && !suspended) assets.ocean().play();
-        else assets.ocean().pause();
+        if (music==null) return;
+        music.setVolume(profile.muted ? 0 : profile.musicVolume);
+        boolean shouldPlay=!profile.muted&&profile.musicEnabled&&!suspended;
+        if (shouldPlay&&!music.isPlaying()) music.play();
+        else if (!shouldPlay&&music.isPlaying()) music.pause();
     }
     public void suspend() {
         suspended = true;
