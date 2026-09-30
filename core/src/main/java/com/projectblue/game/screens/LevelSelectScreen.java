@@ -21,7 +21,7 @@ public final class LevelSelectScreen extends StageMenuScreen {
         selectedLevel=LevelSelectPolicy.move(game.router().selectedLevel(),0);
         choices[selectedLevel-1]=game.router().selectedDifficulty();
         showCard(false);
-        stage.addListener(new InputListener() {
+        stage.addCaptureListener(new InputListener() {
             @Override public boolean keyDown(InputEvent event,int keycode) {
                 if (keycode==Input.Keys.UP) { select(1); return true; }
                 if (keycode==Input.Keys.DOWN) { select(-1); return true; }
@@ -33,12 +33,18 @@ public final class LevelSelectScreen extends StageMenuScreen {
             @Override public boolean touchDown(InputEvent event,float x,float y,int pointer,int button) {
                 if (pointer!=0) return false; touchStartY=y; trackingSwipe=true; return true;
             }
+            @Override public void touchDragged(InputEvent event,float x,float y,int pointer) {
+                if (!trackingSwipe||pointer!=0||Math.abs(y-touchStartY)<LevelSelectPolicy.SWIPE_THRESHOLD) return;
+                finishSwipe(y-touchStartY); event.stop();
+            }
             @Override public void touchUp(InputEvent event,float x,float y,int pointer,int button) {
-                if (!trackingSwipe||pointer!=0) return;
-                trackingSwipe=false; int target=LevelSelectPolicy.afterSwipe(selectedLevel,y-touchStartY);
-                if (target!=selectedLevel) { selectedLevel=target; remember(); showCard(true); }
+                if (trackingSwipe&&pointer==0) finishSwipe(y-touchStartY);
             }
         });
+    }
+    private void finishSwipe(float distance) {
+        trackingSwipe=false; int target=LevelSelectPolicy.afterSwipe(selectedLevel,distance);
+        if (target!=selectedLevel) { selectedLevel=target; remember(); showCard(true); }
     }
     private void select(int direction) {
         int target=LevelSelectPolicy.move(selectedLevel,direction);
@@ -62,15 +68,13 @@ public final class LevelSelectScreen extends StageMenuScreen {
         card.add(label(t("levels.status",status,difficultyStatus),.78f,unlocked?Palette.AQUA:Palette.MUTED)).row();
         card.add(label(region(selectedLevel),1,Palette.AQUA)).row();
         card.add(label(t("level."+selectedLevel+".description"),.82f,Palette.TEXT)).row();
-        card.add(rating(record.bestStars)).height(36).row();
-        card.add(label(t("levels.best_score",record.bestScore),.92f,Palette.GOLD)).row();
-        card.add(label(t("levels.cleared",completed(record)),.82f,Palette.TEXT)).row();
-        card.add(label(t("levels.performance",Math.round(record.bestCleanup),Math.round(record.bestRescue)),.82f,Palette.MUTED)).row();
         TextButton focusTarget=null;
         if(!unlocked) card.add(label(t("levels.requirement",selectedLevel-1),.82f,Palette.MUTED)).minHeight(70).row();
         else {
+            focusTarget=button("start-dive",t("levels.start"),this::start);
+            card.add(focusTarget).height(84).padTop(8).row();
             Table selector=new Table(); selector.setName("difficulty-control");
-            selector.add(label(t("levels.difficulty"),.72f,Palette.MUTED)).colspan(3).padBottom(5).row();
+            selector.add(label(t("levels.difficulty"),.72f,Palette.MUTED)).growX().colspan(3).padBottom(5).row();
             Difficulty current=choices[selectedLevel-1];
             TextButton previous=button("difficulty-previous",t("levels.previous"),() -> changeDifficulty(-1));
             TextButton next=button("difficulty-next",t("levels.next"),() -> changeDifficulty(1));
@@ -81,8 +85,6 @@ public final class LevelSelectScreen extends StageMenuScreen {
             card.add(selector).growX().minHeight(100).row();
             if(next.isDisabled()&&current!=Difficulty.ABYSS)
                 card.add(label(t("levels.difficulty_locked"),.7f,Palette.MUTED)).row();
-            focusTarget=button("start-dive",t("levels.start"),this::start);
-            card.add(focusTarget).height(84).padTop(8).row();
             card.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
                 @Override public void clicked(InputEvent event,float x,float y) {
                     Actor target=event.getTarget();
@@ -95,6 +97,10 @@ public final class LevelSelectScreen extends StageMenuScreen {
                 }
             });
         }
+        card.add(rating(record.bestStars)).height(36).row();
+        card.add(label(t("levels.best_score",record.bestScore),.92f,Palette.GOLD)).row();
+        card.add(label(t("levels.cleared",completed(record)),.82f,Palette.TEXT)).row();
+        card.add(label(t("levels.performance",Math.round(record.bestCleanup),Math.round(record.bestRescue)),.82f,Palette.MUTED)).row();
         if(animate&&!profile.reducedMotion) card.addAction(Actions.sequence(Actions.alpha(.55f),Actions.fadeIn(.16f)));
         if(focusTarget!=null) stage.setKeyboardFocus(focusTarget); else stage.setKeyboardFocus(card);
         scrollToTop();

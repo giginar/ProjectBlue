@@ -58,6 +58,10 @@ class LevelSelectPolicyTest {
     @Test void levelSelectKeepsCardActionAndDoesNotRestoreAGlobalPlayButton() throws Exception {
         String source=Files.readString(Path.of("src/main/java/com/projectblue/game/screens/LevelSelectScreen.java"));
         assertTrue(source.contains("\"start-dive\""));
+        assertTrue(source.contains("stage.addCaptureListener"),
+            "Pager swipes must be captured before the card scroll pane consumes them");
+        assertTrue(source.contains(".growX().colspan(3).padBottom(5)"),
+            "The difficulty heading must span the selector on narrow phone layouts");
         assertFalse(source.contains("\"play\""));
     }
 }
