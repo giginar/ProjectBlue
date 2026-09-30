@@ -81,6 +81,15 @@ Mission systems add their own difficulty effects, including tighter routes, long
 greater sonar cost, faster heat or pressure gain, stronger vortex currents, denser boss patterns,
 and shorter warnings.
 
+Build 27 used `1.0` for every Normal multiplier, one boss projectile, a 175-unit legacy projectile
+speed, a 2.2-second legacy fire interval, and 40 legacy drones at 4-second spacing. The current
+Normal baseline is deliberately more active: 1.08 health and projectile speed, 1.12 spawn density,
+1.10 fire rate, 1.08 boss cadence and movement, and two boss projectiles. In the legacy formulas
+that yields 32 health, 189 projectile speed, 45 drones at 3.57-second spacing, and a 2-second fire
+interval. Authored enemy data still controls each sector; tests cap combined projectile speed at 400
+and keep combined fire intervals at or above 1.6 seconds. Hard, Expert, and Abyss remain strictly
+above Normal for every continuous pressure multiplier.
+
 The campaign introduces systems in this order:
 
 1. Blue Coast teaches movement, auto-fire, cleanup, rescue, salvage, and a telegraphed boss.

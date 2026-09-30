@@ -12,7 +12,7 @@ import static com.projectblue.game.config.GameConfig.*;
 
 class DifficultyTest {
     @ParameterizedTest
-    @CsvSource({"NORMAL,30,175,40,4,2.2,1,1", "HARD,38,210,50,3.2,1.9130435,3,2",
+    @CsvSource({"NORMAL,32,189,45,3.5714285,2,2,1", "HARD,38,210,50,3.2,1.9130435,3,2",
         "EXPERT,47,253.75,64,2.5,1.6296296,5,3", "ABYSS,57,306.25,80,2,1.375,7,3"})
     void configuredMultipliersProduceExpectedGameplay(Difficulty difficulty, int hp, float speed, int count,
         float spawnInterval, float shotInterval, int fan, int phases) {
@@ -38,15 +38,39 @@ class DifficultyTest {
             previous = current;
         }
     }
+    @Test void normalIsMoreActiveThanTheBuild27BaselineWithoutRemovingReactionTime() {
+        CampaignConfig.Tuning normal=CampaignConfig.DEFAULT.tuning(Difficulty.NORMAL);
+        assertTrue(normal.health()>1);
+        assertTrue(normal.bulletSpeed()>1);
+        assertTrue(normal.spawnDensity()>1);
+        assertTrue(normal.fireRate()>1);
+        assertTrue(normal.bossCadence()>1);
+        assertTrue(normal.bossMovement()>1);
+        assertTrue(normal.bossProjectiles()>1);
+        assertTrue(normal.shotInterval()>=2f);
+        assertTrue(normal.shotSpeed()<=190f);
+    }
+    @Test void authoredProjectileAndFireRateBoundsRemainDodgeableAcrossDifficulties() {
+        for (int level=1;level<=CampaignConfig.LEVEL_COUNT;level++) {
+            MissionConfig mission=MissionConfig.forLevel(level);
+            for (MissionConfig.Enemy enemy:mission.enemies()) for (Difficulty difficulty:Difficulty.values()) {
+                CampaignConfig.Tuning tuning=CampaignConfig.DEFAULT.tuning(difficulty);
+                assertTrue(enemy.stats().bulletSpeed()*tuning.bulletSpeed()<=400,
+                    level+" "+enemy.id()+" projectile speed");
+                assertTrue(enemy.stats().shotInterval()/tuning.fireRate()>=1.6f,
+                    level+" "+enemy.id()+" fire interval");
+            }
+        }
+    }
     @Test void originalEntryPointNowUsesAuthoredBlueCoastMission() {
         RunSpec original = RunSpec.original();
         assertEquals(LEVEL_SEED, original.level().seed());
         assertSame(MissionConfig.BLUE_COAST, original.mission());
         assertEquals(MissionConfig.BLUE_COAST.enemyCount(1), original.combatTargets());
         assertTrue(original.hasBoss()); assertEquals(Loadout.standard(), original.loadout());
-        assertEquals(DRONE_HEALTH, original.tuning().droneHealth());
-        assertEquals(DRONE_INTERVAL, original.tuning().droneInterval());
-        assertEquals(ENEMY_SHOT_INTERVAL, original.tuning().shotInterval());
+        assertEquals(Math.round(DRONE_HEALTH*1.08f), original.tuning().droneHealth());
+        assertEquals(DRONE_INTERVAL/1.12f, original.tuning().droneInterval(),.001f);
+        assertEquals(ENEMY_SHOT_INTERVAL/1.1f, original.tuning().shotInterval(),.001f);
     }
     @Test void tenOrderedLevelsHaveDistinctSeedsAndNames() {
         CampaignConfig c = CampaignConfig.DEFAULT;
